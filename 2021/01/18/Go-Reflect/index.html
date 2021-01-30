@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-dragon.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-dragon.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <link rel="manifest" href="/images/manifest.json">
+  <meta name="msapplication-config" content="/images/browserconfig.xml">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/pace-js@1/themes/blue/pace-theme-minimal.css">
+  <script src="//cdn.jsdelivr.net/npm/pace-js@1/pace.min.js"></script>
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"kiosk007.top","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"right","display":"always","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":true,"color":"#484891","save":"auto"},"fancybox":false,"mediumzoom":true,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="Go 语言标准库 reflect 提供了运行时动态获取对象的类型和值以及动态创建对象的能力。反射可以帮助抽象和简化代码，提高开发效率。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Go Reflect ">
+<meta property="og:url" content="http://kiosk007.top/2021/01/18/Go-Reflect/index.html">
+<meta property="og:site_name" content="kiosk007&#39;s Blog">
+<meta property="og:description" content="Go 语言标准库 reflect 提供了运行时动态获取对象的类型和值以及动态创建对象的能力。反射可以帮助抽象和简化代码，提高开发效率。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2021-01-18T15:57:00.000Z">
+<meta property="article:modified_time" content="2021-01-18T15:57:00.000Z">
+<meta property="article:author" content="kiosk">
+<meta property="article:tag" content="Go">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://kiosk007.top/2021/01/18/Go-Reflect/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Go Reflect  | kiosk007's Blog</title>
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?6f3d277b6c83066a05a8b7db067b2308";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<link rel="alternate" href="/atom.xml" title="kiosk007's Blog" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">kiosk007's Blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">专注! 量变产生质变 !</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://kiosk007.top/2021/01/18/Go-Reflect/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="kiosk">
+      <meta itemprop="description" content="NoOps">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="kiosk007's Blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Go Reflect 
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-01-18 23:57:00" itemprop="dateCreated datePublished" datetime="2021-01-18T23:57:00+08:00">2021-01-18</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/programming/" itemprop="url" rel="index"><span itemprop="name">programming</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/2021/01/18/Go-Reflect/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2021/01/18/Go-Reflect/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>Go 语言标准库 <a target="_blank" rel="noopener" href="https://golang.org/pkg/reflect/">reflect</a> 提供了运行时动态获取对象的类型和值以及动态创建对象的能力。反射可以帮助抽象和简化代码，提高开发效率。</p>
+<a id="more"></a>
+
+<h1 id="类型和接口-Types-and-interfaces"><a href="#类型和接口-Types-and-interfaces" class="headerlink" title="类型和接口 (Types and interfaces)"></a>类型和接口 (Types and interfaces)</h1><p>因为反射是建立在类型之上的，所以想要了解反射必须先知道Go 语言中所有的变量都有一个静态类型。例如 <code>int</code>、<code>[]byte</code>、<code>float32</code>、<code>*MyType</code>等等。<br>如下：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> MyInt <span class="keyword">int</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> i <span class="keyword">int</span></span><br><span class="line"><span class="keyword">var</span> j MyInt</span><br></pre></td></tr></table></figure>
+<p>接口是一种特殊的类型，它表示固定的方法集。接口变量可以存储任何具体（非接口）值,只要该值实现接口的方法。最经典的例子便是 io.Reader \ io.Writer 。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Reader is the interface that wraps the basic Read method.</span></span><br><span class="line"><span class="keyword">type</span> Reader <span class="keyword">interface</span> &#123;</span><br><span class="line">    Read(p []<span class="keyword">byte</span>) (n <span class="keyword">int</span>, err error)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Writer is the interface that wraps the basic Write method.</span></span><br><span class="line"><span class="keyword">type</span> Writer <span class="keyword">interface</span> &#123;</span><br><span class="line">    Write(p []<span class="keyword">byte</span>) (n <span class="keyword">int</span>, err error)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>有人说Go的接口是动态类型的，但这是误导。它们是静态类型。一个特殊的例子是空接口，即 <code>interface&#123;&#125;</code>。</p>
+<p>在这个例子中。<font style="color:#00008B">os.OpenFile</font> 的返回参数tty的类型是 <code>*os.File</code>，由于 <code>*os.File</code> 实现了 <font style="color:#00008B">Read()</font> 方法，所以该类型可以被赋于类型 io.Reader (io.Reader是一个interface)。尽管 <code> *os.File</code> 实现了很多方法，但是变量r仅有一个方法Read。但内部的值仍包含有关该值的所有类型信息。这就是为什么我们可以做 <code>w=r.(io.Writer)</code> 的原因。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">	<span class="keyword">var</span> r io.Reader</span><br><span class="line">	tty, err := os.OpenFile(<span class="string">&quot;/dev/tty&quot;</span>, os.O_RDWR, <span class="number">0</span>) <span class="comment">// tty *os.File</span></span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;  <span class="keyword">return</span> &#125;</span><br><span class="line">	r = tty</span><br><span class="line"></span><br><span class="line">	<span class="keyword">var</span> w io.Writer    </span><br><span class="line">	w = r.(io.Writer)  <span class="comment">// 由于r实际内部是有Write方法的，所以r可以被断言成 io.Writer</span></span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> _, err = w.Write([]<span class="keyword">byte</span>(<span class="string">&quot;12345&quot;</span>));err != <span class="literal">nil</span> &#123; <span class="keyword">return</span> &#125;</span><br><span class="line"></span><br><span class="line">	_ = tty.Close()</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>甚至可以继续执行下面的操作。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> empty <span class="keyword">interface</span>&#123;&#125;</span><br><span class="line">empty = w</span><br><span class="line">fmt.Println(reflect.TypeOf(empty))</span><br></pre></td></tr></table></figure>
+<h2 id="反射基本用法"><a href="#反射基本用法" class="headerlink" title="反射基本用法"></a>反射基本用法</h2><h3 id="从接口值到反射对象"><a href="#从接口值到反射对象" class="headerlink" title="从接口值到反射对象"></a><font style="color:#483D8B"><strong>从接口值到反射对象</strong></font></h3><p>ValueOf用来获取输入参数接口中的数据的值。如果是空接口则返回 invalid 。<br>TypeOf用来动态获取输入参数接口中的值的类型，如果空接口则返回nil</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> num = <span class="number">1.2345</span></span><br><span class="line">fmt.Println(<span class="string">&quot;type: &quot;</span>,reflect.TypeOf(num))     <span class="comment">// type:  float64</span></span><br><span class="line">fmt.Println(<span class="string">&quot;value: &quot;</span>,reflect.ValueOf(num))   <span class="comment">// value:  1.2345</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>也可以判断类型</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">checkType</span><span class="params">(v <span class="keyword">interface</span>&#123;&#125;)</span></span> &#123;</span><br><span class="line">	t := reflect.TypeOf(v)</span><br><span class="line">	<span class="keyword">switch</span> t.Kind() &#123;</span><br><span class="line">	<span class="keyword">case</span> reflect.Float64:</span><br><span class="line">		fmt.Println(<span class="string">&quot;float&quot;</span>)</span><br><span class="line">	<span class="keyword">case</span> reflect.Int:</span><br><span class="line">		fmt.Println(<span class="string">&quot;int&quot;</span>)</span><br><span class="line">	<span class="keyword">case</span> reflect.String:</span><br><span class="line">		fmt.Println(<span class="string">&quot;string&quot;</span>)</span><br><span class="line">	<span class="keyword">default</span>:</span><br><span class="line">		fmt.Println(<span class="string">&quot;none&quot;</span>)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">switch</span> v.(<span class="keyword">type</span>) &#123;   <span class="comment">// 方法二</span></span><br><span class="line">	<span class="keyword">case</span> <span class="keyword">float64</span>:</span><br><span class="line">		fmt.Println(<span class="string">&quot;float&quot;</span>)</span><br><span class="line">	<span class="keyword">case</span> <span class="keyword">int</span>:</span><br><span class="line">		fmt.Println(<span class="string">&quot;int&quot;</span>)</span><br><span class="line">	<span class="keyword">case</span> <span class="keyword">string</span>:</span><br><span class="line">		fmt.Println(<span class="string">&quot;string&quot;</span>)</span><br><span class="line">	<span class="keyword">default</span>:</span><br><span class="line">		fmt.Println(<span class="string">&quot;none&quot;</span>)</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="从反射对象到接口值"><a href="#从反射对象到接口值" class="headerlink" title="从反射对象到接口值"></a><font style="color:#483D8B"><strong>从反射对象到接口值</strong></font></h3><p>go 提供了反射和反射的逆，可以通过 <code>.(type)</code> 断言的方式将一个Interface()转成他真正的类型。如果断言的类型不匹配，会发生panic。</p>
+<p>可以通过下面几种方法从反射值对象 reflect.Value 中获取原值，如下表所示。</p>
+<table>
+<thead>
+<tr>
+<th>方法名</th>
+<th>说 明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Interface() interface{}</td>
+<td>将值以 interface{} 类型返回，可以通过类型断言转换为指定类型</td>
+</tr>
+<tr>
+<td>Int() int64</td>
+<td>将值以 int 类型返回，所有有符号整型均可以此方式返回</td>
+</tr>
+<tr>
+<td>Uint() uint64</td>
+<td>将值以 uint 类型返回，所有无符号整型均可以此方式返回</td>
+</tr>
+<tr>
+<td>Float() float64</td>
+<td>将值以双精度（float64）类型返回，所有浮点数（float32、float64）均可以此方式返回</td>
+</tr>
+<tr>
+<td>Bool() bool</td>
+<td>将值以 bool 类型返回</td>
+</tr>
+<tr>
+<td>Bytes() []bytes</td>
+<td>将值以字节数组 []bytes 类型返回</td>
+</tr>
+<tr>
+<td>String() string</td>
+<td>将值以字符串类型返回</td>
+</tr>
+</tbody></table>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> pi <span class="keyword">float64</span></span><br><span class="line">pi = <span class="number">3.1415926</span></span><br><span class="line">v := reflect.ValueOf(pi)</span><br><span class="line">y := v.Interface().(<span class="keyword">float64</span>) <span class="comment">// y will have type float64.</span></span><br><span class="line">fmt.Println(y)</span><br></pre></td></tr></table></figure>
+<h3 id="要修改反射对象，该值必须可设置"><a href="#要修改反射对象，该值必须可设置" class="headerlink" title="要修改反射对象，该值必须可设置"></a><font style="color:#483D8B"><strong>要修改反射对象，该值必须可设置</strong></font></h3><p>如果运行下面的代码将会 <font style="color:#8B0000"> panic </font> ，这时因为 v 是不可设置的。</p>
+<table>
+<thead>
+<tr>
+<th>方法名</th>
+<th>备  注</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Elem() Value</td>
+<td>取值指向的元素值，类似于语言层*操作</td>
+</tr>
+<tr>
+<td>Addr() Value</td>
+<td>对可寻址的值返回其地址，类似于语言层&amp;操作。当值不可寻址时发生宕机</td>
+</tr>
+<tr>
+<td>CanAddr() bool</td>
+<td>表示值是否可寻址</td>
+</tr>
+<tr>
+<td>CanSet() bool</td>
+<td>返回值能否被修改。要求值可寻址且是导出的字段</td>
+</tr>
+</tbody></table>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> x <span class="keyword">float64</span> = <span class="number">3.4</span></span><br><span class="line">v := reflect.ValueOf(x)</span><br><span class="line">v.SetFloat(<span class="number">7.1</span>) <span class="comment">// Error: will panic.</span></span><br></pre></td></tr></table></figure>
+<p>通过 <code>CanSet()</code> 即可判断，<code>CanSet()</code> 报告 v 的值是否可以改变。值只能在可寻址的情况下更改，并且不能通过使用未导出的结构字段获取。如果 CanSet 返回 false ，则调用 Set 或任何类型特定的 setter （例如 SetBool ，SetInt ）将会发生panic。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> x <span class="keyword">float64</span> = <span class="number">3.4</span></span><br><span class="line">v := reflect.ValueOf(x)</span><br><span class="line">fmt.Println(<span class="string">&quot;settability of v:&quot;</span>, v.CanSet())</span><br></pre></td></tr></table></figure>
+<p>v 不可寻址，因为 v 只是 x 的拷贝，即便把 x 换成 &amp;x,还是不可寻址，因为 <code>reflect.ValueOf(&amp;x)</code> 也仅仅是 x 指针的拷贝。实际上，所有通过 <code>reflect.ValueOf(x)</code> 返回的 reflect.Value 都是不可取地址的。但是通过调用 <code>reflect.ValueOf(&amp;x).Elem()</code>，来获取任意变量x对应的可取地址的 Value</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> x <span class="keyword">float64</span></span><br><span class="line">x = <span class="number">3.1415</span></span><br><span class="line">pv := reflect.ValueOf(&amp;x)</span><br><span class="line">pv = pv.Elem()</span><br><span class="line">pv.SetFloat(<span class="number">7.1</span>) </span><br><span class="line"></span><br><span class="line">fmt.Println(x)   <span class="comment">// 7.1</span></span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="结构-Struct"><a href="#结构-Struct" class="headerlink" title="结构 Struct"></a>结构 Struct</h2><p>| 方法  | 说明 |<br>| –   |  –  |<br>| Field(i int) StructField |    根据索引，返回索引对应的结构体字段的信息。当值不是结构体或索引超界时发生panic |<br>| NumField() int |    返回结构体成员字段数量。当类型不是结构体或索引超界时发生panic |<br>| FieldByName(name string) (StructField, bool) | 根据给定字符串返回字符串对应的结构体字段的信息。没有找到时 bool 返回 false，当类型不是结构体或索引超界时发生 panic |<br>| FieldByIndex(index []int) StructField | 多层成员访问时，根据 []int 提供的每个结构体的字段索引，返回字段的信息。没有找到时返回零值。当类型不是结构体或索引超界时发生 panic |<br>| FieldByNameFunc( match func(string) bool) (StructField,bool)    | 根据匹配函数匹配需要的字段。当值不是结构体或索引超界时发生panic |</p>
+<h3 id="普通结构体"><a href="#普通结构体" class="headerlink" title="普通结构体"></a>普通结构体</h3><ol>
+<li>先获取interface的reflect.Type，然后通过NumField进行遍历</li>
+<li>再通过reflect.Type的Field获取其Field</li>
+<li>最后通过Field的Interface()得到对应的value</li>
+</ol>
+<p>假设有以下 <code>User struct</code></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> User <span class="keyword">struct</span> &#123;</span><br><span class="line">	Id      <span class="keyword">int</span></span><br><span class="line">	Name    <span class="keyword">string</span></span><br><span class="line">	Work    Worker</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> Worker <span class="keyword">struct</span> &#123;</span><br><span class="line">	Id           <span class="keyword">int</span></span><br><span class="line">	Occupation   <span class="keyword">string</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(u User)</span> <span class="title">ReflectCallFunc</span><span class="params">()</span></span> &#123;</span><br><span class="line">	fmt.Printf(<span class="string">&quot;My Id :%d ,My Name :%s ,My Occupation :%s&quot;</span>,u.Id,u.Name,u.Work.Occupation)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(u User)</span> <span class="title">ReflectCallFuncHasArgs</span><span class="params">(foo <span class="keyword">int</span>)</span></span> &#123;</span><br><span class="line">	fmt.Printf(<span class="string">&quot;This is number %d \n&quot;</span>, foo)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>我们接下来演示的是如何通过反射区打印结构体中的所有对象、打印结构体中的所有字段、调用方法。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">	user := User&#123;</span><br><span class="line">		Id:   <span class="number">1</span>,</span><br><span class="line">		Name: <span class="string">&quot;Kiosk&quot;</span>,</span><br><span class="line">		Work: Worker&#123;</span><br><span class="line">			Id: <span class="number">1</span>,</span><br><span class="line">			Occupation: <span class="string">&quot;farmer&quot;</span>,</span><br><span class="line">		&#125;,</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	getType := reflect.TypeOf(user)</span><br><span class="line">	fmt.Println(<span class="string">&quot;get type is: &quot;</span>,getType.Name())  <span class="comment">// get type is:  User</span></span><br><span class="line"></span><br><span class="line">	getValue := reflect.ValueOf(user)</span><br><span class="line">	fmt.Println(<span class="string">&quot;get all Fields is &quot;</span>, getValue) <span class="comment">// get all Fields is  &#123;1 Kiosk &#123;1 farmer&#125;&#125;</span></span><br><span class="line"></span><br><span class="line">	<span class="comment">// 对字段进行遍历 获取方法的字段</span></span><br><span class="line">	<span class="keyword">for</span> i := <span class="number">0</span>;i &lt; getType.NumField();i++ &#123;</span><br><span class="line">		field := getType.Field(i)</span><br><span class="line">		value := getValue.Field(i).Interface()</span><br><span class="line">		fmt.Printf(<span class="string">&quot;%s: %v = %v \n&quot;</span>,field.Name,field.Type,value)</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">/*</span></span><br><span class="line"><span class="comment">	   	Id: int = 1</span></span><br><span class="line"><span class="comment">		Name: string = Kiosk</span></span><br><span class="line"><span class="comment">		Work: main.Worker = &#123;1 farmer&#125;</span></span><br><span class="line"><span class="comment">	*/</span></span><br><span class="line"></span><br><span class="line">	<span class="comment">// 获取方法</span></span><br><span class="line">	<span class="keyword">for</span> i := <span class="number">0</span>;i &lt; getType.NumMethod();i++ &#123;</span><br><span class="line">		m := getType.Method(i)</span><br><span class="line">		fmt.Printf(<span class="string">&quot;%s : %v\n&quot;</span>,m.Name,m.Type)</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">/*</span></span><br><span class="line"><span class="comment">	   ReflectCallFunc : func(main.User)</span></span><br><span class="line"><span class="comment">	   ReflectCallFuncHasArgs : func(main.User, int)</span></span><br><span class="line"><span class="comment">	*/</span></span><br><span class="line"></span><br><span class="line">	<span class="comment">// 调用方法</span></span><br><span class="line">	<span class="comment">// 有参数调用</span></span><br><span class="line">	methodValue := getValue.MethodByName(<span class="string">&quot;ReflectCallFuncHasArgs&quot;</span>)</span><br><span class="line">	args := []reflect.Value&#123;reflect.ValueOf(<span class="number">2</span>)&#125;</span><br><span class="line">	methodValue.Call(args)</span><br><span class="line"></span><br><span class="line">	<span class="comment">/*</span></span><br><span class="line"><span class="comment">		This is number 2</span></span><br><span class="line"><span class="comment">	*/</span></span><br><span class="line"></span><br><span class="line">	<span class="comment">// 无参数调用</span></span><br><span class="line">	methodValue = getValue.MethodByName(<span class="string">&quot;ReflectCallFunc&quot;</span>)</span><br><span class="line">	args = <span class="built_in">make</span>([]reflect.Value,<span class="number">0</span>)</span><br><span class="line">	methodValue.Call(args)</span><br><span class="line"></span><br><span class="line">	<span class="comment">/*</span></span><br><span class="line"><span class="comment">		My Id :1 ,My Name :Kiosk ,My Occupation :farmer</span></span><br><span class="line"><span class="comment">	*/</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="带tag的struct"><a href="#带tag的struct" class="headerlink" title="带tag的struct"></a>带tag的struct</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> User <span class="keyword">struct</span> &#123;</span><br><span class="line">	Id      <span class="keyword">int</span> 		<span class="string">`json:&quot;id&quot;   bson:&quot;id&quot;`</span></span><br><span class="line">	Name    <span class="keyword">string</span>		<span class="string">`json:&quot;name&quot; bson:&quot;name&quot;`</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">	user := User&#123;</span><br><span class="line">		Id:   <span class="number">1</span>,</span><br><span class="line">		Name: <span class="string">&quot;Kiosk&quot;</span>,</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	getType := reflect.TypeOf(user)</span><br><span class="line">	fmt.Printf(<span class="string">&quot;get type is: %v \n&quot;</span>,getType.String())  <span class="comment">// get type is:  main.User</span></span><br><span class="line"></span><br><span class="line">	getValue := reflect.ValueOf(user)</span><br><span class="line">	fmt.Println(getValue) <span class="comment">// &#123;1 Kiosk&#125;</span></span><br><span class="line"></span><br><span class="line">	name := getValue.FieldByName(getType.Field(<span class="number">1</span>).Name).String()</span><br><span class="line">	fmt.Printf(<span class="string">&quot;name is %s \n&quot;</span>, name)  <span class="comment">// name is Kiosk</span></span><br><span class="line"></span><br><span class="line">	tag := getType.Field(<span class="number">0</span>).Tag</span><br><span class="line">	fmt.Printf(<span class="string">&quot;name: %v  tag: &#x27;%v&#x27;\n&quot;</span>, getType.Field(<span class="number">0</span>).Name, tag) <span class="comment">// name: Id  tag: &#x27;json:&quot;id&quot;   bson:&quot;id&quot;&#x27;</span></span><br><span class="line">	fmt.Printf(<span class="string">&quot;tag is %s, %s \n&quot;</span>, tag.Get(<span class="string">&quot;json&quot;</span>), tag.Get(<span class="string">&quot;bson&quot;</span>)) <span class="comment">//  tag is id, id </span></span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="判断反射值的有效性和空"><a href="#判断反射值的有效性和空" class="headerlink" title="判断反射值的有效性和空"></a>判断反射值的有效性和空</h2><p>IsNil()和IsValid() – 判断反射值的空和有效性</p>
+<p>反射值对象（reflect.Value）提供一系列方法进行零值和空判定，如下表所示。</p>
+<table>
+<thead>
+<tr>
+<th>方 法</th>
+<th>说 明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>IsNil() bool</td>
+<td>返回值是否为 nil。如果值类型不是通道（channel）、函数、接口、map、指针或 切片时发生 panic，类似于语言层的v== nil操作</td>
+</tr>
+<tr>
+<td>IsValid() bool</td>
+<td>判断值是否有效。 当值本身非法时，返回 false，例如 reflect Value不包含任何值，值为 nil 等。</td>
+</tr>
+</tbody></table>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line"></span><br><span class="line">	<span class="comment">//*int的空指针</span></span><br><span class="line">	<span class="keyword">var</span> a *<span class="keyword">int</span></span><br><span class="line">	fmt.Println(<span class="string">&quot;var a *int:&quot;</span>, reflect.ValueOf(a).IsNil())  </span><br><span class="line">    <span class="comment">// var a *int: true</span></span><br><span class="line"></span><br><span class="line">	<span class="comment">//nil值</span></span><br><span class="line">	fmt.Println(<span class="string">&quot;nil:&quot;</span>, reflect.ValueOf(<span class="literal">nil</span>).IsValid()) </span><br><span class="line">    <span class="comment">// nil: false</span></span><br><span class="line"></span><br><span class="line">	<span class="comment">//*int类型的空指针</span></span><br><span class="line">	fmt.Println(<span class="string">&quot;(*int)(nil):&quot;</span>, reflect.ValueOf((*<span class="keyword">int</span>)(<span class="literal">nil</span>)).Elem().IsValid()) </span><br><span class="line">    <span class="comment">// (*int)(nil): false</span></span><br><span class="line"></span><br><span class="line">	<span class="comment">//实例化一个结构体</span></span><br><span class="line">	s := <span class="keyword">struct</span> &#123;&#125;&#123;&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">//尝试从结构体中查找一个不存在的字段</span></span><br><span class="line">	fmt.Println(<span class="string">&quot;不存在的结构体成员:&quot;</span>, reflect.ValueOf(s).FieldByName(<span class="string">&quot;&quot;</span>).IsValid()) </span><br><span class="line">    <span class="comment">// 不存在的结构体成员: false</span></span><br><span class="line"></span><br><span class="line">	<span class="comment">//尝试从结构体中查找一个不存在的方法</span></span><br><span class="line">	fmt.Println(<span class="string">&quot;不存在的方法:&quot;</span>, reflect.ValueOf(s).MethodByName(<span class="string">&quot;&quot;</span>).IsValid()) </span><br><span class="line">    <span class="comment">// 不存在的方法: false</span></span><br><span class="line"></span><br><span class="line">	<span class="comment">//实例化一个map</span></span><br><span class="line">	m := <span class="keyword">map</span>[<span class="keyword">int</span>]<span class="keyword">int</span>&#123;&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">//尝试从map中查找一个不存在的键</span></span><br><span class="line">	fmt.Println(<span class="string">&quot;不存在的键:&quot;</span>, reflect.ValueOf(m).MapIndex(reflect.ValueOf(<span class="number">3</span>)).IsValid()) </span><br><span class="line">    <span class="comment">// 不存在的键: false</span></span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Go/" rel="tag"># Go</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/01/16/TLS%E8%AF%A6%E8%A7%A3%EF%BC%88%E4%B8%89%EF%BC%89/" rel="prev" title="TLS详解（三）">
+      <i class="fa fa-chevron-left"></i> TLS详解（三）
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2021/01/23/%E6%8E%A2%E7%B4%A2-Webtransport/" rel="next" title="探索 Webtransport">
+      探索 Webtransport <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%B1%BB%E5%9E%8B%E5%92%8C%E6%8E%A5%E5%8F%A3-Types-and-interfaces"><span class="nav-number">1.</span> <span class="nav-text">类型和接口 (Types and interfaces)</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%8D%E5%B0%84%E5%9F%BA%E6%9C%AC%E7%94%A8%E6%B3%95"><span class="nav-number">1.1.</span> <span class="nav-text">反射基本用法</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BB%8E%E6%8E%A5%E5%8F%A3%E5%80%BC%E5%88%B0%E5%8F%8D%E5%B0%84%E5%AF%B9%E8%B1%A1"><span class="nav-number">1.1.1.</span> <span class="nav-text">从接口值到反射对象</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BB%8E%E5%8F%8D%E5%B0%84%E5%AF%B9%E8%B1%A1%E5%88%B0%E6%8E%A5%E5%8F%A3%E5%80%BC"><span class="nav-number">1.1.2.</span> <span class="nav-text">从反射对象到接口值</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%A6%81%E4%BF%AE%E6%94%B9%E5%8F%8D%E5%B0%84%E5%AF%B9%E8%B1%A1%EF%BC%8C%E8%AF%A5%E5%80%BC%E5%BF%85%E9%A1%BB%E5%8F%AF%E8%AE%BE%E7%BD%AE"><span class="nav-number">1.1.3.</span> <span class="nav-text">要修改反射对象，该值必须可设置</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%BB%93%E6%9E%84-Struct"><span class="nav-number">1.2.</span> <span class="nav-text">结构 Struct</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%99%AE%E9%80%9A%E7%BB%93%E6%9E%84%E4%BD%93"><span class="nav-number">1.2.1.</span> <span class="nav-text">普通结构体</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%B8%A6tag%E7%9A%84struct"><span class="nav-number">1.2.2.</span> <span class="nav-text">带tag的struct</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%88%A4%E6%96%AD%E5%8F%8D%E5%B0%84%E5%80%BC%E7%9A%84%E6%9C%89%E6%95%88%E6%80%A7%E5%92%8C%E7%A9%BA"><span class="nav-number">1.3.</span> <span class="nav-text">判断反射值的有效性和空</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="kiosk"
+      src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">kiosk</p>
+  <div class="site-description" itemprop="description">NoOps</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">26</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">10</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">20</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+  <div class="links-of-blogroll motion-element">
+    <div class="links-of-blogroll-title"><i class="fa fa-link fa-fw"></i>
+      Links
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="https://github.com/weijiaxiang007" title="https://github.com/weijiaxiang007" rel="noopener" target="_blank">Github</a>
+        </li>
+    </ul>
+  </div>
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-blog"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">kiosk</span>
+</div>
+
+<div class="BbeiAn-info">
+   	京ICP备 -
+	<a target="_blank" href="http://beian.miit.gov.cn/" text-decoration:none;padding-left:30px;background:url(https://s1.ax1x.com/2018/09/29/ilmwIH.png) no-repeat left center" rel="nofollow">京ICP备20015006号-1</a>	 
+</div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/medium-zoom@1/dist/medium-zoom.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+<script src="/js/bookmark.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+<script>
+if (document.querySelectorAll('pre.mermaid').length) {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/mermaid@8/dist/mermaid.min.js', () => {
+    mermaid.initialize({
+      theme    : 'neutral',
+      logLevel : 3,
+      flowchart: { curve     : 'linear' },
+      gantt    : { axisFormat: '%m/%d/%Y' },
+      sequence : { actorMargin: 50 }
+    });
+  }, window.mermaid);
+}
+</script>
+
+
+  
+
+  
+
+  
+
+  
+
+  <canvas id="evanyou"></canvas>
+  <style>
+    #evanyou {
+      position: fixed;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      z-index: -1;
+    }
+  </style>
+  <script src="/js/evan-you.js"></script>
+
+
+
+
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('https://cdn.jsdelivr.net/npm/valine@1.3.10/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'XhYn8GEq1Sg7ufJQAVmR4dWN-gzGzoHsz',
+      appKey     : 'r42k4lqU022wD7IvtwGaQfjN',
+      placeholder: "Just go go",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : false,
+      lang       : 'zh-cn' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
+</script>
+
+
+  <script src="https://libs.baidu.com/jquery/2.0.0/jquery.min.js"></script>
+  <script src="https://unpkg.com/mermaid@8.4.6/dist/mermaid.min.js"></script>
+  <script>mermaid.initialize({startOnLoad:true});</script>
+</body>
+</html>

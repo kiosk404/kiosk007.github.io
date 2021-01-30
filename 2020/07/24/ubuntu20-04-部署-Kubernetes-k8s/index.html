@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-dragon.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-dragon.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <link rel="manifest" href="/images/manifest.json">
+  <meta name="msapplication-config" content="/images/browserconfig.xml">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/pace-js@1/themes/blue/pace-theme-minimal.css">
+  <script src="//cdn.jsdelivr.net/npm/pace-js@1/pace.min.js"></script>
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"kiosk007.top","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"right","display":"always","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":true,"color":"#484891","save":"auto"},"fancybox":false,"mediumzoom":true,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="Kubernetes（k8s）是一个免费的开源容器编排工具。它用于部署，扩展和管理基于容器的应用程序。在这篇文章中，这里将演示如何安装Kubernetes集群的Ubuntu 20.04 LTS服务器使用（Focal Fossa）kubeadm。在实验室设置中，我使用了三台Ubuntu 20.04 LTS服务器。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="ubuntu20.04 部署 Kubernetes (k8s)">
+<meta property="og:url" content="http://kiosk007.top/2020/07/24/ubuntu20-04-%E9%83%A8%E7%BD%B2-Kubernetes-k8s/index.html">
+<meta property="og:site_name" content="kiosk007&#39;s Blog">
+<meta property="og:description" content="Kubernetes（k8s）是一个免费的开源容器编排工具。它用于部署，扩展和管理基于容器的应用程序。在这篇文章中，这里将演示如何安装Kubernetes集群的Ubuntu 20.04 LTS服务器使用（Focal Fossa）kubeadm。在实验室设置中，我使用了三台Ubuntu 20.04 LTS服务器。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://kiosk007.top/images/k8s/k8s.png">
+<meta property="og:image" content="http://kiosk007.top/images/k8s/k8s_dashboard.png">
+<meta property="og:image" content="http://kiosk007.top/images/k8s/k8s_infra.png">
+<meta property="article:published_time" content="2020-07-24T13:47:00.000Z">
+<meta property="article:modified_time" content="2020-07-24T13:47:00.000Z">
+<meta property="article:author" content="kiosk">
+<meta property="article:tag" content="k8s">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://kiosk007.top/images/k8s/k8s.png">
+
+<link rel="canonical" href="http://kiosk007.top/2020/07/24/ubuntu20-04-%E9%83%A8%E7%BD%B2-Kubernetes-k8s/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>ubuntu20.04 部署 Kubernetes (k8s) | kiosk007's Blog</title>
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?6f3d277b6c83066a05a8b7db067b2308";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<link rel="alternate" href="/atom.xml" title="kiosk007's Blog" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">kiosk007's Blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">专注! 量变产生质变 !</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://kiosk007.top/2020/07/24/ubuntu20-04-%E9%83%A8%E7%BD%B2-Kubernetes-k8s/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="kiosk">
+      <meta itemprop="description" content="NoOps">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="kiosk007's Blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          ubuntu20.04 部署 Kubernetes (k8s)
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-07-24 21:47:00" itemprop="dateCreated datePublished" datetime="2020-07-24T21:47:00+08:00">2020-07-24</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/2020/07/24/ubuntu20-04-%E9%83%A8%E7%BD%B2-Kubernetes-k8s/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2020/07/24/ubuntu20-04-%E9%83%A8%E7%BD%B2-Kubernetes-k8s/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>Kubernetes（k8s）是一个免费的开源容器编排工具。它用于部署，扩展和管理基于容器的应用程序。在这篇文章中，这里将演示如何安装Kubernetes集群的Ubuntu 20.04 LTS服务器使用（Focal Fossa）kubeadm。在实验室设置中，我使用了三台Ubuntu 20.04 LTS服务器。</p>
+<a id="more"></a>
+
+<hr>
+<p>以下为搭建环境。</p>
+<ul>
+<li>ubuntu 20.04 TLS Server</li>
+<li>Minimum of 2 GB RAM</li>
+<li>10 GB Free Space on /var</li>
+<li>Privileged user with sudo rights</li>
+</ul>
+<p>结构：</p>
+<ul>
+<li>Machine 1 (Ubuntu 20.04 LTS Server) – K8s-master – 172.16.101.131</li>
+<li>Machine 1 (Ubuntu 20.04 LTS Server) – K8s-node0 – 172.16.101.132</li>
+<li>Machine 1 (Ubuntu 20.04 LTS Server) – K8s-node1 – 172.16.101.133</li>
+</ul>
+<img src="/images/k8s/k8s.png">
+
+
+<h1 id="安装-kubernetes"><a href="#安装-kubernetes" class="headerlink" title="安装 kubernetes"></a>安装 kubernetes</h1><h2 id="前置步骤"><a href="#前置步骤" class="headerlink" title="前置步骤"></a>前置步骤</h2><h3 id="Step1-设置-hostname-amp-amp-增加解析-etc-hosts"><a href="#Step1-设置-hostname-amp-amp-增加解析-etc-hosts" class="headerlink" title="Step1) 设置 hostname &amp;&amp; 增加解析 /etc/hosts"></a>Step1) 设置 hostname &amp;&amp; 增加解析 /etc/hosts</h3><p>使用 <font color="Blue">hostnamectl </font> 为每一个节点命令设置 hostname , 示例如下:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$ sudo hostnamectl set-hostname &quot;k8s-master&quot;     &#x2F;&#x2F; Run this command on master node</span><br><span class="line">$ sudo hostnamectl set-hostname &quot;k8s-node0&quot;     &#x2F;&#x2F; Run this command on node-0</span><br><span class="line">$ sudo hostnamectl set-hostname &quot;k8s-node1&quot;     &#x2F;&#x2F; Run this command on node-1</span><br></pre></td></tr></table></figure>
+<p>在 <font color="Blue"> /etc/hosts </font> 下添加如下内容：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">172.16.101.131 k8s-master</span><br><span class="line">172.16.101.132 k8s-node0</span><br><span class="line">172.16.101.132 k8s-node1</span><br><span class="line"></span><br><span class="line">172.16.101.131 api-server.k8s.top  # kube API Server Lb</span><br></pre></td></tr></table></figure>
+<h3 id="Step2-确保禁止掉swap分区-amp-amp-确保时间对齐-amp-amp-开启ip转发"><a href="#Step2-确保禁止掉swap分区-amp-amp-确保时间对齐-amp-amp-开启ip转发" class="headerlink" title="Step2) 确保禁止掉swap分区 &amp;&amp; 确保时间对齐 &amp;&amp; 开启ip转发"></a>Step2) 确保禁止掉swap分区 &amp;&amp; 确保时间对齐 &amp;&amp; 开启ip转发</h3><p>K8s的要求，在每个宿主机上关闭 swap，swap会将不活跃匿名页写入磁盘，降低应用程序的性能。使用 <font color="blue"> swapoff -a </font> 来关掉 swap</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">swapoff -a</span><br><span class="line"></span><br><span class="line">vim &#x2F;etc&#x2F;fstab</span><br><span class="line"># &#x2F;swap.img      none    swap    sw      0       0</span><br></pre></td></tr></table></figure>
+<p>每个宿主机上都要确保时区和时间是正确的。如果时区不正确，请使用下面的命令来修改：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">timedatectl set-timezone Asia&#x2F;Shanghai</span><br></pre></td></tr></table></figure>
+<p>永久开启ip转发功能，编辑 “<font color="blue"> /etc/sysctl.d/k8s.conf </font>“ 添加 “<strong>net.ipv4.ip_forward=1</strong>” ，加载 “<strong>br_netfilter</strong>” 模块。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">cat &lt;&lt;EOF | sudo tee &#x2F;etc&#x2F;sysctl.d&#x2F;k8s.conf</span><br><span class="line">net.ipv4.ip_forward &#x3D; 1</span><br><span class="line">net.bridge.bridge-nf-call-ip6tables &#x3D; 1</span><br><span class="line">net.bridge.bridge-nf-call-iptables &#x3D; 1</span><br><span class="line">EOF</span><br><span class="line">sudo sysctl --system</span><br></pre></td></tr></table></figure>
+<h3 id="Step3）安装-docker-Container-Runtime-到三个节点"><a href="#Step3）安装-docker-Container-Runtime-到三个节点" class="headerlink" title="Step3）安装 docker (Container Runtime) 到三个节点"></a>Step3）安装 docker (Container Runtime) 到三个节点</h3><p>在三台机器分别执行如下命令。Ubuntu 20.04 提供的这个包也很新（目前是docker 19.03）。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">apt update</span><br><span class="line">apt install docker.io -y</span><br><span class="line">sudo systemctl start docker</span><br><span class="line">sudo systemctl <span class="built_in">enable</span> docker.service --now</span><br><span class="line"></span><br><span class="line"><span class="comment"># 检查 docker 运行状态，docker 版本</span></span><br><span class="line">systemctl status docker</span><br><span class="line">docker info</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>文件驱动默认由<code>systemd</code>改成<code>cgroupfs</code>.而我们安装的docker使用的文件驱动是systemd, 造成不一致, 导致镜像无法启动</p>
+<p>修改或创建 <font color="blue"> /etc/docker/daemon.json </font>，加入下面的内容：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">  &quot;exec-opts&quot;: [&quot;native.cgroupdriver&#x3D;systemd&quot;]</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>重启docker <code>systemctl restart docker</code>.</p>
+<blockquote>
+<p>不然会遇到 failed to create kubelet: misconfiguration: kubelet cgroup driver: “cgroupfs” is different from docker cgroup driver: “systemd” 错误</p>
+</blockquote>
+<p>参考：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/hongdada/p/9771857.html">https://www.cnblogs.com/hongdada/p/9771857.html</a></p>
+<h2 id="安装k8s-master"><a href="#安装k8s-master" class="headerlink" title="安装k8s master"></a>安装k8s master</h2><p>以下的操作只在master宿主机上执行，适合中国大陆地区使用（因为弃用谷歌的源和repo，转而使用阿里云的镜像）：</p>
+<h3 id="Step1）安装kubeadm-kubeadm-kubectl"><a href="#Step1）安装kubeadm-kubeadm-kubectl" class="headerlink" title="Step1）安装kubeadm kubeadm kubectl"></a>Step1）安装kubeadm kubeadm kubectl</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">apt-get update &amp;&amp; sudo apt-get install -y ca-certificates curl software-properties-common apt-transport-https curl</span><br><span class="line"></span><br><span class="line">curl -s https://mirrors.aliyun.com/kubernetes/apt/doc/apt-key.gpg | sudo apt-key add -</span><br><span class="line"></span><br><span class="line">tee /etc/apt/sources.list.d/kubernetes.list &lt;&lt;<span class="string">EOF </span></span><br><span class="line"><span class="string">deb https://mirrors.aliyun.com/kubernetes/apt/ kubernetes-xenial main</span></span><br><span class="line"><span class="string">EOF</span></span><br><span class="line"></span><br><span class="line">apt-get update</span><br><span class="line">apt-get install -y kubelet kubeadm kubectl</span><br><span class="line"><span class="comment"># 标记该软件包不被自动更新</span></span><br><span class="line">apt-mark hold kubelet kubeadm kubectl</span><br></pre></td></tr></table></figure>
+<h3 id="Step2）通过-kubeadm-Kubernetes-初始化集群-from-master-node"><a href="#Step2）通过-kubeadm-Kubernetes-初始化集群-from-master-node" class="headerlink" title="Step2）通过 kubeadm Kubernetes 初始化集群 (from master node)"></a>Step2）通过 kubeadm Kubernetes 初始化集群 (from master node)</h3><p>查看完整配置选项 <a target="_blank" rel="noopener" href="https://godoc.org/k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1beta2">https://godoc.org/k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1beta2</a></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line">vim .&#x2F;kubeadm-config.yaml</span><br><span class="line"></span><br><span class="line">apiVersion: kubeadm.k8s.io&#x2F;v1beta2</span><br><span class="line">kind: ClusterConfiguration</span><br><span class="line">kubernetesVersion: v1.18.6</span><br><span class="line">imageRepository: registry.aliyuncs.com&#x2F;k8sxio</span><br><span class="line">controlPlaneEndpoint: &quot;api-server.k8s.top:6443&quot;</span><br><span class="line">apiServer:</span><br><span class="line">  certSANs:</span><br><span class="line">  - &quot;k8s-master&quot;</span><br><span class="line">  - &quot;api-server.k8s.top&quot;</span><br><span class="line">  - &quot;172.16.101.131&quot;</span><br><span class="line">networking:</span><br><span class="line">  serviceSubnet: &quot;10.96.0.0&#x2F;16&quot;</span><br><span class="line">  podSubnet: &quot;10.100.0.1&#x2F;16&quot;</span><br><span class="line">  dnsDomain: &quot;cluster.local&quot;</span><br><span class="line">controllerManagerExtraArgs:  </span><br><span class="line">  horizontal-pod-autoscaler-use-rest-clients: &quot;true&quot;  </span><br><span class="line">  horizontal-pod-autoscaler-sync-period: &quot;10s&quot;  </span><br><span class="line">  node-monitor-grace-period: &quot;10s&quot;</span><br><span class="line">apiServerExtraArgs:  </span><br><span class="line">  runtime-config: &quot;api&#x2F;all&#x3D;true&quot;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"># kubeadm init</span><br><span class="line"># 根据您服务器网速的情况，您需要等候 3 - 10 分钟</span><br><span class="line">kubeadm init --config&#x3D;kubeadm-config.yaml --upload-certs -v 6</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"># Kubernetes 集群默认需要加密方式访问。</span><br><span class="line"># 所以，这几条命令，就是将刚刚部署生成的 Kubernetes 集群的安全配置文件，保存到当前用户的.kube 目录下，</span><br><span class="line"># kubectl 默认会使用这个目录下的授权信息访问 Kubernetes 集群。如果不这么做的话，我们每次都需要通过 </span><br><span class="line"># export KUBECONFIG 环境变量告诉 kubectl 这个安全配置文件的位置。</span><br><span class="line">mkdir -p $HOME&#x2F;.kube</span><br><span class="line">sudo cp -i &#x2F;etc&#x2F;kubernetes&#x2F;admin.conf $HOME&#x2F;.kube&#x2F;config</span><br><span class="line">sudo chown $(id -u):$(id -g) $HOME&#x2F;.kube&#x2F;config</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<ul>
+<li><code>podSubnet: Kubernetes</code> 容器组所在的网段，该网段安装完成后，由 kubernetes 创建，事先并不存在于您的物理网络中</li>
+<li><code>horizontal-pod-autoscaler-use-rest-clients: &quot;true&quot;: </code> kube-controller-manager 能够使用自定义资源（Custom Metrics）进行自动水平扩展。</li>
+<li><code>controlPlaneEndpoint</code> 负载均衡器的地址始终与kubeadm相连接（方便kubeapi-server 横向扩展），既然是lb，那么最好不要填 k8s-master的hostname了，这里我写的是 <font color="red">api-server.k8s.top:6443 </font> </li>
+<li><code>upload-certs</code> 将控制平面证书上传到 kubeadm-certs Secret。</li>
+<li><code>-v 6</code> 更可能输出详细的日志，建议开启。</li>
+</ul>
+<p>初始化完成之后</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">You can now join any number of the control-plane node running the following command on each as root:</span><br><span class="line"></span><br><span class="line">  kubeadm join api-server.k8s.top:6443 --token km8rml.3mnits2sbfh2srex \</span><br><span class="line">    --discovery-token-ca-cert-hash sha256:4005adc5c09d7aaa6a5693acf36402eb0273f009a9ce83b8bb208686ed73abd3 \</span><br><span class="line">    --control-plane --certificate-key 619272158ec6c0a14c0539e032f5686df4d6c5576aa549412098ca50592315e6</span><br><span class="line"></span><br><span class="line">Please note that the certificate-key gives access to cluster sensitive data, keep it secret!</span><br><span class="line">As a safeguard, uploaded-certs will be deleted in two hours; If necessary, you can use</span><br><span class="line">&quot;kubeadm init phase upload-certs --upload-certs&quot; to reload certs afterward.</span><br><span class="line"></span><br><span class="line">Then you can join any number of worker nodes by running the following on each as root:</span><br><span class="line"></span><br><span class="line">kubeadm join api-server.k8s.top:6443 --token km8rml.3mnits2sbfh2srex \</span><br><span class="line">    --discovery-token-ca-cert-hash sha256:4005adc5c09d7aaa6a5693acf36402eb0273f009a9ce83b8bb208686ed73abd3 </span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p><strong>查看Master节点的初始化状态 （only exec on master）</strong><br>执行<font color="blue"> kubectl get nodes -o wide </font> 可以看到我们的容器当前属于 NotReady 状态。NodeNotReady 的原因在于，我们尚未部署任何网络插件。通过 kubectl 检查这个节点上各个系统 Pod 的状态。可以看到，CoreDNS、kube-controller-manager 等依赖于网络的 Pod 都处于 Pending 状态，即调度失败。这当然是符合预期的：因为这个 Master 节点的网络尚未就绪。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"># kubectl get nodes -o wide</span><br><span class="line">NAME         STATUS     ROLES    AGE   VERSION   INTERNAL-IP      EXTERNAL-IP   OS-IMAGE           KERNEL-VERSION     CONTAINER-RUNTIME</span><br><span class="line">k8s-master   NotReady   master   22m   v1.18.6   172.16.101.131   &lt;none&gt;        Ubuntu 20.04 LTS   5.4.0-42-generic   docker:&#x2F;&#x2F;19.3.8</span><br><span class="line"></span><br><span class="line"># kubectl get pod -n kube-system -o wide</span><br><span class="line">NAME                                 READY   STATUS    RESTARTS   AGE   IP               NODE         NOMINATED NODE   READINESS GATES</span><br><span class="line">coredns-66db54ff7f-s4696             0&#x2F;1     Pending   0          26m   &lt;none&gt;           &lt;none&gt;       &lt;none&gt;           &lt;none&gt;</span><br><span class="line">coredns-66db54ff7f-xxtvz             0&#x2F;1     Pending   0          26m   &lt;none&gt;           &lt;none&gt;       &lt;none&gt;           &lt;none&gt;</span><br><span class="line">etcd-k8s-master                      1&#x2F;1     Running   1          26m   172.16.101.131   k8s-master   &lt;none&gt;           &lt;none&gt;</span><br><span class="line">kube-apiserver-k8s-master            1&#x2F;1     Running   0          26m   172.16.101.131   k8s-master   &lt;none&gt;           &lt;none&gt;</span><br><span class="line">kube-controller-manager-k8s-master   1&#x2F;1     Running   2          26m   172.16.101.131   k8s-master   &lt;none&gt;           &lt;none&gt;</span><br><span class="line">kube-proxy-lvrkh                     1&#x2F;1     Running   0          26m   172.16.101.131   k8s-master   &lt;none&gt;           &lt;none&gt;</span><br><span class="line">kube-scheduler-k8s-master            1&#x2F;1     Running   2          26m   172.16.101.131   k8s-master   &lt;none&gt;           &lt;none&gt;</span><br></pre></td></tr></table></figure>
+
+<p><strong>安装网络插件</strong><br><br>安装 calico 网络插件<br><br>参考文档 <a target="_blank" rel="noopener" href="https://docs.projectcalico.org/v3.13/getting-started/kubernetes/self-managed-onprem/onpremises">https://docs.projectcalico.org/v3.13/getting-started/kubernetes/self-managed-onprem/onpremises</a></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">wget https:&#x2F;&#x2F;kuboard.cn&#x2F;install-script&#x2F;calico&#x2F;calico-3.13.1.yaml</span><br><span class="line">kubectl apply -f calico-3.13.1.yaml</span><br></pre></td></tr></table></figure>
+
+<h2 id="安装k8s-Worker"><a href="#安装k8s-Worker" class="headerlink" title="安装k8s Worker"></a>安装k8s Worker</h2><p>Kubernetes 的 Worker 节点跟 Master 节点几乎是相同的，它们运行着的都是一个 kubelet 组件。唯一的区别在于，在 kubeadm init 的过程中，kubelet 启动后，Master 节点上还会自动运行 kube-apiserver、kube-scheduler、kube-controller-manger 这三个系统 Pod。</p>
+<p>所以，相比之下，部署 Worker 节点反而是最简单的，只需要两步即可完成。<br><br>第一步，在所有 Worker 节点(node0 node1)上执行“安装 kubeadm”。<br><br>第二步，执行部署 Master 节点时生成的 kubeadm join 指令：<br></p>
+<p>操作在 worker 节点（k8s-node0 k8s-node1）之上：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"># 第一步骤：安装</span><br><span class="line">curl -s https:&#x2F;&#x2F;mirrors.aliyun.com&#x2F;kubernetes&#x2F;apt&#x2F;doc&#x2F;apt-key.gpg | sudo apt-key add -</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">tee &#x2F;etc&#x2F;apt&#x2F;sources.list.d&#x2F;kubernetes.list &lt;&lt;EOF </span><br><span class="line">deb https:&#x2F;&#x2F;mirrors.aliyun.com&#x2F;kubernetes&#x2F;apt&#x2F; kubernetes-xenial main</span><br><span class="line">EOF</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">apt-get install -y kubeadm</span><br><span class="line">apt-mark hold kubeadm</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"># 第二步： 加入（初始化完成时的输出）</span><br><span class="line"></span><br><span class="line">kubeadm join api-server.k8s.top:6443 --token n9ksnt.zgxthovqoyl2weyq     --discovery-token-ca-cert-hash sha256:4005adc5c09d7aaa6a5693acf36402eb0273f009a9ce83b8bb208686ed73abd3</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"># 第三步： 添加环境变量</span><br><span class="line">mkdir -p $HOME&#x2F;.kube</span><br><span class="line">cp -i &#x2F;etc&#x2F;kubernetes&#x2F;kubelet.conf $HOME&#x2F;.kube&#x2F;config</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>不记得安装后的输出的话可以在 master节点执行 <font color="blue">kubeadm token create –print-join-command</font> 查看，该 token 的有效时间为 2 个小时，2小时内，您可以使用此 token 初始化任意数量的 worker 节点。</p>
+</blockquote>
+<p>参考：</p>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://www.kuboard.cn/install/install-k8s.html">使用kubeadm安装kubernetes_v1.18.x</a></li>
+<li><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/138554103">基于Ubuntu 20.04安装Kubernetes 1.18</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.bookstack.cn/read/k8s-1.18-reference/e8ce7efca72fde85.md">Kubernetes v1.18 参考指南</a></li>
+</ul>
+<h2 id="部署插件"><a href="#部署插件" class="headerlink" title="部署插件"></a>部署插件</h2><h3 id="部署-Dashboard-可视化插件"><a href="#部署-Dashboard-可视化插件" class="headerlink" title="部署 Dashboard 可视化插件"></a>部署 Dashboard 可视化插件</h3><h4 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h4><p>由于 Dashboard 是一个 Web Server，很多人经常会在自己的公有云上无意地暴露 Dashboard 的端口，从而造成安全隐患。所以，1.7 版本之后的 Dashboard 项目部署完成后，默认只能通过 Proxy 的方式在本地访问。具体的操作，你可以查看 <a target="_blank" rel="noopener" href="https://github.com/kubernetes/dashboard">Dashboard</a> 项目的官方文档。</p>
+<p>Dashboard 向 Kubernetes 集群部署容器化应用诊断容器化应用的问题</p>
+<ul>
+<li>管理集群的资源</li>
+<li>查看集群上所运行的应用程序</li>
+<li>创建、修改Kubernetes 上的资源（例如 Deployment、Job、DaemonSet等）</li>
+<li>展示集群上发生的错误</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ kubectl apply -f https:&#x2F;&#x2F;raw.githubusercontent.com&#x2F;kubernetes&#x2F;dashboard&#x2F;v2.0.3&#x2F;aio&#x2F;deploy&#x2F;recommended.yaml</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>然后可以使用 <code>kubectl get pods</code> 命令来查看部署状态：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">kubectl get pods --all-namespaces</span><br><span class="line">NAMESPACE              NAME                                         READY   STATUS    RESTARTS   AGE</span><br><span class="line">...</span><br><span class="line">kubernetes-dashboard   dashboard-metrics-scraper-6b4884c9d5-gs97j   1&#x2F;1     Running   0          100m</span><br><span class="line">kubernetes-dashboard   kubernetes-dashboard-7f99b75bf4-h576c        1&#x2F;1     Running   0          100m</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h4 id="创建用户"><a href="#创建用户" class="headerlink" title="创建用户"></a>创建用户</h4><p>首先创建一个叫 <font color="blue"> admin-user </font> 的服务账号，并放在 <font color="blue">kubernetes-dashboard</font> 名称空间下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"># admin-user.yaml</span><br><span class="line">apiVersion: v1</span><br><span class="line">kind: ServiceAccount</span><br><span class="line">metadata:</span><br><span class="line">  name: admin-user</span><br><span class="line">  namespace: kubernetes-dashboard</span><br></pre></td></tr></table></figure>
+<p>执行 <font color="blue"> kubectl create </font> 命令：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl create -f admin-user.yaml</span><br></pre></td></tr></table></figure>
+<h4 id="绑定角色"><a href="#绑定角色" class="headerlink" title="绑定角色"></a>绑定角色</h4><p>默认情况下，kubeadm 创建集群时已经创建了admin角色，我们直接绑定即可：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"># admin-user-role-binding.yaml</span><br><span class="line">apiVersion: rbac.authorization.k8s.io&#x2F;v1beta1</span><br><span class="line">kind: ClusterRoleBinding</span><br><span class="line">metadata:</span><br><span class="line">  name: admin-user</span><br><span class="line">roleRef:</span><br><span class="line">  apiGroup: rbac.authorization.k8s.io</span><br><span class="line">  kind: ClusterRole</span><br><span class="line">  name: cluster-admin</span><br><span class="line">subjects:</span><br><span class="line">- kind: ServiceAccount</span><br><span class="line">  name: admin-user</span><br><span class="line">  namespace: kubernetes-dashboard</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>执行 <font color="blue">kubectl create </font>命令：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">kubectl create -f  admin-user-role-binding.yaml</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h4 id="获取token"><a href="#获取token" class="headerlink" title="获取token"></a>获取token</h4><p>们需要找到新创建的用户的Token，以便用来登录dashboard：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">kubectl -n kubernetes-dashboard describe secret $(kubectl -n kubernetes-dashboard get secret | grep admin-user | awk &#39;&#123;print $1&#125;&#39;)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h4 id="访问"><a href="#访问" class="headerlink" title="访问"></a>访问</h4><p>Kubernetes API服务器是公开的，并可以从外部访问，那我们可以直接使用API Server的方式来访问，也是比较推荐的方式。</p>
+<p>Dashboard的访问地址为：<a target="_blank" rel="noopener" href="https://172.16.101.131:6443/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/#/node/k8s-node1?namespace=default">https://172.16.101.131:6443/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/#/node/k8s-node1?namespace=default</a></p>
+<p>但是直接访问会是403</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">  &quot;kind&quot;: &quot;Status&quot;,</span><br><span class="line">  &quot;apiVersion&quot;: &quot;v1&quot;,</span><br><span class="line">  &quot;metadata&quot;: &#123;</span><br><span class="line">    </span><br><span class="line">  &#125;,</span><br><span class="line">  &quot;status&quot;: &quot;Failure&quot;,</span><br><span class="line">  &quot;message&quot;: &quot;services \&quot;https:kubernetes-dashboard:\&quot; is forbidden: User \&quot;system:anonymous\&quot; cannot get services&#x2F;proxy in the namespace \&quot;kube-system\&quot;&quot;,</span><br><span class="line">  &quot;reason&quot;: &quot;Forbidden&quot;,</span><br><span class="line">  &quot;details&quot;: &#123;</span><br><span class="line">    &quot;name&quot;: &quot;https:kubernetes-dashboard:&quot;,</span><br><span class="line">    &quot;kind&quot;: &quot;services&quot;</span><br><span class="line">  &#125;,</span><br><span class="line">  &quot;code&quot;: 403</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这是因为最新版的k8s默认启用了RBAC，并为未认证用户赋予了一个默认的身份：<font color="blue">anonymous</font><br>对于API Server来说，它是使用证书进行认证的，我们需要先创建一个客户端证书：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"># 生成client-certificate-data</span><br><span class="line">grep &#39;client-certificate-data&#39; ~&#x2F;.kube&#x2F;config | head -n 1 | awk &#39;&#123;print $2&#125;&#39; | base64 -d &gt;&gt; kubecfg.crt</span><br><span class="line"></span><br><span class="line"># 生成client-key-data</span><br><span class="line">grep &#39;client-key-data&#39; ~&#x2F;.kube&#x2F;config | head -n 1 | awk &#39;&#123;print $2&#125;&#39; | base64 -d &gt;&gt; kubecfg.key</span><br><span class="line"></span><br><span class="line"># 生成p12</span><br><span class="line">openssl pkcs12 -export -clcerts -inkey kubecfg.key -in kubecfg.crt -out kubecfg.p12 -name &quot;kubernetes-client&quot;</span><br></pre></td></tr></table></figure>
+<img src="/images/k8s/k8s_dashboard.png">
+
+
+
+<p>参考：</p>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://www.cnblogs.com/RainingNight/p/deploying-k8s-dashboard-ui.html">kubernetes-dashboard(1.8.3)部署与踩坑</a></li>
+</ul>
+<h3 id="部署持久化存储插件-rock"><a href="#部署持久化存储插件-rock" class="headerlink" title="部署持久化存储插件 rock"></a>部署持久化存储插件 rock</h3><p>Rook 项目是一个基于 Ceph 的 Kubernetes 存储插件（它后期也在加入对更多存储实现的支持）。不过，不同于对 Ceph 的简单封装，Rook 在自己的实现中加入了水平扩展、迁移、灾难备份、监控等大量的企业级功能，使得这个项目变成了一个完整的、生产级别可用的容器存储插件。</p>
+<blockquote>
+<p>友情提示，这玩意巨占空间，如果是本地虚拟机搭建的话需要磁盘稍微再大点。</p>
+</blockquote>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">$ kubectl apply -f https://raw.githubusercontent.com/rook/rook/master/cluster/examples/kubernetes/ceph/common.yaml</span><br><span class="line"></span><br><span class="line">$ kubectl apply -f https://raw.githubusercontent.com/rook/rook/master/cluster/examples/kubernetes/ceph/operator.yaml</span><br><span class="line"></span><br><span class="line">$ kubectl apply -f https://raw.githubusercontent.com/rook/rook/master/cluster/examples/kubernetes/ceph/cluster.yaml</span><br></pre></td></tr></table></figure>
+
+<h2 id="通过-Taint-Toleration-调整-Master-执行-Pod-的策略-附加"><a href="#通过-Taint-Toleration-调整-Master-执行-Pod-的策略-附加" class="headerlink" title="通过 Taint/Toleration 调整 Master 执行 Pod 的策略 (附加)"></a>通过 Taint/Toleration 调整 Master 执行 Pod 的策略 (附加)</h2><p>默认情况下 Master 节点是不允许运行用户 Pod 的。而 Kubernetes 做到这一点，依靠的是 Kubernetes 的 Taint/Toleration 机制。</p>
+<p>原理非常简单：一旦某个节点被加上了一个 Taint，即被“打上了污点”，那么所有 Pod 就都不能在这个节点上运行，因为 Kubernetes 的 Pod 都有“洁癖”。除非，有个别的 Pod 声明自己能“容忍”这个“污点”，即声明了 Toleration，它才可以在这个节点上运行。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"># 创建 taint</span><br><span class="line">kubectl taint nodes k8s-nodeXX foo&#x3D;bar:NoSchedule</span><br><span class="line"></span><br><span class="line"># 删除 taint</span><br><span class="line">kubectl taint nodes k8s-nodeXX foo&#x3D;bar:NoSchedule-</span><br></pre></td></tr></table></figure>
+<p>master 默认已经有了一个 taint。即<font color="blue"> role.kubernetes.io/master:NoSchedule</font> </p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">kubectl describe node k8s-master</span><br><span class="line">Name:               k8s-master</span><br><span class="line">Roles:              master</span><br><span class="line">...</span><br><span class="line">CreationTimestamp:  Sat, 25 Jul 2020 09:44:07 +0800</span><br><span class="line">Taints:             node-role.kubernetes.io&#x2F;master:NoSchedule</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+
+<h1 id="创建-k8s容器化应用"><a href="#创建-k8s容器化应用" class="headerlink" title="创建 k8s容器化应用"></a>创建 k8s容器化应用</h1><p>这里创建一个Nginx, 准备一个 <font color="blue"> nginx-deployment.yaml </font> 文件，</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line">apiVersion: apps&#x2F;v1</span><br><span class="line">kind: Deployment</span><br><span class="line">metadata:</span><br><span class="line">  name: nginx-deployment</span><br><span class="line">spec:</span><br><span class="line">  selector:</span><br><span class="line">    matchLabels:</span><br><span class="line">      app: nginx</span><br><span class="line">  replicas: 2</span><br><span class="line">  template:</span><br><span class="line">    metadata:</span><br><span class="line">      labels:</span><br><span class="line">        app: nginx</span><br><span class="line">    spec:</span><br><span class="line">      containers:</span><br><span class="line">      - name: nginx</span><br><span class="line">        image: nginx:1.19.1</span><br><span class="line">        ports:</span><br><span class="line">        - containerPort: 80</span><br><span class="line">        volumeMounts:</span><br><span class="line">        - mountPath: &quot;&#x2F;usr&#x2F;share&#x2F;nginx&#x2F;html&quot;</span><br><span class="line">          name: nginx-vol</span><br><span class="line">      volumes:</span><br><span class="line">      - name: nginx-vol</span><br><span class="line">        hostPath:</span><br><span class="line">          path: &quot;&#x2F;root&#x2F;data&quot;</span><br></pre></td></tr></table></figure>
+<ul>
+<li><code>spec.replicas</code>：Pod 副本个数 ：2</li>
+<li><code>spec.containers.image</code>: 容器镜像 ：Nginx:latest</li>
+<li><code>containerPort</code>: 容器端口：80</li>
+<li><code>volumes.emptyDir</code>: 不显式声明宿主机目录的 Volume。所以，Kubernetes 也会在宿主机上创建一个临时目录，这个目录将来就会被绑定挂载到容器所声明的 Volume 目录上。当然，Kubernetes 也提供了显式的 Volume 定义，它叫作 hostPath。比如下面的这个 YAML 文件：<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">...   </span><br><span class="line">   volumes:</span><br><span class="line">     - name: nginx-vol</span><br><span class="line">       hostPath: </span><br><span class="line">         path:  &quot; &#x2F;var&#x2F;data&quot;</span><br></pre></td></tr></table></figure>
+使用 kubectl create 创建这个容器。</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl create -f nginx-deployment.yaml</span><br></pre></td></tr></table></figure>
+<p>查看运行状态</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">kubectl get pods -l app&#x3D;nginx</span><br><span class="line">NAME                               READY   STATUS    RESTARTS   AGE</span><br><span class="line">nginx-deployment-d4544f9cb-b24wq   1&#x2F;1     Running   0          5m13s</span><br><span class="line">nginx-deployment-d4544f9cb-f88bk   1&#x2F;1     Running   0          5m13s</span><br><span class="line"></span><br><span class="line"># 查看一个 API 对象的细节，通过 Events 字段</span><br><span class="line">kubectl describe pod nginx-deployment-d4544f9cb-b24wq</span><br></pre></td></tr></table></figure>
+<p>查看API对象细节</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">kubectl describe pod nginx-deployment-57f45cfc58-9fpzt</span><br><span class="line">Name:         nginx-deployment-57f45cfc58-9fpzt</span><br><span class="line">Namespace:    default</span><br><span class="line">Priority:     0</span><br><span class="line">Node:         k8s-node1&#x2F;172.16.101.133</span><br><span class="line">Start Time:   Sat, 25 Jul 2020 18:00:01 +0800</span><br><span class="line">Labels:       app&#x3D;nginx</span><br><span class="line">              pod-template-hash&#x3D;57f45cfc58</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+<p>在 kubectl describe 命令返回的结果中，可以看到这个 Pod 的详细信息，比如它的 IP 地址等等。其中，有一个部分值得你特别关注，就是 <strong>Events（事件）</strong>。</p>
+<p>在 Kubernetes 执行的过程中，对 API 对象的所有重要操作，都会被记录在这个对象的 Events 里，并且显示在 kubectl describe 指令返回的结果中。</p>
+<p>如果 pod 信息有改变，比如想要将Nginx的版本换成1.18。修改完 yaml 文件后，只需要执行<code>kubectl apply -f nginx-deployment.yaml</code> 即可。</p>
+<p><strong>进入到pod中，即这个namesapce中</strong></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl exec -it  nginx-deployment-57f45cfc58-9fpzt -- &#x2F;bin&#x2F;bash</span><br></pre></td></tr></table></figure>
+<p>**从 Kubernetes 集群中删除这个 Nginx Deployment **</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl delete -f nginx-deployment.yaml</span><br></pre></td></tr></table></figure>
+<h1 id="k8s-的最小调度单元-pod"><a href="#k8s-的最小调度单元-pod" class="headerlink" title="k8s 的最小调度单元 pod"></a>k8s 的最小调度单元 pod</h1><p>前面已经完全搭建起来了一个 k8s 集群，并跑起来了第一个Nginx服务。但是这距离线上的生成环境还差的很远。</p>
+<p>试想一下，Nginx 假设需要为静态资源前端文件提供服务部署能力，那么该如何实现呢？将前端文件内容和Nginx绑定部署？这显然是不合适的。</p>
+<p>Linux 下的很多服务其实也是多个进程相互协作的，比如两个进程是通过本地socket通信的，那么就必须让两个进程处于同一个 namespace中，而在docker的世界，容器即进程，也就是一个容器跑着一个进程。</p>
+<blockquote>
+<p>再次强调一下：容器的“单进程模型”，并不是指容器里只能运行“一个”进程，而是指容器没有管理多个进程的能力。这是因为容器里 PID=1 的进程就是应用本身，其他的进程都是这个 PID=1 进程的子进程。可是，用户编写的应用，并不能够像正常操作系统里的 init 进程或者 systemd 那样拥有进程管理的功能。比如，你的应用是一个 Java Web 程序（PID=1），然后你执行 docker exec 在后台启动了一个 Nginx 进程（PID=3）。可是，当这个 Nginx 进程异常退出的时候，你该怎么知道呢？这个进程退出后的垃圾收集工作，又应该由谁去做呢？</p>
+</blockquote>
+<p>这就需要多个容器组成一个pod，pod里的容器可以共享namespace，比如共享<code>network namespace</code>或者共享volume的<code>mnt namesapce</code>。这就像 <code>docker run --net=B --volumes-from=B --name=A image-A ...</code>这样的联盟式容器一样的操作。</p>
+<p>在k8s中，需要有一个初始的容器来提供初始化的环境，这个容器（k8s.grc.io/pause）会最先启动,并提供初始的各种namesapce环境，infra容器所占用的资源是最小的。<strong>k8s.gcr.io/pause</strong> 这个镜像是一个用汇编语言编写的、永远处于“暂停”状态的容器，解压后的大小也只有 100~200 KB 左右。<br><img src="/images/k8s/k8s_infra.png" style="height:400px"></p>
+<p>如果要开发容器的网络插件，也就是针对这个infra容器的，而不是应用本身的容器。</p>
+<p>在web场景中经常即需要war包也需要运行war包的tomcat web服务器。web包需要放在tomcat的webapp下运行。<br>如果用容器去可能的2个实现方法是。</p>
+<ol>
+<li>把 WAR 包直接放在 Tomcat 镜像的 webapps 目录下，做成一个新的镜像运行起来。可是，这时候，如果你要更新 WAR 包的内容，或者要升级 Tomcat 镜像，就要重新制作一个新的发布镜像，非常麻烦。</li>
+<li>压根儿不管 WAR 包，永远只发布一个 Tomcat 容器。不过，这个容器的 webapps 目录，就必须声明一个 hostPath 类型的 Volume，从而把宿主机上的 WAR 包挂载进 Tomcat 容器当中运行起来。不过，这样你就必须要解决一个问题，即：如何让每一台宿主机，都预先准备好这个存储有 WAR 包的目录呢？这样来看，你只能独立维护一套分布式存储系统了。</li>
+</ol>
+<p>有了 Pod 之后，这样的问题就很容易解决了。我们可以把 WAR 包和 Tomcat 分别做成镜像，然后把它们作为一个 Pod 里的两个容器“组合”在一起。<br>这里定义了2个容器 <code>war</code> 和 <code>tomcat</code>。war容器只专心提供war包，而tomcat基<br>本不变。不过，<code>war</code> 容器的类型不再是一个普通容器，而是一个 <strong>Init Container</strong> 类型的容器。Init Container 类型的 WAR 包容器启动后，执行了<code>cp /sample.war /app</code>，把应用的 WAR 包拷贝到 /app 目录下，然后退出。</p>
+<ul>
+<li>这种组合即“sidecar”，sidecar 指的就是我们可以在一个 Pod 中，启动一个辅助容器，来完成一些独立于主进程（主容器）之外的工作。</li>
+</ul>
+<blockquote>
+<p>Init Container 定义的容器，都会比 spec.containers 定义的用户容器先启动。并且，Init Container 容器会按顺序逐一启动，而直到它们都启动并且退出了，用户容器才会启动。</p>
+</blockquote>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line">apiVersion: v1</span><br><span class="line">kind: Pod</span><br><span class="line">metadata:</span><br><span class="line">  name: javaweb-2</span><br><span class="line">spec:</span><br><span class="line">  initContainers:</span><br><span class="line">  - image: geektime&#x2F;sample:v2</span><br><span class="line">    name: war</span><br><span class="line">    command: [&quot;cp&quot;, &quot;&#x2F;sample.war&quot;, &quot;&#x2F;app&quot;]</span><br><span class="line">    volumeMounts:</span><br><span class="line">    - mountPath: &#x2F;app</span><br><span class="line">      name: app-volume</span><br><span class="line">  containers:</span><br><span class="line">  - image: geektime&#x2F;tomcat:7.0</span><br><span class="line">    name: tomcat</span><br><span class="line">    command: [&quot;sh&quot;,&quot;-c&quot;,&quot;&#x2F;root&#x2F;apache-tomcat-7.0.42-v2&#x2F;bin&#x2F;start.sh&quot;]</span><br><span class="line">    volumeMounts:</span><br><span class="line">    - mountPath: &#x2F;root&#x2F;apache-tomcat-7.0.42-v2&#x2F;webapps</span><br><span class="line">      name: app-volume</span><br><span class="line">    ports:</span><br><span class="line">    - containerPort: 8080</span><br><span class="line">      hostPort: 8001 </span><br><span class="line">  volumes:</span><br><span class="line">  - name: app-volume</span><br><span class="line">    emptyDir: &#123;&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+
+
+
+
+
+
+
+
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/k8s/" rel="tag"># k8s</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/07/22/Android-%E4%BF%A1%E4%BB%BB%E8%87%AA%E7%AD%BE%E5%90%8D%E8%AF%81%E4%B9%A6/" rel="prev" title="Android 信任自签名证书">
+      <i class="fa fa-chevron-left"></i> Android 信任自签名证书
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/08/22/Kubernetes-Pod/" rel="next" title="Kubernetes 调度对象">
+      Kubernetes 调度对象 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%AE%89%E8%A3%85-kubernetes"><span class="nav-number">1.</span> <span class="nav-text">安装 kubernetes</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%89%8D%E7%BD%AE%E6%AD%A5%E9%AA%A4"><span class="nav-number">1.1.</span> <span class="nav-text">前置步骤</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Step1-%E8%AE%BE%E7%BD%AE-hostname-amp-amp-%E5%A2%9E%E5%8A%A0%E8%A7%A3%E6%9E%90-etc-hosts"><span class="nav-number">1.1.1.</span> <span class="nav-text">Step1) 设置 hostname &amp;&amp; 增加解析 &#x2F;etc&#x2F;hosts</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Step2-%E7%A1%AE%E4%BF%9D%E7%A6%81%E6%AD%A2%E6%8E%89swap%E5%88%86%E5%8C%BA-amp-amp-%E7%A1%AE%E4%BF%9D%E6%97%B6%E9%97%B4%E5%AF%B9%E9%BD%90-amp-amp-%E5%BC%80%E5%90%AFip%E8%BD%AC%E5%8F%91"><span class="nav-number">1.1.2.</span> <span class="nav-text">Step2) 确保禁止掉swap分区 &amp;&amp; 确保时间对齐 &amp;&amp; 开启ip转发</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Step3%EF%BC%89%E5%AE%89%E8%A3%85-docker-Container-Runtime-%E5%88%B0%E4%B8%89%E4%B8%AA%E8%8A%82%E7%82%B9"><span class="nav-number">1.1.3.</span> <span class="nav-text">Step3）安装 docker (Container Runtime) 到三个节点</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%89%E8%A3%85k8s-master"><span class="nav-number">1.2.</span> <span class="nav-text">安装k8s master</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Step1%EF%BC%89%E5%AE%89%E8%A3%85kubeadm-kubeadm-kubectl"><span class="nav-number">1.2.1.</span> <span class="nav-text">Step1）安装kubeadm kubeadm kubectl</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Step2%EF%BC%89%E9%80%9A%E8%BF%87-kubeadm-Kubernetes-%E5%88%9D%E5%A7%8B%E5%8C%96%E9%9B%86%E7%BE%A4-from-master-node"><span class="nav-number">1.2.2.</span> <span class="nav-text">Step2）通过 kubeadm Kubernetes 初始化集群 (from master node)</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%89%E8%A3%85k8s-Worker"><span class="nav-number">1.3.</span> <span class="nav-text">安装k8s Worker</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%83%A8%E7%BD%B2%E6%8F%92%E4%BB%B6"><span class="nav-number">1.4.</span> <span class="nav-text">部署插件</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%83%A8%E7%BD%B2-Dashboard-%E5%8F%AF%E8%A7%86%E5%8C%96%E6%8F%92%E4%BB%B6"><span class="nav-number">1.4.1.</span> <span class="nav-text">部署 Dashboard 可视化插件</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%AE%89%E8%A3%85"><span class="nav-number">1.4.1.1.</span> <span class="nav-text">安装</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%88%9B%E5%BB%BA%E7%94%A8%E6%88%B7"><span class="nav-number">1.4.1.2.</span> <span class="nav-text">创建用户</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%BB%91%E5%AE%9A%E8%A7%92%E8%89%B2"><span class="nav-number">1.4.1.3.</span> <span class="nav-text">绑定角色</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%8E%B7%E5%8F%96token"><span class="nav-number">1.4.1.4.</span> <span class="nav-text">获取token</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%AE%BF%E9%97%AE"><span class="nav-number">1.4.1.5.</span> <span class="nav-text">访问</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%83%A8%E7%BD%B2%E6%8C%81%E4%B9%85%E5%8C%96%E5%AD%98%E5%82%A8%E6%8F%92%E4%BB%B6-rock"><span class="nav-number">1.4.2.</span> <span class="nav-text">部署持久化存储插件 rock</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%80%9A%E8%BF%87-Taint-Toleration-%E8%B0%83%E6%95%B4-Master-%E6%89%A7%E8%A1%8C-Pod-%E7%9A%84%E7%AD%96%E7%95%A5-%E9%99%84%E5%8A%A0"><span class="nav-number">1.5.</span> <span class="nav-text">通过 Taint&#x2F;Toleration 调整 Master 执行 Pod 的策略 (附加)</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%88%9B%E5%BB%BA-k8s%E5%AE%B9%E5%99%A8%E5%8C%96%E5%BA%94%E7%94%A8"><span class="nav-number">2.</span> <span class="nav-text">创建 k8s容器化应用</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#k8s-%E7%9A%84%E6%9C%80%E5%B0%8F%E8%B0%83%E5%BA%A6%E5%8D%95%E5%85%83-pod"><span class="nav-number">3.</span> <span class="nav-text">k8s 的最小调度单元 pod</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="kiosk"
+      src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">kiosk</p>
+  <div class="site-description" itemprop="description">NoOps</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">26</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">10</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">20</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+  <div class="links-of-blogroll motion-element">
+    <div class="links-of-blogroll-title"><i class="fa fa-link fa-fw"></i>
+      Links
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="https://github.com/weijiaxiang007" title="https://github.com/weijiaxiang007" rel="noopener" target="_blank">Github</a>
+        </li>
+    </ul>
+  </div>
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-blog"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">kiosk</span>
+</div>
+
+<div class="BbeiAn-info">
+   	京ICP备 -
+	<a target="_blank" href="http://beian.miit.gov.cn/" text-decoration:none;padding-left:30px;background:url(https://s1.ax1x.com/2018/09/29/ilmwIH.png) no-repeat left center" rel="nofollow">京ICP备20015006号-1</a>	 
+</div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/medium-zoom@1/dist/medium-zoom.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+<script src="/js/bookmark.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+<script>
+if (document.querySelectorAll('pre.mermaid').length) {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/mermaid@8/dist/mermaid.min.js', () => {
+    mermaid.initialize({
+      theme    : 'neutral',
+      logLevel : 3,
+      flowchart: { curve     : 'linear' },
+      gantt    : { axisFormat: '%m/%d/%Y' },
+      sequence : { actorMargin: 50 }
+    });
+  }, window.mermaid);
+}
+</script>
+
+
+  
+
+  
+
+  
+
+  
+
+  <canvas id="evanyou"></canvas>
+  <style>
+    #evanyou {
+      position: fixed;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      z-index: -1;
+    }
+  </style>
+  <script src="/js/evan-you.js"></script>
+
+
+
+
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('https://cdn.jsdelivr.net/npm/valine@1.3.10/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'XhYn8GEq1Sg7ufJQAVmR4dWN-gzGzoHsz',
+      appKey     : 'r42k4lqU022wD7IvtwGaQfjN',
+      placeholder: "Just go go",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : false,
+      lang       : 'zh-cn' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
+</script>
+
+
+  <script src="https://libs.baidu.com/jquery/2.0.0/jquery.min.js"></script>
+  <script src="https://unpkg.com/mermaid@8.4.6/dist/mermaid.min.js"></script>
+  <script>mermaid.initialize({startOnLoad:true});</script>
+</body>
+</html>

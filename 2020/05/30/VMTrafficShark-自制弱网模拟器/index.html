@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-dragon.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-dragon.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <link rel="manifest" href="/images/manifest.json">
+  <meta name="msapplication-config" content="/images/browserconfig.xml">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/pace-js@1/themes/blue/pace-theme-minimal.css">
+  <script src="//cdn.jsdelivr.net/npm/pace-js@1/pace.min.js"></script>
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"kiosk007.top","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"right","display":"always","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":true,"color":"#484891","save":"auto"},"fancybox":false,"mediumzoom":true,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="VMTrafficShark是参考 TrafficShark 改造后的弱网模拟和抓包工具。其本质是参考Facebook开源的弱网模拟器 ATC 。方便应用开发测试人员模拟弱网环境下的用户体验。VMTrafficShark是基于Vmware&#x2F;VirtualBox 虚拟机，方便移动部署，一键开机，配置灵活，功能强大。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="VMTrafficShark 自制弱网模拟器">
+<meta property="og:url" content="http://kiosk007.top/2020/05/30/VMTrafficShark-%E8%87%AA%E5%88%B6%E5%BC%B1%E7%BD%91%E6%A8%A1%E6%8B%9F%E5%99%A8/index.html">
+<meta property="og:site_name" content="kiosk007&#39;s Blog">
+<meta property="og:description" content="VMTrafficShark是参考 TrafficShark 改造后的弱网模拟和抓包工具。其本质是参考Facebook开源的弱网模拟器 ATC 。方便应用开发测试人员模拟弱网环境下的用户体验。VMTrafficShark是基于Vmware&#x2F;VirtualBox 虚拟机，方便移动部署，一键开机，配置灵活，功能强大。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://kiosk007.top/images/network/VMTrafficShark/vmtrafficshark.png">
+<meta property="og:image" content="http://kiosk007.top/images/network/VMTrafficShark/netinterface_driver_install.png">
+<meta property="og:image" content="http://kiosk007.top/images/network/VMTrafficShark/net_interface_usb.png">
+<meta property="og:image" content="http://kiosk007.top/images/network/VMTrafficShark/eth1.png">
+<meta property="og:image" content="http://kiosk007.top/images/network/VMTrafficShark/wifi.png">
+<meta property="og:image" content="http://kiosk007.top/images/network/VMTrafficShark/traffic_test.png">
+<meta property="og:image" content="http://kiosk007.top/images/network/VMTrafficShark/mitmproxy.png">
+<meta property="article:published_time" content="2020-05-30T01:21:00.000Z">
+<meta property="article:modified_time" content="2020-05-30T01:21:00.000Z">
+<meta property="article:author" content="kiosk">
+<meta property="article:tag" content="network">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://kiosk007.top/images/network/VMTrafficShark/vmtrafficshark.png">
+
+<link rel="canonical" href="http://kiosk007.top/2020/05/30/VMTrafficShark-%E8%87%AA%E5%88%B6%E5%BC%B1%E7%BD%91%E6%A8%A1%E6%8B%9F%E5%99%A8/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>VMTrafficShark 自制弱网模拟器 | kiosk007's Blog</title>
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?6f3d277b6c83066a05a8b7db067b2308";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<link rel="alternate" href="/atom.xml" title="kiosk007's Blog" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">kiosk007's Blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">专注! 量变产生质变 !</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://kiosk007.top/2020/05/30/VMTrafficShark-%E8%87%AA%E5%88%B6%E5%BC%B1%E7%BD%91%E6%A8%A1%E6%8B%9F%E5%99%A8/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="kiosk">
+      <meta itemprop="description" content="NoOps">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="kiosk007's Blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          VMTrafficShark 自制弱网模拟器
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-05-30 09:21:00" itemprop="dateCreated datePublished" datetime="2020-05-30T09:21:00+08:00">2020-05-30</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/network/" itemprop="url" rel="index"><span itemprop="name">network</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/2020/05/30/VMTrafficShark-%E8%87%AA%E5%88%B6%E5%BC%B1%E7%BD%91%E6%A8%A1%E6%8B%9F%E5%99%A8/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2020/05/30/VMTrafficShark-%E8%87%AA%E5%88%B6%E5%BC%B1%E7%BD%91%E6%A8%A1%E6%8B%9F%E5%99%A8/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>VMTrafficShark是参考 <a target="_blank" rel="noopener" href="http://geekluo.com/contents/2017/05/02/38-trafficshark-tool-for-network.html">TrafficShark</a> 改造后的弱网模拟和抓包工具。其本质是参考Facebook开源的弱网模拟器 <a target="_blank" rel="noopener" href="https://github.com/facebookarchive/augmented-traffic-control">ATC</a> 。方便应用开发测试人员模拟弱网环境下的用户体验。VMTrafficShark是基于Vmware/VirtualBox 虚拟机，方便移动部署，一键开机，配置灵活，功能强大。</p>
+<a id="more"></a>
+<hr>
+<h1 id="功能"><a href="#功能" class="headerlink" title="功能"></a>功能</h1><img src="/images/network/VMTrafficShark/vmtrafficshark.png">
+
+
+<p>VMTrafficShark 可以模拟各种复杂网络场景.</p>
+<ul>
+<li><input checked disabled type="checkbox"> 低带宽、高丢包、高时延.</li>
+<li><input checked disabled type="checkbox"> DNS空解析、DNS劫持.</li>
+<li><input checked disabled type="checkbox"> 7层HTTP内容劫持、模拟服务端故障</li>
+<li><input checked disabled type="checkbox"> 中间人抓包、方便导出 pcap、sslkey.log （设备只要应用层没有做 SSL Pinning 等反中间人措施的APP均可嗅探TLS加密后的应用层内容）</li>
+<li><input disabled type="checkbox"> 可视化前端操作、多场景模拟一键操作</li>
+<li><input disabled type="checkbox"> 接入设备管理</li>
+</ul>
+<h1 id="环境搭建与安装"><a href="#环境搭建与安装" class="headerlink" title="环境搭建与安装"></a>环境搭建与安装</h1><h2 id="环境"><a href="#环境" class="headerlink" title="环境"></a>环境</h2><p><strong>硬件</strong></p>
+<ul>
+<li>笔记本电脑</li>
+<li>USB无线网卡</li>
+</ul>
+<blockquote>
+<p>本文使用的是 <a target="_blank" rel="noopener" href="https://item.jd.com/100006507594.html">COMFAST CF-812AC双频千兆无线网卡 (不是打广告)</a></p>
+</blockquote>
+<p><strong>软件</strong></p>
+<ul>
+<li>vmware workstation</li>
+<li>ubuntu 19.10</li>
+</ul>
+<h2 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h2><h3 id="安装必须软件包"><a href="#安装必须软件包" class="headerlink" title="安装必须软件包"></a>安装必须软件包</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">➜ sudo apt-get update</span><br><span class="line">➜ sudo apt install git gcc make vim libssl-dev net-tools -y</span><br></pre></td></tr></table></figure>
+<h3 id="连接USB网卡，安装驱动"><a href="#连接USB网卡，安装驱动" class="headerlink" title="连接USB网卡，安装驱动"></a>连接USB网卡，安装驱动</h3><ul>
+<li>连接USB网卡</li>
+</ul>
+<p><img src="/images/network/VMTrafficShark/netinterface_driver_install.png
+"></p>
+<blockquote>
+<p>最好将USB改称USB 3.0 ，2.0好像兼容性不是特别好<br><img src="/images/network/VMTrafficShark/net_interface_usb.png
+" style="height:250px"></p>
+</blockquote>
+<ul>
+<li>安装驱动</li>
+</ul>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">➜ git <span class="built_in">clone</span> https://github.com/cilynx/rtl88x2BU_WiFi_linux_v5.3.1_27678.20180430_COEX20180427-5959.git </span><br><span class="line">➜ <span class="built_in">cd</span> rtl88x2BU_WiFi_linux_v5.3.1_27678.20180430_COEX20180427-5959/</span><br><span class="line">➜ make</span><br><span class="line">➜ sudo make install</span><br><span class="line">➜ sudo modprobe 88x2bu</span><br><span class="line">➜ sudo lsmod | grep 88x2bu</span><br><span class="line">➜ sudo reboot</span><br></pre></td></tr></table></figure>
+<h3 id="配置网卡"><a href="#配置网卡" class="headerlink" title="配置网卡"></a>配置网卡</h3><ul>
+<li><p>添加一块 host-only 的网卡 <code>eth1</code> ，用于我们ssh登陆 虚拟机使用<br><img src="/images/network/VMTrafficShark/eth1.png
+" style="height:350px"><br>右键虚拟机tab，<code>settings</code> -&gt; <code>Add</code> -&gt; <code>Network Adapter</code> -&gt; <code>Host-only</code></p>
+</li>
+<li><p>修改网络内核参数</p>
+</li>
+</ul>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 默认开启端口转发</span></span><br><span class="line">➜ sudo <span class="built_in">echo</span> <span class="string">&quot;net.ipv4.ip_forward = 1&quot;</span> &gt;&gt; /etc/sysctl.conf</span><br><span class="line"><span class="comment"># 修改网络接口命名方式（默认为ens33规则，修改为eth0、wlan0规则，与上面对应）</span></span><br><span class="line">➜ sudo vim /etc/default/grub</span><br><span class="line"><span class="comment"># Modify GRUB_CMDLINE_LINUX</span></span><br><span class="line">GRUB_CMDLINE_LINUX=<span class="string">&quot;net.ifnames=0 biosdevname=0&quot;</span></span><br><span class="line">sudo grub-mkconfig -o /boot/grub/grub.cfg</span><br><span class="line">➜ sudo reboot</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>重启后就ssh不上了…  另外注意 eth0 必须是桥接模式，nat的话会导致tcp option丢失。</p>
+</blockquote>
+<ul>
+<li>配置网卡</li>
+</ul>
+<p>ubuntu从17.10开始，已放弃在/etc/network/interfaces里固定IP的配置，即使配置也不会生效，而是改成netplan方式</p>
+<p>refer: <a target="_blank" rel="noopener" href="https://netplan.io/examples">https://netplan.io/examples</a></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">➜ sudo vim /etc/netplan/50-cloud-init.yaml </span><br><span class="line">network:</span><br><span class="line">    ethernets:</span><br><span class="line">        eth0:</span><br><span class="line">            dhcp4: <span class="literal">true</span></span><br><span class="line">        eth1:</span><br><span class="line">            dhcp4: <span class="literal">true</span></span><br><span class="line">        wlan0:</span><br><span class="line">            dhcp4: no</span><br><span class="line">            dhcp6: no</span><br><span class="line">            addresses: [192.168.100.1/24]</span><br><span class="line">    version: 2</span><br><span class="line">    </span><br><span class="line">➜ sodu netplan apply</span><br></pre></td></tr></table></figure>
+<ul>
+<li>配置完成</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">➜ ip a</span><br><span class="line">1: lo: &lt;LOOPBACK,UP,LOWER_UP&gt; mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000</span><br><span class="line">    link&#x2F;loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00</span><br><span class="line">    inet 127.0.0.1&#x2F;8 scope host lo</span><br><span class="line">       valid_lft forever preferred_lft forever</span><br><span class="line">    inet6 ::1&#x2F;128 scope host </span><br><span class="line">       valid_lft forever preferred_lft forever</span><br><span class="line">2: eth0: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1500 qdisc fq_codel state UP group default qlen 1000</span><br><span class="line">    link&#x2F;ether 00:0c:29:1d:c7:31 brd ff:ff:ff:ff:ff:ff</span><br><span class="line">    inet 192.168.0.104&#x2F;24 brd 192.168.0.255 scope global dynamic eth0</span><br><span class="line">       valid_lft 6009sec preferred_lft 6009sec</span><br><span class="line">    inet6 fe80::20c:29ff:fe1d:c731&#x2F;64 scope link </span><br><span class="line">       valid_lft forever preferred_lft forever</span><br><span class="line">3: eth1: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1500 qdisc fq_codel state UP group default qlen 1000</span><br><span class="line">    link&#x2F;ether 00:0c:29:1d:c7:3b brd ff:ff:ff:ff:ff:ff</span><br><span class="line">    inet 172.16.246.128&#x2F;24 brd 172.16.246.255 scope global dynamic eth1</span><br><span class="line">       valid_lft 1510sec preferred_lft 1510sec</span><br><span class="line">    inet6 fe80::20c:29ff:fe1d:c73b&#x2F;64 scope link </span><br><span class="line">       valid_lft forever preferred_lft forever</span><br><span class="line">4: wlan0: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1500 qdisc mq state UP group default qlen 1000</span><br><span class="line">    link&#x2F;ether 20:0d:b0:38:d2:ea brd ff:ff:ff:ff:ff:ff</span><br><span class="line">    inet 192.168.100.1&#x2F;24 brd 192.168.100.255 scope global wlan0</span><br><span class="line">       valid_lft forever preferred_lft forever</span><br><span class="line">    inet6 fe80::220d:b0ff:fe38:d2ea&#x2F;64 scope link </span><br><span class="line">       valid_lft forever preferred_lft forever</span><br><span class="line"></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h3 id="安装dhcp服务"><a href="#安装dhcp服务" class="headerlink" title="安装dhcp服务"></a>安装dhcp服务</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">➜ sudo apt install isc-dhcp-server -y</span><br><span class="line"><span class="comment"># 备份</span></span><br><span class="line">➜ sudo cp /etc/default/isc-dhcp-server&#123;,.bak&#125; </span><br><span class="line"><span class="comment"># 更改DHCP生效网卡</span></span><br><span class="line">➜ sudo vim /etc/default/isc-dhcp-server</span><br><span class="line">DHCPDv4_CONF=/etc/dhcp/dhcpd.conf</span><br><span class="line">INTERFACESv4=<span class="string">&quot;wlan0&quot;</span></span><br><span class="line"><span class="comment"># 更改dhcp配置文件</span></span><br><span class="line">➜ sudo vim /etc/dhcp/dhcpd.cnf</span><br><span class="line">subnet 192.168.100.0 netmask 255.255.255.0 &#123;</span><br><span class="line">    range 192.168.100.100 192.168.100.200;</span><br><span class="line">    option domain-name-servers 192.168.100.1;</span><br><span class="line">    option routers 192.168.100.1;</span><br><span class="line">&#125;</span><br><span class="line">➜ sudo systemctl restart isc-dhcp-server</span><br><span class="line">➜</span><br></pre></td></tr></table></figure>
+<h3 id="安装hostapd服务"><a href="#安装hostapd服务" class="headerlink" title="安装hostapd服务"></a>安装hostapd服务</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">➜ sudo apt install hostapd -y</span><br><span class="line">➜ sudo sed -i <span class="string">&#x27;s|#DAEMON_CONF=&quot;&quot;|DAEMON_CONF=&quot;/etc/hostapd/hostapd.conf&quot;|&#x27;</span> /etc/default/hostapd</span><br><span class="line">➜ sudo vim /etc/hostapd/hostapd.conf</span><br><span class="line">interface=wlan0</span><br><span class="line">driver=nl80211</span><br><span class="line">ssid=Traffic Shark</span><br><span class="line">hw_mode=g</span><br><span class="line">ieee80211n=1</span><br><span class="line">wmm_enabled=1</span><br><span class="line">channel=7</span><br><span class="line">macaddr_acl=0</span><br><span class="line">auth_algs=1</span><br><span class="line">ignore_broadcast_ssid=0</span><br><span class="line">wpa=2</span><br><span class="line">wpa_passphrase=12345678</span><br><span class="line">wpa_key_mgmt=WPA-PSK</span><br><span class="line">wpa_pairwise=TKIP</span><br><span class="line">rsn_pairwise=CCMP </span><br><span class="line">➜ sudo systemctl unmask hostapd</span><br><span class="line">➜ sudo systemctl <span class="built_in">enable</span> hostapd</span><br><span class="line">➜ sudo systemctl start hostapd</span><br></pre></td></tr></table></figure>
+<h3 id="安装dnsmasq"><a href="#安装dnsmasq" class="headerlink" title="安装dnsmasq"></a>安装dnsmasq</h3><p>由于ubuntu 18.04 开始，多了一个系统的systemd-resolvd服务，与我们要安装的dnsmasq都监听在 53 端口，妨碍了我们启用dnsmasq，所以需要停掉。</p>
+<ul>
+<li>停止 systemd-resolved</li>
+</ul>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">➜ sudo systemctl <span class="built_in">disable</span> systemd-resolved</span><br><span class="line">➜ sudo systemctl stop systemd-resolved</span><br><span class="line">➜ ll /etc/resolv.conf </span><br><span class="line">lrwxrwxrwx 1 root root 39 Oct 17  2019 /etc/resolv.conf -&gt; ../run/systemd/resolve/stub-resolv.conf</span><br><span class="line">➜ rm -f /etc/resolv.conf </span><br><span class="line">➜ sudo tee /etc/resolv.conf &lt;&lt;<span class="string">EOF</span></span><br><span class="line"><span class="string">nameserver 127.0.0.1</span></span><br><span class="line"><span class="string">nameserver 114.114.114.114</span></span><br><span class="line"><span class="string">EOF</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<ul>
+<li>安装dnsmasq</li>
+</ul>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">➜ sudo apt-get install dnsmasq</span><br><span class="line">➜ touch /etc/hosts.chat.freenode.net</span><br><span class="line">➜ vim /etc/dnsmasq.conf</span><br><span class="line">interface=wlan0</span><br><span class="line">listen-address=192.168.100.1</span><br><span class="line">dhcp-range=192.168.100.100,192.168.100.199,255.255.255.0,24h</span><br><span class="line"></span><br><span class="line">address=/www.kiosk007.top/127.0.0.1</span><br><span class="line">addn-hosts=/etc/hosts.chat.freenode.net</span><br><span class="line">➜ systemctl <span class="built_in">enable</span> dnsmasq</span><br><span class="line">➜ systemctl start dnsmasq</span><br></pre></td></tr></table></figure>
+<h3 id="安装中间人"><a href="#安装中间人" class="headerlink" title="安装中间人"></a>安装中间人</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">➜ wget https://snapshots.mitmproxy.org/5.1.1/mitmproxy-5.1.1-linux.tar.gz</span><br><span class="line">➜ tar -xf mitmproxy-5.1.1-linux.tar.gz</span><br></pre></td></tr></table></figure>
+<h3 id="安装Nginx"><a href="#安装Nginx" class="headerlink" title="安装Nginx"></a>安装Nginx</h3><p>安装Nginx是为了模拟服务端故障和7层劫持，如果配置了证书同样可以对https进行劫持</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line">➜ sudo apt install nginx -y</span><br><span class="line">➜ sudo tee /etc/nginx/nginx.conf &lt;&lt;<span class="string">EOF</span></span><br><span class="line"><span class="string">user www-data;</span></span><br><span class="line"><span class="string">worker_processes auto;</span></span><br><span class="line"><span class="string">pid /run/nginx.pid;</span></span><br><span class="line"><span class="string">include /etc/nginx/modules-enabled/*.conf;</span></span><br><span class="line"><span class="string">events &#123;</span></span><br><span class="line"><span class="string">        worker_connections 768;</span></span><br><span class="line"><span class="string">        multi_accept on;</span></span><br><span class="line"><span class="string">&#125;</span></span><br><span class="line"><span class="string">http &#123;</span></span><br><span class="line"><span class="string">        sendfile on;</span></span><br><span class="line"><span class="string">        tcp_nopush on;</span></span><br><span class="line"><span class="string">        tcp_nodelay on;</span></span><br><span class="line"><span class="string">        keepalive_timeout 65;</span></span><br><span class="line"><span class="string">        types_hash_max_size 2048;</span></span><br><span class="line"><span class="string">        include /etc/nginx/mime.types;</span></span><br><span class="line"><span class="string">        default_type application/octet-stream;</span></span><br><span class="line"><span class="string">        ssl_protocols TLSv1 TLSv1.1 TLSv1.2 TLSv1.3; </span></span><br><span class="line"><span class="string">        ssl_prefer_server_ciphers on;</span></span><br><span class="line"><span class="string">        access_log /var/log/nginx/access.log;</span></span><br><span class="line"><span class="string">        error_log /var/log/nginx/error.log;</span></span><br><span class="line"><span class="string">        gzip on;</span></span><br><span class="line"><span class="string">        include /etc/nginx/conf.d/*.conf;</span></span><br><span class="line"><span class="string">&#125;</span></span><br><span class="line"><span class="string">EOF</span></span><br></pre></td></tr></table></figure>
+<h2 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h2><p>使用 iptables 命令转发流量</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">echo</span> 1 &gt; /proc/sys/net/ipv4/ip_forward</span><br><span class="line">iptables -F</span><br><span class="line">iptables -t nat -F</span><br><span class="line">iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE</span><br><span class="line">iptables -A FORWARD -i eth0 -o wlan0 -m state --state RELATED,ESTABLISHED -j ACCEPT</span><br><span class="line">iptables -A FORWARD -i wlan0 -o eth0 -j ACCEPT</span><br></pre></td></tr></table></figure>
+<ul>
+<li>手机搜索 AP “Traffic Shark”</li>
+<li>密码 12345678</li>
+</ul>
+<img src="/images/network/VMTrafficShark/wifi.png" style="height:550px">
+
+
+<p>下行带宽可以达到93.35Mbps<br>上行带宽可以达到30.50Mbps （主要还得看物理网卡和运营商猛不猛）<br><img src="/images/network/VMTrafficShark/traffic_test.png" style="height:550px"></p>
+<h2 id="弱网模拟使用"><a href="#弱网模拟使用" class="headerlink" title="弱网模拟使用"></a>弱网模拟使用</h2><ul>
+<li>弱网模拟使用的是tc</li>
+<li>DNS劫持使用的dnsmasq</li>
+<li>应用层劫持使用的Nginx和iptables</li>
+<li>中间人使用的 mitmproxy</li>
+</ul>
+<h3 id="上行限速"><a href="#上行限速" class="headerlink" title="上行限速"></a>上行限速</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Uplink</span></span><br><span class="line">sudo tc qdisc del dev eth0 root</span><br><span class="line">sudo tc qdisc add dev eth0 root handle 1: htb default 2</span><br><span class="line">sudo tc class add dev eth0 parent 1:1 classid 1:2 htb rate 100mbit</span><br><span class="line">sudo tc class add dev eth0 parent 1:1 classid 1:3 htb rate 100mbit</span><br><span class="line">sudo tc qdisc add dev eth0 parent 1:2 handle 2: sfq perturb 10</span><br><span class="line">sudo tc qdisc add dev eth0 parent 1:3 handle 3: netem rate 2mbit</span><br><span class="line">sudo tc filter add dev eth0 protocol ip parent 1:0 u32 match ip src 192.168.100.0/24 flowid 1:3</span><br></pre></td></tr></table></figure>
+<h3 id="下行限速"><a href="#下行限速" class="headerlink" title="下行限速"></a>下行限速</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Downlink</span></span><br><span class="line">sudo tc qdisc del dev wlan0 root</span><br><span class="line">sudo tc qdisc add dev wlan0 root handle 1: htb default 2</span><br><span class="line">sudo tc class add dev wlan0 parent 1:1 classid 1:2 htb rate 100mbit</span><br><span class="line">sudo tc class add dev wlan0 parent 1:1 classid 1:3 htb rate 100mbit</span><br><span class="line">sudo tc qdisc add dev wlan0 parent 1:2 handle 2: sfq perturb 10</span><br><span class="line">sudo tc qdisc add dev wlan0 parent 1:3 handle 3: netem rate 20mbit</span><br><span class="line">sudo tc filter add dev wlan0 protocol ip parent 1:0 u32 match ip dst 192.168.100.0/24 flowid 1:3</span><br></pre></td></tr></table></figure>
+<h3 id="模拟丢包、高时延等弱网环境"><a href="#模拟丢包、高时延等弱网环境" class="headerlink" title="模拟丢包、高时延等弱网环境"></a>模拟丢包、高时延等弱网环境</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">sudo tc qdisc del dev wlan0 root</span><br><span class="line">sudo tc qdisc add dev wlan0 root handle 1: htb default 2</span><br><span class="line">sudo tc class add dev wlan0 parent 1:1 classid 1:2 htb rate 100mbps</span><br><span class="line">sudo tc class add dev wlan0 parent 1:1 classid 1:3 htb rate 100mbps</span><br><span class="line">sudo tc qdisc add dev wlan0 parent 1:2 handle 2: netem rate 3000kbit</span><br><span class="line">sudo tc qdisc add dev wlan0 parent 1:3 handle 3: netem loss random 50%</span><br><span class="line">sudo tc filter add dev wlan0 protocol ip parent 1:0 u32 match ip dst 192.168.0.0/24 flowid 1:2  <span class="comment"># ip 是 eth0 的出网ip</span></span><br></pre></td></tr></table></figure>
+<h3 id="封禁DNS请求"><a href="#封禁DNS请求" class="headerlink" title="封禁DNS请求"></a>封禁DNS请求</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">sudo tc qdisc del dev wlan0 root</span><br><span class="line">sudo tc qdisc add dev wlan0 root handle 1: htb default 2</span><br><span class="line">sudo tc class add dev wlan0 parent 1: classid 1:2 htb rate 100mbps</span><br><span class="line">sudo tc class add dev wlan0 parent 1: classid 1:3 htb rate 100mbps</span><br><span class="line">sudo tc qdisc add dev wlan0 parent 1:2 handle 2: sfq perturb 10</span><br><span class="line">sudo tc qdisc add dev wlan0 parent 1:3 handle 3: netem loss 100%</span><br><span class="line">sudo tc filter add dev wlan0 protocol ip parent 1: prio 1 u32 match ip protocol 17 ff match ip sport 53 0xffff flowid 1:3</span><br></pre></td></tr></table></figure>
+<h3 id="封禁IP段"><a href="#封禁IP段" class="headerlink" title="封禁IP段"></a>封禁IP段</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">sudo tc qdisc del dev wlan0 root</span><br><span class="line">sudo tc qdisc add dev wlan0 root handle 1: htb default 2</span><br><span class="line">sudo tc class add dev wlan0 parent 1: classid 1:2 htb rate 100mbps</span><br><span class="line">sudo tc class add dev wlan0 parent 1: classid 1:3 htb rate 100mbps</span><br><span class="line">sudo tc qdisc add dev wlan0 parent 1:2 handle 2: sfq perturb 10</span><br><span class="line">sudo tc qdisc add dev wlan0 parent 1:3 handle 3: netem loss 100%</span><br><span class="line">sudo tc filter add dev wlan0 protocol ip parent 1: u32 match ip src 8.8.0.0/16 flowid 1:3</span><br></pre></td></tr></table></figure>
+<h3 id="组合弱网场景"><a href="#组合弱网场景" class="headerlink" title="组合弱网场景"></a>组合弱网场景</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">sudo tc qdisc del dev wlan0 root</span><br><span class="line">sudo tc qdisc add dev wlan0 root handle 1: htb default 2</span><br><span class="line">sudo tc class add dev wlan0 parent 1:1 classid 1:2 htb rate 100mbps</span><br><span class="line">sudo tc class add dev wlan0 parent 1:1 classid 1:3 htb rate 100mbps</span><br><span class="line">sudo tc class add dev wlan0 parent 1:1 classid 1:4 htb rate 100mbps</span><br><span class="line">sudo tc qdisc add dev wlan0 parent 1:2 handle 2:  sfq perturb 10</span><br><span class="line">sudo tc qdisc add dev wlan0 parent 1:3 handle 3: netem loss random 1% rate 20mbps</span><br><span class="line">sudo tc qdisc add dev wlan0 parent 1:4 handle 4: netem loss 100%</span><br><span class="line">sudo tc filter add dev wlan0 protocol ip parent 1:0 u32 match ip dst 192.168.100.0/24 flowid 1:3  <span class="comment"># 限制下行带宽</span></span><br><span class="line">sudo tc filter add dev wlan0 protocol ip parent 1: prio 1 u32 match ip protocol 17 ff match ip sport 443 0xffff flowid 1:4  <span class="comment">#封禁 udp 443 端口 </span></span><br></pre></td></tr></table></figure>
+<h3 id="dns-劫持"><a href="#dns-劫持" class="headerlink" title="dns 劫持"></a>dns 劫持</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">➜ vim /etc/dnsmasq.conf</span><br><span class="line">address=/www.kiosk007.top/127.0.0.1</span><br><span class="line"></span><br><span class="line">如果想要解析多个ip</span><br><span class="line">➜ vim /etc/hosts.chat.freenode.net</span><br><span class="line">127.0.0.1 www.kiosk007.top</span><br><span class="line">127.0.0.2 www.kiosk007.top</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h3 id="7层内容劫持"><a href="#7层内容劫持" class="headerlink" title="7层内容劫持"></a>7层内容劫持</h3><ul>
+<li>1、利用 DNS 劫持先将流量劫持到 Nginx 上</li>
+<li>2、自签名泛域名证书，参考 <a target="_blank" rel="noopener" href="https://github.com/Fishdrowned/ssl">https://github.com/Fishdrowned/ssl</a></li>
+<li>3、配置Nginx完成劫持</li>
+</ul>
+<h3 id="mitm中间人"><a href="#mitm中间人" class="headerlink" title="mitm中间人"></a>mitm中间人</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">echo</span> 1 &gt; /proc/sys/net/ipv4/ip_forward</span><br><span class="line">iptables  -t nat -F</span><br><span class="line">iptables  -t nat -A PREROUTING -i wlan0 -p tcp -j REDIRECT --to-port 8080</span><br><span class="line">ip6tables -t nat -A PREROUTING -i wlan0 -p tcp --dport 443 -j REDIRECT --to-port 8080</span><br><span class="line">iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE</span><br><span class="line">iptables -A FORWARD -i eth0 -o wlan0 -m state --state RELATED,ESTABLISHED -j ACCEPT</span><br><span class="line">iptables -A FORWARD -i wlan0 -o eth0 -j ACCEPT</span><br><span class="line">SSLKEYLOGFILE=<span class="string">&quot;/root/sslkey/sslkeylogfile.txt&quot;</span> mitmproxy --mode transparent --showhost</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<img src="/images/network/VMTrafficShark/mitmproxy.png">
+
+
+<h3 id="抓包"><a href="#抓包" class="headerlink" title="抓包"></a>抓包</h3><p>为了能将抓到的包在宿主机上实时显示，需要配置root用户ssh免密登陆,配合上面的mitm导出中间人密钥，再将sslkey_log所在目录挂载到宿主机导入wireshark中，可以做到实时查看tls内容。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">➜ vim /etc/ssh/sshd_config</span><br><span class="line">PermitRootLogin yes</span><br><span class="line"></span><br><span class="line">➜ ssh root@172.16.246.128 <span class="string">&quot;tcpdump -i wlan0 -U -w - 2&gt;/dev/null&quot;</span>| wireshark -k -S -i -</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/network/" rel="tag"># network</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/05/04/TLS-%E8%AF%A6%E8%A7%A3-%E4%BA%8C/" rel="prev" title="TLS 详解（二）">
+      <i class="fa fa-chevron-left"></i> TLS 详解（二）
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/05/30/go-etcd-%E7%9A%84%E5%9F%BA%E6%9C%AC%E6%93%8D%E4%BD%9C/" rel="next" title="etcd 的基本入门">
+      etcd 的基本入门 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%8A%9F%E8%83%BD"><span class="nav-number">1.</span> <span class="nav-text">功能</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%8E%AF%E5%A2%83%E6%90%AD%E5%BB%BA%E4%B8%8E%E5%AE%89%E8%A3%85"><span class="nav-number">2.</span> <span class="nav-text">环境搭建与安装</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%8E%AF%E5%A2%83"><span class="nav-number">2.1.</span> <span class="nav-text">环境</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%89%E8%A3%85"><span class="nav-number">2.2.</span> <span class="nav-text">安装</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%89%E8%A3%85%E5%BF%85%E9%A1%BB%E8%BD%AF%E4%BB%B6%E5%8C%85"><span class="nav-number">2.2.1.</span> <span class="nav-text">安装必须软件包</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%BF%9E%E6%8E%A5USB%E7%BD%91%E5%8D%A1%EF%BC%8C%E5%AE%89%E8%A3%85%E9%A9%B1%E5%8A%A8"><span class="nav-number">2.2.2.</span> <span class="nav-text">连接USB网卡，安装驱动</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%85%8D%E7%BD%AE%E7%BD%91%E5%8D%A1"><span class="nav-number">2.2.3.</span> <span class="nav-text">配置网卡</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%89%E8%A3%85dhcp%E6%9C%8D%E5%8A%A1"><span class="nav-number">2.2.4.</span> <span class="nav-text">安装dhcp服务</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%89%E8%A3%85hostapd%E6%9C%8D%E5%8A%A1"><span class="nav-number">2.2.5.</span> <span class="nav-text">安装hostapd服务</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%89%E8%A3%85dnsmasq"><span class="nav-number">2.2.6.</span> <span class="nav-text">安装dnsmasq</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%89%E8%A3%85%E4%B8%AD%E9%97%B4%E4%BA%BA"><span class="nav-number">2.2.7.</span> <span class="nav-text">安装中间人</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%89%E8%A3%85Nginx"><span class="nav-number">2.2.8.</span> <span class="nav-text">安装Nginx</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%B5%8B%E8%AF%95"><span class="nav-number">2.3.</span> <span class="nav-text">测试</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%BC%B1%E7%BD%91%E6%A8%A1%E6%8B%9F%E4%BD%BF%E7%94%A8"><span class="nav-number">2.4.</span> <span class="nav-text">弱网模拟使用</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%8A%E8%A1%8C%E9%99%90%E9%80%9F"><span class="nav-number">2.4.1.</span> <span class="nav-text">上行限速</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%8B%E8%A1%8C%E9%99%90%E9%80%9F"><span class="nav-number">2.4.2.</span> <span class="nav-text">下行限速</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%A8%A1%E6%8B%9F%E4%B8%A2%E5%8C%85%E3%80%81%E9%AB%98%E6%97%B6%E5%BB%B6%E7%AD%89%E5%BC%B1%E7%BD%91%E7%8E%AF%E5%A2%83"><span class="nav-number">2.4.3.</span> <span class="nav-text">模拟丢包、高时延等弱网环境</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%B0%81%E7%A6%81DNS%E8%AF%B7%E6%B1%82"><span class="nav-number">2.4.4.</span> <span class="nav-text">封禁DNS请求</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%B0%81%E7%A6%81IP%E6%AE%B5"><span class="nav-number">2.4.5.</span> <span class="nav-text">封禁IP段</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BB%84%E5%90%88%E5%BC%B1%E7%BD%91%E5%9C%BA%E6%99%AF"><span class="nav-number">2.4.6.</span> <span class="nav-text">组合弱网场景</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#dns-%E5%8A%AB%E6%8C%81"><span class="nav-number">2.4.7.</span> <span class="nav-text">dns 劫持</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#7%E5%B1%82%E5%86%85%E5%AE%B9%E5%8A%AB%E6%8C%81"><span class="nav-number">2.4.8.</span> <span class="nav-text">7层内容劫持</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#mitm%E4%B8%AD%E9%97%B4%E4%BA%BA"><span class="nav-number">2.4.9.</span> <span class="nav-text">mitm中间人</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%8A%93%E5%8C%85"><span class="nav-number">2.4.10.</span> <span class="nav-text">抓包</span></a></li></ol></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="kiosk"
+      src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">kiosk</p>
+  <div class="site-description" itemprop="description">NoOps</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">26</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">10</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">20</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+  <div class="links-of-blogroll motion-element">
+    <div class="links-of-blogroll-title"><i class="fa fa-link fa-fw"></i>
+      Links
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="https://github.com/weijiaxiang007" title="https://github.com/weijiaxiang007" rel="noopener" target="_blank">Github</a>
+        </li>
+    </ul>
+  </div>
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-blog"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">kiosk</span>
+</div>
+
+<div class="BbeiAn-info">
+   	京ICP备 -
+	<a target="_blank" href="http://beian.miit.gov.cn/" text-decoration:none;padding-left:30px;background:url(https://s1.ax1x.com/2018/09/29/ilmwIH.png) no-repeat left center" rel="nofollow">京ICP备20015006号-1</a>	 
+</div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/medium-zoom@1/dist/medium-zoom.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+<script src="/js/bookmark.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+<script>
+if (document.querySelectorAll('pre.mermaid').length) {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/mermaid@8/dist/mermaid.min.js', () => {
+    mermaid.initialize({
+      theme    : 'neutral',
+      logLevel : 3,
+      flowchart: { curve     : 'linear' },
+      gantt    : { axisFormat: '%m/%d/%Y' },
+      sequence : { actorMargin: 50 }
+    });
+  }, window.mermaid);
+}
+</script>
+
+
+  
+
+  
+
+  
+
+  
+
+  <canvas id="evanyou"></canvas>
+  <style>
+    #evanyou {
+      position: fixed;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      z-index: -1;
+    }
+  </style>
+  <script src="/js/evan-you.js"></script>
+
+
+
+
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('https://cdn.jsdelivr.net/npm/valine@1.3.10/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'XhYn8GEq1Sg7ufJQAVmR4dWN-gzGzoHsz',
+      appKey     : 'r42k4lqU022wD7IvtwGaQfjN',
+      placeholder: "Just go go",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : false,
+      lang       : 'zh-cn' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
+</script>
+
+
+  <script src="https://libs.baidu.com/jquery/2.0.0/jquery.min.js"></script>
+  <script src="https://unpkg.com/mermaid@8.4.6/dist/mermaid.min.js"></script>
+  <script>mermaid.initialize({startOnLoad:true});</script>
+</body>
+</html>

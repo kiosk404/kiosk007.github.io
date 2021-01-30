@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-dragon.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-dragon.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <link rel="manifest" href="/images/manifest.json">
+  <meta name="msapplication-config" content="/images/browserconfig.xml">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/pace-js@1/themes/blue/pace-theme-minimal.css">
+  <script src="//cdn.jsdelivr.net/npm/pace-js@1/pace.min.js"></script>
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"kiosk007.top","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"right","display":"always","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":true,"color":"#484891","save":"auto"},"fancybox":false,"mediumzoom":true,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="在之前的文章 VMTrafficShark 自制弱网模拟器 中介绍了如何搭建一个弱网模拟器，并且进行弱网模拟，中间人，劫持重放测试等等。对了这里一般的测试设备是Android手机，那么这篇文章介绍一下Android 手机应该如何支持自签名证书。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Android 信任自签名证书">
+<meta property="og:url" content="http://kiosk007.top/2020/07/22/Android-%E4%BF%A1%E4%BB%BB%E8%87%AA%E7%AD%BE%E5%90%8D%E8%AF%81%E4%B9%A6/index.html">
+<meta property="og:site_name" content="kiosk007&#39;s Blog">
+<meta property="og:description" content="在之前的文章 VMTrafficShark 自制弱网模拟器 中介绍了如何搭建一个弱网模拟器，并且进行弱网模拟，中间人，劫持重放测试等等。对了这里一般的测试设备是Android手机，那么这篇文章介绍一下Android 手机应该如何支持自签名证书。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://kiosk007.top/images/network/AndroidRoot/cert_fqdn.png">
+<meta property="og:image" content="http://kiosk007.top/images/network/AndroidRoot/cert_sign.png">
+<meta property="og:image" content="http://kiosk007.top/images/network/AndroidRoot/cert_san.png">
+<meta property="og:image" content="http://kiosk007.top/images/network/AndroidRoot/android_root.png">
+<meta property="article:published_time" content="2020-07-22T15:23:00.000Z">
+<meta property="article:modified_time" content="2020-07-22T15:23:00.000Z">
+<meta property="article:author" content="kiosk">
+<meta property="article:tag" content="Certificate">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://kiosk007.top/images/network/AndroidRoot/cert_fqdn.png">
+
+<link rel="canonical" href="http://kiosk007.top/2020/07/22/Android-%E4%BF%A1%E4%BB%BB%E8%87%AA%E7%AD%BE%E5%90%8D%E8%AF%81%E4%B9%A6/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Android 信任自签名证书 | kiosk007's Blog</title>
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?6f3d277b6c83066a05a8b7db067b2308";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<link rel="alternate" href="/atom.xml" title="kiosk007's Blog" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">kiosk007's Blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">专注! 量变产生质变 !</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://kiosk007.top/2020/07/22/Android-%E4%BF%A1%E4%BB%BB%E8%87%AA%E7%AD%BE%E5%90%8D%E8%AF%81%E4%B9%A6/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="kiosk">
+      <meta itemprop="description" content="NoOps">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="kiosk007's Blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Android 信任自签名证书
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-07-22 23:23:00" itemprop="dateCreated datePublished" datetime="2020-07-22T23:23:00+08:00">2020-07-22</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Linux/" itemprop="url" rel="index"><span itemprop="name">Linux</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/2020/07/22/Android-%E4%BF%A1%E4%BB%BB%E8%87%AA%E7%AD%BE%E5%90%8D%E8%AF%81%E4%B9%A6/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2020/07/22/Android-%E4%BF%A1%E4%BB%BB%E8%87%AA%E7%AD%BE%E5%90%8D%E8%AF%81%E4%B9%A6/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>在之前的文章 <a href="https://kiosk007.top/2020/05/30/VMTrafficShark-%E8%87%AA%E5%88%B6%E5%BC%B1%E7%BD%91%E6%A8%A1%E6%8B%9F%E5%99%A8/">VMTrafficShark 自制弱网模拟器</a> 中介绍了如何搭建一个弱网模拟器，并且进行弱网模拟，中间人，劫持重放测试等等。对了这里一般的测试设备是Android手机，那么这篇文章介绍一下Android 手机应该如何支持自签名证书。</p>
+<a id="more"></a>
+<hr>
+<h1 id="Android-root"><a href="#Android-root" class="headerlink" title="Android root"></a>Android root</h1><p>Android 本身可以理解为一个Linux操作系统的终端，只是没有root权限，普通用户 <code>adb</code> 连上之后只有普通用户的权限。而root不是那么容易的，这里推荐 <code>Magisk Root</code> 这款软件，目前我的 Mi3， RedMi Note 8 Pro 都是已经root了的（曾经是米粉…）</p>
+<p>甩几个链接参考</p>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://www.magiskroots.com/">Magic Mask To Enhance Your Default Android | The First Systemless Root Tool</a></li>
+<li><a target="_blank" rel="noopener" href="https://devsjournal.com/how-to-setup-magisk-manager-on-rooted-android-device-to-hide-root.html#:~:text=Installing%20Magisk%20Root%20via%20TWRP%3A%201%20Make%20sure,Zip%20and%20confirm%20flashing.%20...%20More%20items...%20">How To Setup Magisk Manager On Rooted Android Device To Hide “Root”</a></li>
+<li><a target="_blank" rel="noopener" href="https://c.mi.com/thread-1808315-1-0.html">How to Root Xiaomi Redmi Note 5</a></li>
+</ul>
+<h1 id="生成自签名证书"><a href="#生成自签名证书" class="headerlink" title="生成自签名证书"></a>生成自签名证书</h1><h2 id="X509-证书简介"><a href="#X509-证书简介" class="headerlink" title="X509 证书简介"></a>X509 证书简介</h2><p>首先介绍一下证书体系吧</p>
+<p>公钥基础设施（PKI）是一种用于验证网络世界中的用户和设备的技术。基本思想是让一个或多个受信方对数据进行数字签名，以证明特定的加密密钥属于特定的用户或设备。然后该密钥可以用作证明该用户的身份。</p>
+<p>而 x509 正是当下最常见的证书标准，<a target="_blank" rel="noopener" href="https://tools.ietf.org/html/rfc5280">RFC5280</a> 阐述了IETF对X509证书的定义。x509证书的格式在google chrome 浏览器地址栏左边的小锁即可查看。</p>
+<p>以cloudflare的官网域名 <a target="_blank" rel="noopener" href="https://1.1.1.1/">https://1.1.1.1</a> 举例（没错，还有ip证书）</p>
+<p><strong>第一组详细信息包括有关主题的信息，包括公司名称和地址以及证书旨在保护的网站的通用名称（Fully Qualified Domain Name）</strong><br><img src="/images/network/AndroidRoot/cert_fqdn.png" style="height:450px"></p>
+<p><strong>向下滑动，是发行者的信息（Issuer）, 这里可以看到签发者是 DigiCert。在颁发者下方，我们可以看到证书的序列号，X.509版本（3），签名算法以及指定证书有效期的日期。</strong><br><img src="/images/network/AndroidRoot/cert_sign.png" style="height:450px"></p>
+<p><strong>X.509 v3证书还包括一组扩展，这些扩展在证书使用方面提供了更多的灵活性。例如，主题备用名称扩展名允许证书绑定到多个身份。（因此，有时将多域证书称为 <a target="_blank" rel="noopener" href="https://www.ssl.com/faqs/what-is-a-san-certificate/">SAN</a> 证书）。这里提供了很多其他域名，这里还可以提供ip地址,可以看到 cloudflare 的1.1.1.1</strong></p>
+<img src="/images/network/AndroidRoot/cert_san.png" style="height:450px">
+
+<h2 id="证书格式"><a href="#证书格式" class="headerlink" title="证书格式"></a>证书格式</h2><ul>
+<li>.DER .CER，文件是二进制格式，只保存证书，不保存私钥。</li>
+<li>.PEM，一般是文本格式，可保存证书，可保存私钥。</li>
+<li>.CRT，可以是二进制格式，可以是文本格式，与 .DER 格式相同，不保存私钥。</li>
+<li>.PFX .P12，二进制格式，同时包含证书和私钥，一般有密码保护。</li>
+<li>.JKS，二进制格式，同时包含证书和私钥，一般有密码保护。</li>
+</ul>
+<h2 id="利用-Mitm-的-Root-CA-制作自签名证书"><a href="#利用-Mitm-的-Root-CA-制作自签名证书" class="headerlink" title="利用 Mitm 的 Root CA 制作自签名证书"></a>利用 Mitm 的 Root CA 制作自签名证书</h2><p><a target="_blank" rel="noopener" href="https://docs.mitmproxy.org/stable/">mitmproxy</a> 是一款中间人工具，通过代理来实现https流量嗅探。</p>
+<p>安装好 mitmproxy 后再家目录下就放着 mitm 的root ca。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">➜  ls ~/.mitmproxy</span><br><span class="line">mitmproxy-ca-cert.cer  mitmproxy-ca-cert.p12  mitmproxy-ca-cert.pem  mitmproxy-ca.p12  mitmproxy-ca.pem  mitmproxy-dhparam.pem</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>这里我们取 <code>mitmproxy-ca.pem</code> 这个文件制作自签名证书。</p>
+<h3 id="分离CA证书和私钥"><a href="#分离CA证书和私钥" class="headerlink" title="分离CA证书和私钥"></a>分离CA证书和私钥</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">➜  mkdir mitm &amp;&amp; <span class="built_in">cd</span> mitm</span><br><span class="line">➜  cp ~/.mitmproxy/mitmproxy-ca.pem .</span><br><span class="line"></span><br><span class="line"><span class="comment"># 分离私钥</span></span><br><span class="line">➜  openssl pkey -<span class="keyword">in</span> mitmproxy-ca.pem -out mitmproxy-ca-private.key</span><br><span class="line"></span><br><span class="line"><span class="comment"># 提取所有证书，包括CA Chain</span></span><br><span class="line">➜  openssl crl2pkcs7 -nocrl -certfile mitmproxy-ca.pem | openssl pkcs7 -print_certs -out mitmproxy-ca-certificate.cert</span><br></pre></td></tr></table></figure>
+<h3 id="创建自签名证书"><a href="#创建自签名证书" class="headerlink" title="创建自签名证书"></a>创建自签名证书</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 生成证书私钥（your-domain.com 换成你要签名的域名）</span></span><br><span class="line">➜  openssl genrsa -out your-domain.com.key 2048</span><br><span class="line"></span><br><span class="line"><span class="comment"># 生成证书请求文件(并按要求填写 CN、SPN、LN等，不想填就全部回车)</span></span><br><span class="line">➜  openssl req -new -key your-domain.com.key -out your-domain.com.csr</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>在 Chrome 58 之后，改为使用 SAN(Subject Alternative Name) 检查域名的一致性。</p>
+<p>而 SAN 属于 x509 扩展里面的内容，所以我们需要通过 -extfile 参数来指定存放扩展内容的文件。创建一个 your-domain.com.ext 文件用来保存 SAN 信息，通过指定多个 DNS 从而可以实现多域名证书。<br>参考：<a target="_blank" rel="noopener" href="http://wiki.cacert.org/FAQ/subjectAltName">FAQ/subjectAltName (SAN)</a></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">➜  vim your-domain.com.ext</span><br><span class="line">[req]</span><br><span class="line">req_extensions = v3_req</span><br><span class="line"></span><br><span class="line">[v3_req]</span><br><span class="line">authorityKeyIdentifier=keyid,issuer</span><br><span class="line">basicConstraints=CA:FALSE</span><br><span class="line">keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment</span><br><span class="line">subjectAltName = @alt_names</span><br><span class="line"></span><br><span class="line">[alt_names]</span><br><span class="line">DNS.1 = your-domain.com.</span><br><span class="line">DNS.2 = *.your-domain.com.</span><br><span class="line">IP.1 = 127.0.0.1</span><br><span class="line">IP.2 = 192.168.0.107</span><br></pre></td></tr></table></figure>
+<p>使用 mitm 的CA 公私钥对 签署自己域名的证书。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">➜  openssl x509 -req -sha256 -<span class="keyword">in</span> your-domain.com.csr \</span><br><span class="line">-CA mitmproxy-ca-certificate.cert \</span><br><span class="line">-CAkey mitmproxy-ca-private.key \</span><br><span class="line">-CAcreateserial \</span><br><span class="line">-out your-domain.com.crt \</span><br><span class="line">-days 365 \</span><br><span class="line">-extfile kiosk007.top.ext \</span><br><span class="line">-extensions v3_req</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>至此，自签名证书已经生成完毕，自签名的证书为 <code>your-domain.crt</code> , 自签名的私钥为 <code>your-domain.key</code> 。只需要将 <code>mitmproxy-ca-certificate.cert</code> 导入到Android手机中，手机便会信任由这个root 证书签名的证书，如刚才的 <code>your-domian.crt</code></p>
+<h2 id="导入根证书到Android手机"><a href="#导入根证书到Android手机" class="headerlink" title="导入根证书到Android手机"></a>导入根证书到Android手机</h2><h3 id="修改文件名"><a href="#修改文件名" class="headerlink" title="修改文件名"></a>修改文件名</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 得到hash值</span></span><br><span class="line">➜  openssl x509 -subject_hash_old -<span class="keyword">in</span> mitmproxy-ca-certificate.cert |head -n 1</span><br><span class="line">➜  cp mitmproxy-ca-certificate.cert &lt;Certificate_Hash&gt;.0</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h3 id="安装到Android机"><a href="#安装到Android机" class="headerlink" title="安装到Android机"></a>安装到Android机</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">➜  adb push c8750f0d.0 /sdcard/</span><br><span class="line">➜  adb shell</span><br><span class="line"></span><br><span class="line"><span class="comment"># 手机中操作</span></span><br><span class="line">begonia:/ $ su root</span><br><span class="line">:/ <span class="comment"># mount -o rw,remount /</span></span><br><span class="line">:/ <span class="comment"># mv /sdcard/c8750f0d.0 /system/etc/security/cacerts/</span></span><br><span class="line">:/ <span class="comment"># chmod 644 /system/etc/security/cacerts/c8750f0d.0</span></span><br><span class="line">:/ <span class="comment"># chown root:root /system/etc/security/cacerts/c8750f0d.0</span></span><br><span class="line">:/ <span class="comment"># mount -o ro,remount /</span></span><br><span class="line">:/ <span class="comment"># reboot</span></span><br><span class="line">➜  </span><br><span class="line">➜  </span><br></pre></td></tr></table></figure>
+
+<p>参考：</p>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://www.ssl.com/faqs/what-is-an-x-509-certificate/">What Is an X.509 Certificate?</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.ssh.com/pki/">PKI - Public Key Infrastructure</a></li>
+<li><a target="_blank" rel="noopener" href="https://blog.freessl.cn/ssl-cert-format-introduce/">SSL 证书格式普及，PEM、CER、JKS、PKCS12</a></li>
+</ul>
+<h1 id="Android-ssh-终端-附加"><a href="#Android-ssh-终端-附加" class="headerlink" title="Android ssh 终端 (附加)"></a>Android ssh 终端 (附加)</h1><p>这一步主要是可以通过ssh操作终端（已经和信任自签名证书无关了哈，只是附加的。哈哈），因为<code>adb shell</code>实在是太难操作了。</p>
+<p>这里先安装 Termux （可以在 google play 或者 豌豆荚下载）</p>
+<p>安装 Termux 之后，安装sshd<br>手机上操作：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">pkg install openssh -y</span><br><span class="line"># start ssh</span><br><span class="line">sshd</span><br></pre></td></tr></table></figure>
+<p>配置远程登录</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"># PC copy ssh 公钥 (没有的化，执行 ssh-keygen 生成)</span><br><span class="line">➜  copy id_rsa.pub</span><br><span class="line"></span><br><span class="line"># Termux 粘贴公钥</span><br><span class="line">cd .ssh</span><br><span class="line">vim authorized_keys</span><br><span class="line">粘贴保存</span><br><span class="line"></span><br><span class="line">查看当前用户，后面登录用</span><br><span class="line">whoami</span><br><span class="line"></span><br><span class="line"># PC 上配置端口转发</span><br><span class="line">（如果是远程的话配置一下 adb connect xxxxxx:xxx）</span><br><span class="line">➜  adb forward --list</span><br><span class="line">➜  adb forward --remove-all</span><br><span class="line">➜  adb forward tcp:8022 tcp:8022</span><br><span class="line">➜  ssh u0_a221@127.0.0.1 -p 8022</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>Tips: 界面左滑，长按 <code>KEYBOARD</code> 可以出现辅助按钮， ESC、CTR、ALT 等。再次单按 <code>KEYBOARD</code> 可出现键盘。</p>
+</blockquote>
+<img src="/images/network/AndroidRoot/android_root.png">
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Certificate/" rel="tag"># Certificate</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/07/18/%E7%90%86%E8%A7%A3%E5%8D%8F%E7%A8%8B/" rel="prev" title="理解协程">
+      <i class="fa fa-chevron-left"></i> 理解协程
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/07/24/ubuntu20-04-%E9%83%A8%E7%BD%B2-Kubernetes-k8s/" rel="next" title="ubuntu20.04 部署 Kubernetes (k8s)">
+      ubuntu20.04 部署 Kubernetes (k8s) <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Android-root"><span class="nav-number">1.</span> <span class="nav-text">Android root</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%94%9F%E6%88%90%E8%87%AA%E7%AD%BE%E5%90%8D%E8%AF%81%E4%B9%A6"><span class="nav-number">2.</span> <span class="nav-text">生成自签名证书</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#X509-%E8%AF%81%E4%B9%A6%E7%AE%80%E4%BB%8B"><span class="nav-number">2.1.</span> <span class="nav-text">X509 证书简介</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%AF%81%E4%B9%A6%E6%A0%BC%E5%BC%8F"><span class="nav-number">2.2.</span> <span class="nav-text">证书格式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%88%A9%E7%94%A8-Mitm-%E7%9A%84-Root-CA-%E5%88%B6%E4%BD%9C%E8%87%AA%E7%AD%BE%E5%90%8D%E8%AF%81%E4%B9%A6"><span class="nav-number">2.3.</span> <span class="nav-text">利用 Mitm 的 Root CA 制作自签名证书</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%86%E7%A6%BBCA%E8%AF%81%E4%B9%A6%E5%92%8C%E7%A7%81%E9%92%A5"><span class="nav-number">2.3.1.</span> <span class="nav-text">分离CA证书和私钥</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%9B%E5%BB%BA%E8%87%AA%E7%AD%BE%E5%90%8D%E8%AF%81%E4%B9%A6"><span class="nav-number">2.3.2.</span> <span class="nav-text">创建自签名证书</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AF%BC%E5%85%A5%E6%A0%B9%E8%AF%81%E4%B9%A6%E5%88%B0Android%E6%89%8B%E6%9C%BA"><span class="nav-number">2.4.</span> <span class="nav-text">导入根证书到Android手机</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BF%AE%E6%94%B9%E6%96%87%E4%BB%B6%E5%90%8D"><span class="nav-number">2.4.1.</span> <span class="nav-text">修改文件名</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%89%E8%A3%85%E5%88%B0Android%E6%9C%BA"><span class="nav-number">2.4.2.</span> <span class="nav-text">安装到Android机</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Android-ssh-%E7%BB%88%E7%AB%AF-%E9%99%84%E5%8A%A0"><span class="nav-number">3.</span> <span class="nav-text">Android ssh 终端 (附加)</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="kiosk"
+      src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">kiosk</p>
+  <div class="site-description" itemprop="description">NoOps</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">26</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">10</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">20</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+  <div class="links-of-blogroll motion-element">
+    <div class="links-of-blogroll-title"><i class="fa fa-link fa-fw"></i>
+      Links
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="https://github.com/weijiaxiang007" title="https://github.com/weijiaxiang007" rel="noopener" target="_blank">Github</a>
+        </li>
+    </ul>
+  </div>
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-blog"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">kiosk</span>
+</div>
+
+<div class="BbeiAn-info">
+   	京ICP备 -
+	<a target="_blank" href="http://beian.miit.gov.cn/" text-decoration:none;padding-left:30px;background:url(https://s1.ax1x.com/2018/09/29/ilmwIH.png) no-repeat left center" rel="nofollow">京ICP备20015006号-1</a>	 
+</div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/medium-zoom@1/dist/medium-zoom.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+<script src="/js/bookmark.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+<script>
+if (document.querySelectorAll('pre.mermaid').length) {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/mermaid@8/dist/mermaid.min.js', () => {
+    mermaid.initialize({
+      theme    : 'neutral',
+      logLevel : 3,
+      flowchart: { curve     : 'linear' },
+      gantt    : { axisFormat: '%m/%d/%Y' },
+      sequence : { actorMargin: 50 }
+    });
+  }, window.mermaid);
+}
+</script>
+
+
+  
+
+  
+
+  
+
+  
+
+  <canvas id="evanyou"></canvas>
+  <style>
+    #evanyou {
+      position: fixed;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      z-index: -1;
+    }
+  </style>
+  <script src="/js/evan-you.js"></script>
+
+
+
+
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('https://cdn.jsdelivr.net/npm/valine@1.3.10/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'XhYn8GEq1Sg7ufJQAVmR4dWN-gzGzoHsz',
+      appKey     : 'r42k4lqU022wD7IvtwGaQfjN',
+      placeholder: "Just go go",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : false,
+      lang       : 'zh-cn' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
+</script>
+
+
+  <script src="https://libs.baidu.com/jquery/2.0.0/jquery.min.js"></script>
+  <script src="https://unpkg.com/mermaid@8.4.6/dist/mermaid.min.js"></script>
+  <script>mermaid.initialize({startOnLoad:true});</script>
+</body>
+</html>

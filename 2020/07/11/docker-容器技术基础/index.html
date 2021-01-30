@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-dragon.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-dragon.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <link rel="manifest" href="/images/manifest.json">
+  <meta name="msapplication-config" content="/images/browserconfig.xml">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/pace-js@1/themes/blue/pace-theme-minimal.css">
+  <script src="//cdn.jsdelivr.net/npm/pace-js@1/pace.min.js"></script>
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"kiosk007.top","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"right","display":"always","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":true,"color":"#484891","save":"auto"},"fancybox":false,"mediumzoom":true,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="docker 容器是随着PaaS技术的普及随之诞生的，Docker公司推出了docker并通过“容器镜像”解决了容器打包的根本性难题。而容器本身没有价值，有价值的是“容器编排技术”。Docker项目则通过容器技术解决了应用打包的根本性难题。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="docker 容器技术基础">
+<meta property="og:url" content="http://kiosk007.top/2020/07/11/docker-%E5%AE%B9%E5%99%A8%E6%8A%80%E6%9C%AF%E5%9F%BA%E7%A1%80/index.html">
+<meta property="og:site_name" content="kiosk007&#39;s Blog">
+<meta property="og:description" content="docker 容器是随着PaaS技术的普及随之诞生的，Docker公司推出了docker并通过“容器镜像”解决了容器打包的根本性难题。而容器本身没有价值，有价值的是“容器编排技术”。Docker项目则通过容器技术解决了应用打包的根本性难题。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://kiosk007.top/images/docker/docker_namespace.png">
+<meta property="og:image" content="http://kiosk007.top/images/docker/docker-cgroups.jpg">
+<meta property="og:image" content="http://kiosk007.top/images/docker/cgroups.png">
+<meta property="og:image" content="http://kiosk007.top/images/docker/cgroups_docker.png">
+<meta property="og:image" content="http://kiosk007.top/images/docker/aufs_image.png">
+<meta property="article:published_time" content="2020-07-10T16:32:00.000Z">
+<meta property="article:modified_time" content="2020-07-10T16:32:00.000Z">
+<meta property="article:author" content="kiosk">
+<meta property="article:tag" content="devops">
+<meta property="article:tag" content="docker">
+<meta property="article:tag" content="k8s">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://kiosk007.top/images/docker/docker_namespace.png">
+
+<link rel="canonical" href="http://kiosk007.top/2020/07/11/docker-%E5%AE%B9%E5%99%A8%E6%8A%80%E6%9C%AF%E5%9F%BA%E7%A1%80/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>docker 容器技术基础 | kiosk007's Blog</title>
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?6f3d277b6c83066a05a8b7db067b2308";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<link rel="alternate" href="/atom.xml" title="kiosk007's Blog" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">kiosk007's Blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">专注! 量变产生质变 !</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://kiosk007.top/2020/07/11/docker-%E5%AE%B9%E5%99%A8%E6%8A%80%E6%9C%AF%E5%9F%BA%E7%A1%80/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="kiosk">
+      <meta itemprop="description" content="NoOps">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="kiosk007's Blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          docker 容器技术基础
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-07-11 00:32:00" itemprop="dateCreated datePublished" datetime="2020-07-11T00:32:00+08:00">2020-07-11</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/docker/" itemprop="url" rel="index"><span itemprop="name">docker</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/2020/07/11/docker-%E5%AE%B9%E5%99%A8%E6%8A%80%E6%9C%AF%E5%9F%BA%E7%A1%80/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2020/07/11/docker-%E5%AE%B9%E5%99%A8%E6%8A%80%E6%9C%AF%E5%9F%BA%E7%A1%80/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p><a target="_blank" rel="noopener" href="https://hijiangtao.github.io/2018/04/17/Docker-in-Action/">docker</a> 容器是随着PaaS技术的普及随之诞生的，Docker公司推出了docker并通过“容器镜像”解决了容器打包的根本性难题。而容器本身没有价值，有价值的是“容器编排技术”。Docker项目则通过容器技术解决了应用打包的根本性难题。</p>
+<a id="more"></a>
+
+<hr>
+<p>为什么在开头就放出了 “容器本身没有价值” 的大话呢？</p>
+<p>因为容器本身只是一个沙盒技术，其使用<strong>Cgroups</strong>和<strong>Namespace</strong>技术创建出来一个隔离环境，而docker项目之所以能得到如此之高的关注也是因为他解决了应用打包和发布这个困扰运维人员的多年的技术难题。能够把应用装到集装箱内方便搬来搬去才是PaaS的最理想状态。</p>
+<p>Docker本身所用到的隔离技术也并不是什么黑科技，都是把已有的功能翻出来拼装了一下而已。<strong>容器的本质是一个“单进程”模型，本质是一个特殊的进程而已</strong></p>
+<blockquote>
+<p>Docker 容器技术由 Namespace、Cgroups、rootfs 三种技术构建出,其中Namespace、Cgroups 构建了容器的动态视图（称为 运行时），rootfs构建了容器的静态视图。</p>
+</blockquote>
+<h1 id="容器技术"><a href="#容器技术" class="headerlink" title="容器技术"></a>容器技术</h1><h2 id="Namespace"><a href="#Namespace" class="headerlink" title="Namespace"></a>Namespace</h2><p><strong>Namespace</strong>是Linux很早版本就实现的一个系统调用，他可以实现新创建一个进程的时候，为这个进程创建一个沙盒，比如让新的进程以为自己是1号PID进程，或者是让自己以为自己有一个新的网卡等等。</p>
+<p>Linux创建新进程的时候有一个可选参数，加上 <strong>CLONE_NEWPID</strong> 就可以让创建的进程拥有一个全新的进程空间，在宿主机的真实进程空间，其PID还是那个PID，但是新进程自己认为自己是当前空间里的1号进程。他们无法看到真实的进程空间。也无法看到其他Namespace里的进程空间。</p>
+<p><code>int pid = clone(main_function, stack_size, CLONE_NEWPID | SIGCHLD, NULL);</code></p>
+<p>类似的参数还有</p>
+<ul>
+<li><code>CLONE_NEWNS</code>: 用于指定Mount Namespace (挂载点)</li>
+<li><code>CLONE_NEWUTS</code>: 用于指定UTS Namespace (HOSTNAME和DOMAIN)</li>
+<li><code>CLONE_NEWIPC</code>: 用于指定IPC Namespace (共享内存、信号量和消息队列)</li>
+<li><code>CLONE_NEWPID</code>: 用于指定PID Namespace (进程号)</li>
+<li><code>CLONE_NEWNET</code>: 用于指定Network Namespace （网络）</li>
+<li><code>CLONE_NEWUSER</code>: 用于指定User Namespace  （用户）</li>
+</ul>
+<p>用户可以在**/proc/$pid/ns**文件下看到本进程所属的Namespace的文件信息。</p>
+<p>比如使用 <code>docker run -it busybox /bin/sh</code> 启动一个容器，然后在另外一个终端看到</p>
+<img src="/images/docker/docker_namespace.png">
+
+<p>同样，Linux也提供了其他系统调用，可以让其他进程加入到一个Namespace中，<code>int setns(int fd, int nstype);</code>，这也为之后的联盟式容器创造了可能。即多个进程使用相同的Namespace。系统调用<code>int unshare(int flags);</code>也为相同Namespace分家提供了技术支持。</p>
+<p>所以，Docker容器这个听起来高端大气的概念，只不过是在创建容器进程时，指定了这个进程一组Namespace参数而已。</p>
+<p>比如我们启动了一个容器。可以使用 <code>docker exec -it xxxxx /bin/bash</code> 进入到这个容器中。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">➜  docker inspect --format <span class="string">&#x27;&#123;&#123; .State.Pid &#125;&#125;&#x27;</span> 25 </span><br><span class="line">83488</span><br><span class="line"></span><br><span class="line">➜  sudo ls -l /proc/`docker inspect --format <span class="string">&#x27;&#123;&#123; .State.Pid &#125;&#125;&#x27;</span> 25`/ns</span><br><span class="line">总用量 0</span><br><span class="line">lrwxrwxrwx 1 root root 0 7月  24 14:35 cgroup -&gt; <span class="string">&#x27;cgroup:[4026531835]&#x27;</span></span><br><span class="line">lrwxrwxrwx 1 root root 0 7月  24 14:28 ipc -&gt; <span class="string">&#x27;ipc:[4026532521]&#x27;</span></span><br><span class="line">lrwxrwxrwx 1 root root 0 7月  24 14:28 mnt -&gt; <span class="string">&#x27;mnt:[4026532519]&#x27;</span></span><br><span class="line">lrwxrwxrwx 1 root root 0 7月  24 14:14 net -&gt; <span class="string">&#x27;net:[4026532586]&#x27;</span></span><br><span class="line">lrwxrwxrwx 1 root root 0 7月  24 14:28 pid -&gt; <span class="string">&#x27;pid:[4026532522]&#x27;</span></span><br><span class="line">lrwxrwxrwx 1 root root 0 7月  24 14:35 pid_for_children -&gt; <span class="string">&#x27;pid:[4026532522]&#x27;</span></span><br><span class="line">lrwxrwxrwx 1 root root 0 7月  24 14:35 user -&gt; <span class="string">&#x27;user:[4026531837]&#x27;</span></span><br><span class="line">lrwxrwxrwx 1 root root 0 7月  24 14:28 uts -&gt; <span class="string">&#x27;uts:[4026532520]&#x27;</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>每一个进程的所有Linux Namespace，都在/proc/[pid 进程号]/ns 下有一个虚拟文件，并且链接到真实的Namespace上。这样其他进程就可以加入一个已经存在的Namespace中。这也为了之后的pod（联盟式容器）打下基础。如 <code>docker run -it  -net container:25836f0da751  busybox ifconfig</code>。这就是起一个容器，但是network namespace 用和 258xx 这个容器用一个。</p>
+<p><strong>Namespace的问题</strong></p>
+<p>既然容器技术只是一个特殊的进程被隔离而已，那么其缺点就很明显了，那就是容器的<strong>“隔离不彻底”</strong>。</p>
+<p><font color="red">第一，容器既然是运行在宿主机上的一种特殊进程，那么多个进程还是共享同一个操作系统的内核（注意这里是Linux 内核 ，Mac和Windows上的容器首先是运行在Docker Machine上的，说白了运行在Linux虚拟机上）</font></p>
+<p><font color="red">第二，容器并不是所有资源都可以Namespace化的，典型的不能被Namespace的例子就是：时间</font></p>
+<p><font color="red">第三，由于避免不了多个容器共享宿主机内核的事实，那么就意味着容器的越狱比虚拟机简单的多了，一些危险的系统调用需要被监管加固</font></p>
+<p>正是上述的问题，Docker的安全性会很差，一般不会直接把Docker暴露在公网上。</p>
+<p>Refer:</p>
+<blockquote>
+<p><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/73248894">浅谈Linux Namesapce机制 (知乎)</a></p>
+</blockquote>
+<h2 id="Cgroups"><a href="#Cgroups" class="headerlink" title="Cgroups"></a>Cgroups</h2><p>上面提到容器只是一个特殊的进程而已，那么这个容器进程和宿主机上其他的普通进程是平等的。如果容器进程可以占用宿主机全部资源的话，这显然不符合沙盒技术的特征。<strong>而Cgroups则正是 Linux 内核中用来限制资源的功能。</strong> </p>
+<p>Cgroups 的本质是给进程挂上钩子 (hooks) ,当Task的运行涉及到某个资源的时就触发钩子上所携带的subsystem检测。最终进行资源限制和优先级分配。</p>
+<img src="/images/docker/docker-cgroups.jpg">
+
+<p><strong>Cgroups全称是 Linux Control Group, 他最主要的作用就是限制一个进程组能够使用的资源上限，包括CPU，内存，磁盘，网络带宽等</strong></p>
+<p>Cgroups 给用户直接暴露出来的操作接口是文件系统，即以文件和目录的方式组织在操作系统的 <code>/sys/fs/cgroups</code> 路径下，在这个路径下有很多诸如 <code>cpuset</code>、<code>cpu</code>、<code>memory</code> 这样的子目录。这些就是当前操作系统下可以被限制的资源类型。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">~ mount -t cgroup</span><br><span class="line">cgroup on /sys/fs/cgroup/systemd <span class="built_in">type</span> cgroup (rw,nosuid,nodev,noexec,relatime,xattr,name=systemd)</span><br><span class="line">cgroup on /sys/fs/cgroup/freezer <span class="built_in">type</span> cgroup (rw,nosuid,nodev,noexec,relatime,freezer)</span><br><span class="line">cgroup on /sys/fs/cgroup/cpu,cpuacct <span class="built_in">type</span> cgroup (rw,nosuid,nodev,noexec,relatime,cpu,cpuacct)</span><br><span class="line">cgroup on /sys/fs/cgroup/pids <span class="built_in">type</span> cgroup (rw,nosuid,nodev,noexec,relatime,pids)</span><br><span class="line">cgroup on /sys/fs/cgroup/net_cls,net_prio <span class="built_in">type</span> cgroup (rw,nosuid,nodev,noexec,relatime,net_cls,net_prio)</span><br><span class="line">...</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>怎么样去限制一个进程的资源呢？需要在这些目录之下再创建一个目录，如进入 <code>/sys/fs/cgroup/cpu</code> 目录下。创建目录 container 。这样一个目录，操作系统会自动在这个目录下生成子系统对应的资源限制文件。<br><img src="/images/docker/cgroups.png"></p>
+<p>这下，我们创建一个死循环，将CPU吃满，记录该进程的PID。向 container 组里的 cfs_quota 文件写入 2ms，这意味着每 100ms 内的单位时间内，被该控制组限制的进程只能使用2ms的CPU时间，即只能用到2%的计算力。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">root@XPS-13:/sys/fs/cgroup/cpu/container<span class="comment"># echo 2000 &gt; cpu.cfs_quota_us </span></span><br><span class="line">root@XPS-13:/sys/fs/cgroup/cpu/container<span class="comment"># echo 4918 &gt; tasks </span></span><br><span class="line">root@XPS-13:/sys/fs/cgroup/cpu/container<span class="comment"># </span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>打开htop指令可以看到刚才的死循环只有2%的CPU占用。</p>
+<blockquote>
+<p>实验完成后可以使用  <code>cgdelete -r cpu:container</code> 删除</p>
+</blockquote>
+<p>这样就可以理解 Linux Cgroups 的设计，其限制进程的方式也是简单粗暴，为一个子目录系统上添加一组资源限制文件的组合即可。在docker容器中，也可以直接通过命令来查看。</p>
+<p><code>docker run -it --cpu-period=100000 --cpu-quota=20000 busybox /bin/sh</code></p>
+<img src="/images/docker/cgroups_docker.png">
+
+
+<p><strong>Cgroups 的问题</strong><br>容器的Cgroups只是限制了某个进程的使用资源而已，而进程本身看到的资源还是宿主机的资源。</p>
+<p><font color="red"> /proc 文件系统并不知道 Cgroups 给某个进程做了什么限制。这就会造成在容器中使用 top,free,df 等命令看到的全部是宿主机上的资源。这会给应用的运行带来非常大的困惑。<br></font></p>
+<p>不过在生产环境，已经有 <strong><code>lxcfs</code></strong> 这样的技术可以修正这种偏差。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">$ apt install -y lxcfs</span><br><span class="line">$ systemctl start lxcfs</span><br><span class="line">$ docker run -it -m 500m  \</span><br><span class="line">      -v /var/lib/lxcfs/proc/cpuinfo:/proc/cpuinfo:rw \</span><br><span class="line">      -v /var/lib/lxcfs/proc/diskstats:/proc/diskstats:rw \</span><br><span class="line">      -v /var/lib/lxcfs/proc/meminfo:/proc/meminfo:rw \</span><br><span class="line">      -v /var/lib/lxcfs/proc/<span class="built_in">stat</span>:/proc/<span class="built_in">stat</span>:rw \</span><br><span class="line">      -v /var/lib/lxcfs/proc/swaps:/proc/swaps:rw \</span><br><span class="line">      -v /var/lib/lxcfs/proc/uptime:/proc/uptime:rw \</span><br><span class="line">      ubuntu:19.04 /bin/bash</span><br></pre></td></tr></table></figure>
+<p>其原理是把宿主机上的 <code>/var/lib/lxcfs/proc/meminfo</code> 文件挂载到容器的 <code>/proc/meminfo</code> 位置。</p>
+<p>refer:<br><a target="_blank" rel="noopener" href="https://cuisongliu.github.io/2019/03/docker/lxcfs/">https://cuisongliu.github.io/2019/03/docker/lxcfs/</a></p>
+<h2 id="镜像"><a href="#镜像" class="headerlink" title="镜像"></a>镜像</h2><p>Namespace 和 Cgroups 使这个特殊的进程看到的是隔离环境，而且使用的资源也被限制。那么这样还有一个点，就是进程看到的文件系统是什么呢？这里没有新的技术，还是最开始提到的Mount Namespace技术，拥有这项技术，可以给容器挂载一个全新、独立的文件系统。</p>
+<p>挂载完成之后使用 <code>chroot</code> 指令, 使得新的挂载点成为进程的 <code>/</code> 路径。一般为了让这个容器的根目录更为真实，一般会给进程容器的根目录下挂载一个完整操作系统的文件系统。比如 Ubuntu19.04 的ISO。<strong>而这个挂载在容器根目录上的、用来给容器进程提供隔离后执行环境的文件系统就是 rootfs（根文件系统）</strong></p>
+<p><font color="red">这里我再来强调一遍，容器是一个特殊的进程而已！！！rootfs只是操作系统所包含的文件、配置和目录，并不包含内核，内核是宿主机的内核。所以说 rootfs只是操作系统的驱壳，并没有操作系统的灵魂<br></font></p>
+<p>不过正是rootfs的存在，才有了容器作为PaaS的基础，一致性！开发的程序连同操作系统的整个目录环境被打包封装在一个集装箱里。真正的依赖库都放在了这个rootfs的<code>/var/lib/xxx</code> 里。</p>
+<p>还没完，虽然这个时候已经解决了大部分问题，但是每个容器创建的时候都需要一个rootfs未免也太浪费空间了，Docker的解决方法是提出 <code>layer</code> 的概念。用户每制造出来一个镜像就生成一个层。</p>
+<p>Linux操作系统又提供了一种联合文件系统（Union File System）的能力。<br>UFS 提供的能力是将多个目录挂载到同一个目录下，使得多个目录合并。</p>
+<p>假设有两个目录<code>A</code>和<code>B</code></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">$ tree</span><br><span class="line">.</span><br><span class="line">├── A</span><br><span class="line">│   ├── a</span><br><span class="line">│   └── x</span><br><span class="line">└── B</span><br><span class="line">    ├── b</span><br><span class="line">    └── x</span><br><span class="line"></span><br><span class="line">2 directories, 4 files</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>创建目录<code>C</code>,并且将两个目录挂载到一个公共的目录<code>C</code></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">$ mkdir C</span><br><span class="line">$ mount -t aufs -o dirs&#x3D;.&#x2F;A:.&#x2F;B none .&#x2F;C</span><br><span class="line">$ tree C</span><br><span class="line">C</span><br><span class="line">├── a</span><br><span class="line">├── b</span><br><span class="line">└── x</span><br><span class="line"></span><br><span class="line">0 directories, 3 files</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>以Docker容器为例,这个挂载点就是在 <code>/var/lib/docker/overlay2</code> 下。不出意外，这个下面拥有一个完整的ubuntu操作系统</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;var&#x2F;lib&#x2F;docker&#x2F;overlay2# ll 6f56172222645f34f4454ecdbfd592785245dc7b68511dc49723e0591aba54a8&#x2F;diff&#x2F;</span><br><span class="line">总用量 48</span><br><span class="line">drwxr-xr-x 10 root   root     4096 7月  11 01:04 .&#x2F;</span><br><span class="line">drwx------  3 root   root     4096 7月  11 01:04 ..&#x2F;</span><br><span class="line">drwxr-xr-x  2 root   root    12288 6月  27 08:21 bin&#x2F;</span><br><span class="line">drwxr-xr-x  2 root   root     4096 6月  27 08:21 dev&#x2F;</span><br><span class="line">drwxr-xr-x  3 root   root     4096 6月  27 08:21 etc&#x2F;</span><br><span class="line">drwxr-xr-x  2 nobody nogroup  4096 6月  27 08:21 home&#x2F;</span><br><span class="line">drwx------  2 root   root     4096 6月  27 08:21 root&#x2F;</span><br><span class="line">drwxrwxrwt  2 root   root     4096 6月  27 08:21 tmp&#x2F;</span><br><span class="line">drwxr-xr-x  3 root   root     4096 6月  27 08:21 usr&#x2F;</span><br><span class="line">drwxr-xr-x  4 root   root     4096 6月  27 08:21 var&#x2F;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>同时也可以看到，对应的操作系统挂载信息里面的overlay信息。可以看到最终多个目录被联合挂载到<code>/var/lib/docker/overlay2/3734ddb66fee5ad2339503f830d7d073f8179c98ccd74d3ce11077d7605f5ba1/merged</code> 上，而这个merged会最终呈现一个文件系统。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">cat &#x2F;proc&#x2F;mounts |grep overlay2</span><br><span class="line">overlay &#x2F;var&#x2F;lib&#x2F;docker&#x2F;overlay2&#x2F;3734ddb66fee5ad2339503f830d7d073f8179c98ccd74d3ce11077d7605f5ba1&#x2F;merged overlay rw,relatime,lowerdir&#x3D;&#x2F;var&#x2F;lib&#x2F;docker&#x2F;overlay2&#x2F;l&#x2F;N2BLQFHN3PRM3P4BR6LYEALQN5:&#x2F;var&#x2F;lib&#x2F;docker&#x2F;overlay2&#x2F;l&#x2F;FYVKPJJ3TF7THIM4Z4J2OAQTZN:&#x2F;var&#x2F;lib&#x2F;docker&#x2F;overlay2&#x2F;l&#x2F;GPBK6EICFMAEBZR5IBE6XTWPSO:&#x2F;var&#x2F;lib&#x2F;docker&#x2F;overlay2&#x2F;l&#x2F;FLBZS3ORDOYOD2ECQTRUMHAUBV:&#x2F;var&#x2F;lib&#x2F;docker&#x2F;overlay2&#x2F;l&#x2F;JAFCRW5O4V3HB7PWVABFY3SLRK,upperdir&#x3D;&#x2F;var&#x2F;lib&#x2F;docker&#x2F;overlay2&#x2F;3734ddb66fee5ad2339503f830d7d073f8179c98ccd74d3ce11077d7605f5ba1&#x2F;diff,workdir&#x3D;&#x2F;var&#x2F;lib&#x2F;docker&#x2F;overlay2&#x2F;3734ddb66fee5ad2339503f830d7d073f8179c98ccd74d3ce11077d7605f5ba1&#x2F;work,xino&#x3D;off 0 0</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<img src="/images/docker/aufs_image.png">
+
+<p>最下面的几层只读。上层的可写。而最上层是可读写。</p>
+<blockquote>
+<p>所以在运行容器的时候，只需要拉取不存在的 image layer。镜像一般完全拉下来的化需要3，4百M，一般的大厂都是采用 p2p 下载镜像，如 <a target="_blank" rel="noopener" href="https://developer.aliyun.com/article/244897">阿里的蜻蜓 p2p 下载</a>。</p>
+</blockquote>
+<h1 id="制作Docker镜像"><a href="#制作Docker镜像" class="headerlink" title="制作Docker镜像"></a>制作Docker镜像</h1><p>使用 golang 编写一个web应用。准备一个main.go</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> main</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> (</span><br><span class="line">        <span class="string">&quot;net/http&quot;</span></span><br><span class="line">        <span class="string">&quot;log&quot;</span></span><br><span class="line">        <span class="string">&quot;fmt&quot;</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">        http.HandleFunc(<span class="string">&quot;/&quot;</span>, indexHandler)</span><br><span class="line">        http.HandleFunc(<span class="string">&quot;/hello&quot;</span>, helloHandler)</span><br><span class="line">        log.Fatal(http.ListenAndServe(<span class="string">&quot;localhost:8000&quot;</span>, <span class="literal">nil</span>))</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">indexHandler</span><span class="params">(w http.ResponseWriter, r *http.Request)</span></span> &#123;</span><br><span class="line">        fmt.Fprintf(w, <span class="string">&quot;URL.Path = %q \n&quot;</span>, r.URL.Path)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">helloHandler</span><span class="params">(w http.ResponseWriter, r *http.Request)</span></span> &#123;</span><br><span class="line">        fmt.Fprintf(w, <span class="string">&quot;&lt;h1&gt;Hello World&lt;/h1&gt;&quot;</span>)</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>制作Dockerfile 文件。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">FROM golang:1.12-alpine</span><br><span class="line"></span><br><span class="line"># Set ENV</span><br><span class="line">ENV GO111MODULE&#x3D;on \</span><br><span class="line">    CGO_ENABLED&#x3D;0 \</span><br><span class="line">    GOOS&#x3D;linux \</span><br><span class="line">    GOARCH&#x3D;amd64</span><br><span class="line"></span><br><span class="line"># Set the Current Working Directory inside the container</span><br><span class="line">WORKDIR $GOPATH&#x2F;src&#x2F;app</span><br><span class="line"></span><br><span class="line"># Copy all file to &#x2F;app</span><br><span class="line">ADD . $GOPATH&#x2F;src&#x2F;app</span><br><span class="line"></span><br><span class="line"># Build the Go app</span><br><span class="line">RUN go build main.go</span><br><span class="line"></span><br><span class="line"># This container exposes port 8000 to the outside world</span><br><span class="line">EXPOSE 8000</span><br><span class="line"></span><br><span class="line"># Run the binary program produced by &#96;.&#x2F;main&#96;</span><br><span class="line">ENTRYPOINT [&quot;.&#x2F;main&quot;]</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>制作镜像在当前目录执行<code>docker build -t hello .</code><br>run 起来该容器<code>docker run -p 8000:8000 hello</code></p>
+<h2 id="上传到-docker-hub"><a href="#上传到-docker-hub" class="headerlink" title="上传到 docker hub"></a>上传到 docker hub</h2><p>在docker hub 上创建一个 docker 账号<br><br>使用 <code>docker login</code> 登录</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 为容器起一个完整的名字。</span></span><br><span class="line">docker tag helloworld your-docker-id/helloworld:v1</span><br><span class="line"></span><br><span class="line"><span class="comment"># 上传到docker hub 上</span></span><br><span class="line">docker push your-docker-id/helloworld:v1</span><br><span class="line"></span><br><span class="line"><span class="comment"># 在容器中新建文件</span></span><br><span class="line">docker <span class="built_in">exec</span> -it 29038er849jsa /bin/sh</span><br><span class="line">touch tmp.file</span><br><span class="line"><span class="built_in">exit</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 将新建的内容提交</span></span><br><span class="line">docker commit 29038er849jsa your-docker-id/helloworld:v2</span><br></pre></td></tr></table></figure>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/devops/" rel="tag"># devops</a>
+              <a href="/tags/docker/" rel="tag"># docker</a>
+              <a href="/tags/k8s/" rel="tag"># k8s</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/06/13/Git-%E6%90%9C%E7%B4%A2%E5%B0%8F%E6%8A%80%E5%B7%A7/" rel="prev" title="Github 搜索">
+      <i class="fa fa-chevron-left"></i> Github 搜索
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/07/18/%E7%90%86%E8%A7%A3%E5%8D%8F%E7%A8%8B/" rel="next" title="理解协程">
+      理解协程 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%AE%B9%E5%99%A8%E6%8A%80%E6%9C%AF"><span class="nav-number">1.</span> <span class="nav-text">容器技术</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Namespace"><span class="nav-number">1.1.</span> <span class="nav-text">Namespace</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Cgroups"><span class="nav-number">1.2.</span> <span class="nav-text">Cgroups</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%95%9C%E5%83%8F"><span class="nav-number">1.3.</span> <span class="nav-text">镜像</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%88%B6%E4%BD%9CDocker%E9%95%9C%E5%83%8F"><span class="nav-number">2.</span> <span class="nav-text">制作Docker镜像</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%8A%E4%BC%A0%E5%88%B0-docker-hub"><span class="nav-number">2.1.</span> <span class="nav-text">上传到 docker hub</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="kiosk"
+      src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">kiosk</p>
+  <div class="site-description" itemprop="description">NoOps</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">26</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">10</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">20</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+  <div class="links-of-blogroll motion-element">
+    <div class="links-of-blogroll-title"><i class="fa fa-link fa-fw"></i>
+      Links
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="https://github.com/weijiaxiang007" title="https://github.com/weijiaxiang007" rel="noopener" target="_blank">Github</a>
+        </li>
+    </ul>
+  </div>
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-blog"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">kiosk</span>
+</div>
+
+<div class="BbeiAn-info">
+   	京ICP备 -
+	<a target="_blank" href="http://beian.miit.gov.cn/" text-decoration:none;padding-left:30px;background:url(https://s1.ax1x.com/2018/09/29/ilmwIH.png) no-repeat left center" rel="nofollow">京ICP备20015006号-1</a>	 
+</div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/medium-zoom@1/dist/medium-zoom.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+<script src="/js/bookmark.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+<script>
+if (document.querySelectorAll('pre.mermaid').length) {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/mermaid@8/dist/mermaid.min.js', () => {
+    mermaid.initialize({
+      theme    : 'neutral',
+      logLevel : 3,
+      flowchart: { curve     : 'linear' },
+      gantt    : { axisFormat: '%m/%d/%Y' },
+      sequence : { actorMargin: 50 }
+    });
+  }, window.mermaid);
+}
+</script>
+
+
+  
+
+  
+
+  
+
+  
+
+  <canvas id="evanyou"></canvas>
+  <style>
+    #evanyou {
+      position: fixed;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      z-index: -1;
+    }
+  </style>
+  <script src="/js/evan-you.js"></script>
+
+
+
+
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('https://cdn.jsdelivr.net/npm/valine@1.3.10/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'XhYn8GEq1Sg7ufJQAVmR4dWN-gzGzoHsz',
+      appKey     : 'r42k4lqU022wD7IvtwGaQfjN',
+      placeholder: "Just go go",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : false,
+      lang       : 'zh-cn' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
+</script>
+
+
+  <script src="https://libs.baidu.com/jquery/2.0.0/jquery.min.js"></script>
+  <script src="https://unpkg.com/mermaid@8.4.6/dist/mermaid.min.js"></script>
+  <script>mermaid.initialize({startOnLoad:true});</script>
+</body>
+</html>

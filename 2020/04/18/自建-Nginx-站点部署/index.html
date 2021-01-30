@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-dragon.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-dragon.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <link rel="manifest" href="/images/manifest.json">
+  <meta name="msapplication-config" content="/images/browserconfig.xml">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/pace-js@1/themes/blue/pace-theme-minimal.css">
+  <script src="//cdn.jsdelivr.net/npm/pace-js@1/pace.min.js"></script>
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"kiosk007.top","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"right","display":"always","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":true,"color":"#484891","save":"auto"},"fancybox":false,"mediumzoom":true,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="这段时间搭建自己的 Nginx 服务器，顺便总结回顾了一些运维相关的知识点，详细介绍了如何搭建一个企业级的高性能 Nginx 服务器。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="自建 Nginx 部署">
+<meta property="og:url" content="http://kiosk007.top/2020/04/18/%E8%87%AA%E5%BB%BA-Nginx-%E7%AB%99%E7%82%B9%E9%83%A8%E7%BD%B2/index.html">
+<meta property="og:site_name" content="kiosk007&#39;s Blog">
+<meta property="og:description" content="这段时间搭建自己的 Nginx 服务器，顺便总结回顾了一些运维相关的知识点，详细介绍了如何搭建一个企业级的高性能 Nginx 服务器。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2020-04-18T12:51:00.000Z">
+<meta property="article:modified_time" content="2020-04-18T12:51:00.000Z">
+<meta property="article:author" content="kiosk">
+<meta property="article:tag" content="nginx">
+<meta property="article:tag" content="ops">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://kiosk007.top/2020/04/18/%E8%87%AA%E5%BB%BA-Nginx-%E7%AB%99%E7%82%B9%E9%83%A8%E7%BD%B2/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>自建 Nginx 部署 | kiosk007's Blog</title>
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?6f3d277b6c83066a05a8b7db067b2308";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<link rel="alternate" href="/atom.xml" title="kiosk007's Blog" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">kiosk007's Blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">专注! 量变产生质变 !</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://kiosk007.top/2020/04/18/%E8%87%AA%E5%BB%BA-Nginx-%E7%AB%99%E7%82%B9%E9%83%A8%E7%BD%B2/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="kiosk">
+      <meta itemprop="description" content="NoOps">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="kiosk007's Blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          自建 Nginx 部署
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-04-18 20:51:00" itemprop="dateCreated datePublished" datetime="2020-04-18T20:51:00+08:00">2020-04-18</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E8%BF%90%E7%BB%B4/" itemprop="url" rel="index"><span itemprop="name">运维</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/2020/04/18/%E8%87%AA%E5%BB%BA-Nginx-%E7%AB%99%E7%82%B9%E9%83%A8%E7%BD%B2/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2020/04/18/%E8%87%AA%E5%BB%BA-Nginx-%E7%AB%99%E7%82%B9%E9%83%A8%E7%BD%B2/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>这段时间搭建自己的 <a target="_blank" rel="noopener" href="http://nginx.org/">Nginx</a> 服务器，顺便总结回顾了一些运维相关的知识点，详细介绍了如何搭建一个企业级的高性能 Nginx 服务器。</p>
+<a id="more"></a>
+<h1 id="部署"><a href="#部署" class="headerlink" title="部署"></a>部署</h1><h2 id="部署环境"><a href="#部署环境" class="headerlink" title="部署环境"></a>部署环境</h2><ul>
+<li>本机：Ubuntu 19.10</li>
+<li>Nginx：tengine-2.3.2</li>
+<li>部署脚本：<a target="_blank" rel="noopener" href="https://github.com/weijiaxiang007/nginx_install">https://github.com/weijiaxiang007/nginx_install</a></li>
+</ul>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ git <span class="built_in">clone</span> https://github.com/weijiaxiang007/nginx_install.git</span><br></pre></td></tr></table></figure>
+
+<h2 id="Nginx-部署"><a href="#Nginx-部署" class="headerlink" title="Nginx 部署"></a>Nginx 部署</h2><blockquote>
+<p>Nginx是一款自由的、开源的、高性能的HTTP服务器和反向代理服务器，也是今天的主角。</p>
+</blockquote>
+<p>各组件版本</p>
+<ul>
+<li>luajit=”LuaJIT-2.0.5”</li>
+<li>openssl=”openssl-1.1.1f”</li>
+<li>pcre=”pcre-8.44”</li>
+<li>tengine=”tengine-2.3.2”</li>
+<li>jemalloc=”jemalloc-5.2.1”</li>
+</ul>
+<p>nginx 部署脚本 <a target="_blank" rel="noopener" href="https://github.com/weijiaxiang007/nginx_install/blob/master/install.sh">install.sh</a></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$ sudo su</span><br><span class="line">$ <span class="built_in">cd</span> nginx_install</span><br><span class="line">$ bash install.sh</span><br></pre></td></tr></table></figure>
+<p>默认安装用户为 work ，安装目录在 <code>/home/work/nginx</code>, 自定义虚拟主机可以放在 <code>/home/work/nginx/conf.d</code>。默认配置文件在<code>/home/work/nginx/conf/nginx.conf</code>。之后Nginx将作为一个出色的反向代理服务器，成为后面工作的主角。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># nginx -V</span></span><br><span class="line">JXWServer version: JXWServer/2.3.2</span><br><span class="line">nginx version: nginx/1.17.3</span><br><span class="line">built by gcc 9.2.1 20191008 (Ubuntu 9.2.1-9ubuntu2) </span><br><span class="line">built with OpenSSL 1.1.1f  31 Mar 2020</span><br><span class="line">TLS SNI support enabled</span><br><span class="line">configure arguments: --prefix=/home/work/nginx --error-log-path=/home/work/<span class="built_in">log</span>/nginx/nginx.log --add-module=./modules/ngx_http_upstream_dyups_module --add-module=./modules/ngx_http_concat_module --add-module=./modules/ngx_http_upstream_session_sticky_module --add-module=./modules/ngx_http_upstream_check_module --add-module=./modules/ngx_http_upstream_dynamic_module --add-module=./modules/ngx_http_lua_module --add-module=./modules/ngx_backtrace_module --add-module=./modules/ngx_http_reqstat_module --add-module=./modules/ngx_http_user_agent_module --add-module=./modules/ngx_multi_upstream_module --add-module=./modules/headers-more-nginx-module --add-module=./modules/ngx_cache_purge --add-module=./modules/ngx_devel_kit --add-module=./modules/echo-nginx-module --add-module=./modules/ngx_slab_stat --add-module=./modules/ngx_http_sysguard_module --add-module=./modules/ngx_http_upstream_consistent_hash_module --add-module=./modules/ngx_http_proxy_connect_module --add-module=./modules/ngx_http_upstream_keepalive_module --without-http_upstream_keepalive_module --with-http_gunzip_module --with-http_gzip_static_module --with-http_ssl_module --with-http_v2_module --with-http_realip_module --with-http_addition_module --without-mail_pop3_module --without-mail_imap_module --without-mail_smtp_module --with-http_sub_module --with-pcre=/tmp/nginx_install/pcre-8.44 --with-pcre-jit --with-openssl=/tmp/nginx_install/openssl-1.1.1f --with-openssl-opt=enable-shared --with-jemalloc=/tmp/nginx_install/jemalloc-5.2.1 --with-luajit-inc=/usr/<span class="built_in">local</span>/include/luajit-2.0 --with-luajit-lib=/usr/<span class="built_in">local</span>/lib --with-http_auth_request_module --with-http_stub_status_module --with-google_perftools_module --with-ld-opt=-ltcmalloc --with-http_secure_link_module</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h2 id="Bind-部署"><a href="#Bind-部署" class="headerlink" title="Bind 部署"></a>Bind 部署</h2><blockquote>
+<p>BIND是一种开源的DNS（Domain Name System）协议的实现，包含对域名的查询和响应所需的所有软件。它是互联网上最广泛使用的一种DNS服务器，对于类UNIX系统来说，已经成为事实上的标准。</p>
+</blockquote>
+<p>我们搭建内网的dns服务器，不仅可以解析我们自定义的域名，也可以作为转发型\缓存型的DNS服务器解析其他公网域名。</p>
+<p>部署版本</p>
+<ul>
+<li>bind9</li>
+</ul>
+<p>安装bind9</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ sudo apt-get update</span><br><span class="line">$ sudo apt-get install bind9 bind9utils bind9-doc</span><br></pre></td></tr></table></figure>
+<p>bind9的配置文件默认在 <code>/etc/bind</code>。主配置文件被保存在下列文件中。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">/etc/<span class="built_in">bind</span>/named.conf</span><br><span class="line">/etc/<span class="built_in">bind</span>/named.conf.options</span><br><span class="line">/etc/<span class="built_in">bind</span>/named.conf.local</span><br></pre></td></tr></table></figure>
+<p>我的部署脚本中有最简版的bind9配置文件模板，可以将 <code>./bind9/named.conf.options</code> 拷贝到 <code>/etc/bind/named.conf.options</code>。然后照着例子生成一个 <code>db.demo.com</code>的待解析的文件即可<br>对配置文件做下简单的介绍</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># cat named.conf.options</span></span><br><span class="line">...</span><br><span class="line">		forwarders &#123;</span><br><span class="line">                127.0.0.53;  // 对于公网域名，直接转发。并缓存记录</span><br><span class="line">        &#125;;</span><br><span class="line"></span><br><span class="line">        //========================================================================</span><br><span class="line">        // If BIND logs error messages about the root key being expired,</span><br><span class="line">        // you will need to update your keys.  See https://www.isc.org/bind-keys</span><br><span class="line">        //========================================================================</span><br><span class="line">        dnssec-validation auto;  // 递归查询服务器上开启DNSSEC验证</span><br><span class="line"></span><br><span class="line">        max-cache-ttl 120;  </span><br><span class="line">        max-ncache-ttl 120;</span><br><span class="line">        version <span class="string">&quot;[no version.]&quot;</span>;</span><br><span class="line">        minimal-responses yes;</span><br><span class="line">        recursion yes;    // 允许递归查询，直接返回结果</span><br><span class="line">        allow-query &#123;any;&#125;;  // 允许所有主机查询</span><br><span class="line">...</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>上述的例子是最简单的例子，没有引入复杂的视图，logging等概念，详情可以参考如下链接。如果这是本机访问的话，大可不必搭建bind服务器，可以直接写 <code>/etc/hosts</code></p>
+<p>More Info:</p>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://wiki.ubuntu.org.cn/Bind9%E5%AE%89%E8%A3%85%E8%AE%BE%E7%BD%AE%E6%8C%87%E5%8D%97#Repositories_.E8.BD.AF.E4.BB.B6.E5.BA.93">Bind9安装设置指南</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.cnblogs.com/ibyte/p/5805548.html">DNS(三)DNS SEC(域名系统安全扩展)</a></li>
+<li><a target="_blank" rel="noopener" href="https://blog.csdn.net/zhiyuan_2007/article/details/48930449">bind9支持edns-client-subnet</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.cnblogs.com/anpengapple/p/5877661.html">BIND简易教程（1）：安装及基本配置</a></li>
+</ul>
+<h2 id="自签证书"><a href="#自签证书" class="headerlink" title="自签证书"></a>自签证书</h2><p>为了能实现https访问当前的自定义的域名。需要自签证书，然后将自签证书导入到系统证书中。</p>
+<p>自签证书工具</p>
+<ul>
+<li>openssl1.1.1k</li>
+</ul>
+<p>自签证书已经写好了脚本只需要简单的运行即可生成自签证书</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$ <span class="built_in">cd</span> ssl</span><br><span class="line">$ bash create_ca.sh</span><br><span class="line">$ bash create_client_cert.sh --ou SRE --cn kiosk.io --email admin@kiosk.io</span><br></pre></td></tr></table></figure>
+<p>ca的证书在 <code>./demoCA/cacert.pem</code><br>kiosk.io 的证书在 <code>./kiosk.io/kiosk.io.crt</code> ， key在 <code>./kiosk.io/kiosk.io.key</code> 的。拷贝至Nginx所在目录即可。<br>将ca证书加入系统证书中。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ sudo cp .&#x2F;demoCA&#x2F;cacert.pem &#x2F;usr&#x2F;local&#x2F;share&#x2F;ca-certificates&#x2F;cacert.crt</span><br><span class="line">$ sudo update-ca-certificates</span><br></pre></td></tr></table></figure>
+<p>其实update-ca-certificates是一个shell脚本,命令的本质其实是将PEM格式的根证书内容附加到**/etc/ssl/certs/ca-certificates.crt**, 而**/etc/ssl/certs/ca-certificates.crt** 中本身就包含了系统自带的各种可信根证书。</p>
+<p>当然在企业内网还可以签署 客户端证书，没有装客户端证书的用户将不能访问该站点。在Nginx的配置文件中加上如下配置。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">ssl_client_certificate ssl_certs/demoCA/cacert.pem;</span><br><span class="line">ssl_crl ssl_certs/demoCA/private/ca.crl;</span><br><span class="line">ssl_verify_client on;</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>ssl_client_certificate就是客户端证书的CA证书了，代表此CA签发的证书都是可信的。<br>ssl_verify_client on;代表强制启用客户端认证，非法客户端(无证书，证书不可信)都会返回400错。</p>
+</blockquote>
+<p>特别注意ssl_crl这个配置，代表Nginx会读取一个CRL(Certificate Revoke List)文件，之前说过，可能会有收回用户权限的需求，因此我们必须有吊销证书的功能，产生一个CRL文件让Nginx知道哪些证书被吊销了即可。</p>
+<p>需要收回签发证书时，只需要</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ bash ./revoke_cert.sh aaa.demo.com</span><br></pre></td></tr></table></figure>
+<p>这个脚本会自动吊销他的签证文件crt，并且自动更新CRL文件。特别注意需要reload或restart nginx才能让nginx重新加载CRL。这样被吊销的证书将无法访问网站了。</p>
+<p><strong>可能出现的问题</strong></p>
+<ul>
+<li>NET::ERR_CERT_COMMON_NAME_INVALID</li>
+</ul>
+<p>自建CA和自签证书文档，但是发现自己生成之后，将ca证书导入客户端之后，Chrome访问网站总是会出现该错误。</p>
+<p>如果要通过 修改 openssl.cnf 来签发证书，除将上述配置直接改到 openssl.cnf 相应位置外，必须将配置中的 basicConstraints = CA:FLASE 改为 basicConstraints = CA:TRUE，否则修改不生效，这是其他教程没有提到的。</p>
+<p>如果是域名证书，也可以在此可以添加多域名，如：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># vim http.ext</span></span><br><span class="line">keyUsage = nonRepudiation, digitalSignature, keyEncipherment</span><br><span class="line">extendedKeyUsage = serverAuth, clientAuth</span><br><span class="line">subjectAltName=@SubjectAlternativeName</span><br><span class="line"></span><br><span class="line">[ SubjectAlternativeName ]</span><br><span class="line">DNS.1=test.com</span><br><span class="line">DNS.2=www.test.com</span><br></pre></td></tr></table></figure>
+<p>extendedKeyUsage 可以指定证书目的，即用途，一般有：</p>
+<ul>
+<li>serverAuth：保证远程计算机的身份</li>
+<li>clientAuth：向远程计算机证明你的身份</li>
+<li>codeSigning：确保软件来自软件发布者，保护软件在发行后不被更改</li>
+<li>emailProtection：保护电子邮件消息</li>
+<li>timeStamping：允许用当前时间签名数据</li>
+</ul>
+<p>如果不指定，则默认为 所有应用程序策略</p>
+<p>More Info:</p>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://kiosk.io/admin/#/posts/ck95p6zs90000sfc6frdv25ia">Ubuntu添加可信任根证书</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.cnblogs.com/will-space/p/11913744.html">OpenSSL自签发自建CA签发SSL证书</a></li>
+<li><a target="_blank" rel="noopener" href="https://blog.dteam.top/posts/2018-06/nginx-ssl%E5%BF%AB%E9%80%9F%E5%8F%8C%E5%90%91%E8%AE%A4%E8%AF%81%E9%85%8D%E7%BD%AE%E8%84%9A%E6%9C%AC.html">Nginx SSL快速双向认证配置(脚本)</a></li>
+<li><a target="_blank" rel="noopener" href="https://vimsky.com/article/3608.html">如何将.pem转换为.crt和.key？</a></li>
+</ul>
+<h1 id="Nginx-配置文件"><a href="#Nginx-配置文件" class="headerlink" title="Nginx 配置文件"></a>Nginx 配置文件</h1><p>在<code>/home/work/nginx/conf.d/</code> 下新建<code>kiosk.io.conf</code><br>配置文件内容如下：</p>
+<figure class="highlight nginx"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br></pre></td><td class="code"><pre><span class="line"><span class="attribute">upstream</span>  hexo_backend &#123;</span><br><span class="line">        <span class="attribute">server</span> <span class="number">127.0.0.1:4000</span>  weight=<span class="number">1</span> max_fails=<span class="number">2</span> fail_timeout=<span class="number">30s</span>;      </span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="section">server</span> &#123;</span><br><span class="line">	<span class="attribute">listen</span> <span class="number">80</span>;</span><br><span class="line">	<span class="attribute">listen</span> <span class="number">443</span> ssl;</span><br><span class="line">        <span class="attribute">server_name</span> kiosk.io http2;</span><br><span class="line"></span><br><span class="line">	<span class="attribute">if</span> ($scheme != <span class="string">&quot;https&quot;</span>) &#123;</span><br><span class="line">    		<span class="attribute">return</span> <span class="number">301</span> https://$http_host$request_uri;</span><br><span class="line">  	&#125;</span><br><span class="line">	</span><br><span class="line">        <span class="attribute">access_log</span>  /home/work/log/nginx/https_kiosk.io.log jxjson;</span><br><span class="line">        <span class="attribute">error_log</span>   /home/work/log/nginx/ssl-<span class="literal">error</span>.log <span class="literal">notice</span>;</span><br><span class="line"></span><br><span class="line">        <span class="attribute">ssl_certificate</span>         ssl/kiosk.io/kiosk.io.crt;</span><br><span class="line">        <span class="attribute">ssl_certificate_key</span>     ssl/kiosk.io/kiosk.io.key;</span><br><span class="line">        <span class="attribute">ssl_prefer_server_ciphers</span>   <span class="literal">on</span>;</span><br><span class="line"></span><br><span class="line">        <span class="attribute">ssl_session_cache</span>  shared:SSL:<span class="number">80m</span>;</span><br><span class="line">        <span class="attribute">ssl_session_timeout</span>  <span class="number">5m</span>;</span><br><span class="line">        <span class="attribute">ssl_protocols</span>   TLSv1.<span class="number">1</span> TLSv1.<span class="number">2</span> TLSv1.<span class="number">3</span>;</span><br><span class="line">        <span class="attribute">ssl_ciphers</span> EECDH+AESGCM:EDH+AESGCM:AES256+EECDH:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-SHA384:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA:ECDHE-RSA-AES128-SHA:ECDHE-RSA-DES-CBC3-SHA:DHE-RSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-SHA256:DHE-RSA-AES128-SHA256:DHE-RSA-AES256-SHA:DHE-RSA-AES128-SHA:DHE-RSA-DES-CBC3-SHA:AES256-GCM-SHA384:AES128-GCM-SHA256:AES256-SHA256:AES128-SHA256:AES256-SHA:AES128-SHA:DES-CBC3-SHA:HIGH:!aNULL:!eNULL:!EXPORT:!DES:!MD5:!PSK:!RC4;</span><br><span class="line">        <span class="attribute">ssl_stapling</span> <span class="literal">on</span>; </span><br><span class="line">        <span class="attribute">ssl_stapling_verify</span> <span class="literal">on</span>; </span><br><span class="line">        <span class="attribute">ssl_trusted_certificate</span> ssl/kiosk.io/kiosk.io.crt;</span><br><span class="line">        <span class="attribute">ssl_dhparam</span> ssl/dhparam.pem;</span><br><span class="line">                </span><br><span class="line">        <span class="attribute">ssl_early_data</span>     <span class="literal">on</span>;</span><br><span class="line">        <span class="attribute">add_header</span> Strict-Transport-Security <span class="string">&quot;max-age=31536000; includeSubdomains&quot;</span>;</span><br><span class="line">        <span class="attribute">add_header</span> X-Content-Type-Options nosniff;</span><br><span class="line"></span><br><span class="line">        <span class="attribute">proxy_set_header</span>   Early-Data $ssl_early_data;</span><br><span class="line">        <span class="attribute">proxy_set_header</span>   Host  $host;</span><br><span class="line">        <span class="attribute">proxy_set_header</span>   X-Forwarded-For   $proxy_add_x_forwarded_for;</span><br><span class="line">        <span class="attribute">proxy_set_header</span>   X-Real-IP         $remote_addr;</span><br><span class="line">        <span class="attribute">proxy_set_header</span>   X-Forwarded-Proto $scheme;</span><br><span class="line">	</span><br><span class="line">	<span class="attribute">location</span> / &#123;</span><br><span class="line">            <span class="attribute">proxy_pass</span> http://hexo_backend/;</span><br><span class="line">        &#125;</span><br><span class="line">	</span><br><span class="line">	<span class="attribute">error_page</span>   <span class="number">500</span> <span class="number">502</span> <span class="number">503</span> <span class="number">504</span>  /50x.html;</span><br><span class="line">        <span class="attribute">proxy_intercept_errors</span> <span class="literal">on</span>;</span><br><span class="line">        <span class="attribute">location</span> = /50x.html &#123;</span><br><span class="line">               <span class="attribute">root</span>   html;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/nginx/" rel="tag"># nginx</a>
+              <a href="/tags/ops/" rel="tag"># ops</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/04/06/QUIC-%E5%8D%8F%E8%AE%AE/" rel="prev" title="认识 QUIC 协议">
+      <i class="fa fa-chevron-left"></i> 认识 QUIC 协议
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/04/25/%E5%87%BD%E6%95%B0%E5%BC%8F%E7%BC%96%E7%A8%8B%E6%80%9D%E7%BB%B4/" rel="next" title="函数式编程思维">
+      函数式编程思维 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E9%83%A8%E7%BD%B2"><span class="nav-number">1.</span> <span class="nav-text">部署</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%83%A8%E7%BD%B2%E7%8E%AF%E5%A2%83"><span class="nav-number">1.1.</span> <span class="nav-text">部署环境</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Nginx-%E9%83%A8%E7%BD%B2"><span class="nav-number">1.2.</span> <span class="nav-text">Nginx 部署</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Bind-%E9%83%A8%E7%BD%B2"><span class="nav-number">1.3.</span> <span class="nav-text">Bind 部署</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%87%AA%E7%AD%BE%E8%AF%81%E4%B9%A6"><span class="nav-number">1.4.</span> <span class="nav-text">自签证书</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Nginx-%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6"><span class="nav-number">2.</span> <span class="nav-text">Nginx 配置文件</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="kiosk"
+      src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">kiosk</p>
+  <div class="site-description" itemprop="description">NoOps</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">26</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">10</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">20</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+  <div class="links-of-blogroll motion-element">
+    <div class="links-of-blogroll-title"><i class="fa fa-link fa-fw"></i>
+      Links
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="https://github.com/weijiaxiang007" title="https://github.com/weijiaxiang007" rel="noopener" target="_blank">Github</a>
+        </li>
+    </ul>
+  </div>
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-blog"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">kiosk</span>
+</div>
+
+<div class="BbeiAn-info">
+   	京ICP备 -
+	<a target="_blank" href="http://beian.miit.gov.cn/" text-decoration:none;padding-left:30px;background:url(https://s1.ax1x.com/2018/09/29/ilmwIH.png) no-repeat left center" rel="nofollow">京ICP备20015006号-1</a>	 
+</div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/medium-zoom@1/dist/medium-zoom.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+<script src="/js/bookmark.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+<script>
+if (document.querySelectorAll('pre.mermaid').length) {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/mermaid@8/dist/mermaid.min.js', () => {
+    mermaid.initialize({
+      theme    : 'neutral',
+      logLevel : 3,
+      flowchart: { curve     : 'linear' },
+      gantt    : { axisFormat: '%m/%d/%Y' },
+      sequence : { actorMargin: 50 }
+    });
+  }, window.mermaid);
+}
+</script>
+
+
+  
+
+  
+
+  
+
+  
+
+  <canvas id="evanyou"></canvas>
+  <style>
+    #evanyou {
+      position: fixed;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      z-index: -1;
+    }
+  </style>
+  <script src="/js/evan-you.js"></script>
+
+
+
+
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('https://cdn.jsdelivr.net/npm/valine@1.3.10/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'XhYn8GEq1Sg7ufJQAVmR4dWN-gzGzoHsz',
+      appKey     : 'r42k4lqU022wD7IvtwGaQfjN',
+      placeholder: "Just go go",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : false,
+      lang       : 'zh-cn' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
+</script>
+
+
+  <script src="https://libs.baidu.com/jquery/2.0.0/jquery.min.js"></script>
+  <script src="https://unpkg.com/mermaid@8.4.6/dist/mermaid.min.js"></script>
+  <script>mermaid.initialize({startOnLoad:true});</script>
+</body>
+</html>

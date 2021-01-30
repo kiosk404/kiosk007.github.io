@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-dragon.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-dragon.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <link rel="manifest" href="/images/manifest.json">
+  <meta name="msapplication-config" content="/images/browserconfig.xml">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/pace-js@1/themes/blue/pace-theme-minimal.css">
+  <script src="//cdn.jsdelivr.net/npm/pace-js@1/pace.min.js"></script>
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"kiosk007.top","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"right","display":"always","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":true,"color":"#484891","save":"auto"},"fancybox":false,"mediumzoom":true,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="RPC 全称 (Remote Procedure Call)，远程过程调用，指的是一台计算机通过网络请求另一台计算机的上服务，从而不需要了解底层网络细节，RPC 是构建在已经存在的协议（TCP&#x2F;IP，HTTP 等）之上的。gRPC 是云原生计算基金会（CNCF）项目，gRPC 一开始由 google 开发，是一款语言中立、平台中立的服务间通信框架，使用 gRPC 可以使得客户端像调用本地方法一样，">
+<meta property="og:type" content="article">
+<meta property="og:title" content="gRPC Quick Start ">
+<meta property="og:url" content="http://kiosk007.top/2020/11/25/gRPC-Quick-Start/index.html">
+<meta property="og:site_name" content="kiosk007&#39;s Blog">
+<meta property="og:description" content="RPC 全称 (Remote Procedure Call)，远程过程调用，指的是一台计算机通过网络请求另一台计算机的上服务，从而不需要了解底层网络细节，RPC 是构建在已经存在的协议（TCP&#x2F;IP，HTTP 等）之上的。gRPC 是云原生计算基金会（CNCF）项目，gRPC 一开始由 google 开发，是一款语言中立、平台中立的服务间通信框架，使用 gRPC 可以使得客户端像调用本地方法一样，">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://kiosk007.top/images/network/gRPC/grpc_concept_diagram.png">
+<meta property="og:image" content="http://kiosk007.top/images/network/gRPC/grpc_v1.png">
+<meta property="og:image" content="http://kiosk007.top/images/network/gRPC/grpc_v2.png">
+<meta property="article:published_time" content="2020-11-25T15:37:00.000Z">
+<meta property="article:modified_time" content="2020-11-25T15:37:00.000Z">
+<meta property="article:author" content="kiosk">
+<meta property="article:tag" content="grpc">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://kiosk007.top/images/network/gRPC/grpc_concept_diagram.png">
+
+<link rel="canonical" href="http://kiosk007.top/2020/11/25/gRPC-Quick-Start/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>gRPC Quick Start  | kiosk007's Blog</title>
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?6f3d277b6c83066a05a8b7db067b2308";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<link rel="alternate" href="/atom.xml" title="kiosk007's Blog" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">kiosk007's Blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">专注! 量变产生质变 !</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://kiosk007.top/2020/11/25/gRPC-Quick-Start/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="kiosk">
+      <meta itemprop="description" content="NoOps">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="kiosk007's Blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          gRPC Quick Start 
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-11-25 23:37:00" itemprop="dateCreated datePublished" datetime="2020-11-25T23:37:00+08:00">2020-11-25</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/network/" itemprop="url" rel="index"><span itemprop="name">network</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/2020/11/25/gRPC-Quick-Start/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2020/11/25/gRPC-Quick-Start/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>RPC 全称 (Remote Procedure Call)，远程过程调用，指的是一台计算机通过网络请求另一台计算机的上服务，从而不需要了解底层网络细节，RPC 是构建在已经存在的协议（TCP/IP，HTTP 等）之上的。<code>gRPC</code> 是云原生计算基金会（CNCF）项目，gRPC 一开始由 google 开发，是一款语言中立、平台中立的服务间通信框架，使用 gRPC 可以使得客户端像调用本地方法一样，调用远程主机提供的服务。可以在任何地方运行，它使客户端和服务器应用程序能够透明地进行通信，并使构建连接系统变得更加容易。</p>
+<a id="more"></a>
+
+<h1 id="Context"><a href="#Context" class="headerlink" title="Context"></a>Context</h1><ul>
+<li>gRPC 默认采用 protocol buffer 作为 IDL (Interface Description Lanage) 接口描述语言，服务之间通信的数据序列化和反序列化也是基于 protocol buffer 的，因为 protocol buffer 的特殊性，所以 gRPC 框架是跨语言的通信框架（与编程语言无关性）</li>
+<li>gRPC 是基于 http2 协议实现,多路复用支持通过同一连接发送多个并行请求,双向全双工通信，用于同时发送客户端请求和服务器响应,内置流式传输使请求和响应能够异步流式传输大数据集</li>
+<li>gRPC 并没有直接实现负载均衡和服务发现的功能，但是已经提供了自己的设计思路。已经为命名解析和负载均衡提供了接口。</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">service Greeter &#123;</span><br><span class="line">   &#x2F;*</span><br><span class="line">   以下 分别是 服务端 推送流， 客户端 推送流 ，双向流。</span><br><span class="line">   *&#x2F;</span><br><span class="line">  rpc GetStream (StreamReqData) returns (stream StreamResData)&#123;&#125;</span><br><span class="line">  rpc PutStream (stream StreamReqData) returns (StreamResData)&#123;&#125;</span><br><span class="line">  rpc AllStream (stream StreamReqData) returns (stream StreamResData)&#123;&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h1 id="Protocal-Buffer"><a href="#Protocal-Buffer" class="headerlink" title="Protocal Buffer"></a>Protocal Buffer</h1><h2 id="Profile"><a href="#Profile" class="headerlink" title="Profile"></a>Profile</h2><p><a target="_blank" rel="noopener" href="https://developers.google.cn/protocol-buffers">Protocol buffers</a> 是一个灵活的、高效的、自动化的用于对结构化数据进行序列化的协议，与XML相比，Protocol buffers序列化后的码流更小、速度更快、操作更简单。</p>
+<p><code>序列化(serialization、marshalling)</code>的过程是指将数据结构或者对象的状态转换成可以存储(比如文件、内存)或者传输的格式(比如网络)。反向操作就是反序列化<code>(deserialization、unmarshalling)</code>的过程。</p>
+<ul>
+<li>二十世纪九十年代后期，XML开始流行，它是一种人类易读的基于文本的编码方式，易于阅读和理解，但是失去了紧凑的基于字节流的编码的优势。</li>
+<li>JSON是一种更轻量级的基于文本的编码方式，经常用在client/server端的通讯中。</li>
+<li>YAML类似JSON，新的特性更强大，更适合人类阅读，也更紧凑。</li>
+</ul>
+<p>除了上面这些和Protobuf，还有许许多多的序列化格式，比如Thrift、Avro、BSON、CBOR、MessagePack, 还有很多非跨语言的编码格式。项目<a target="_blank" rel="noopener" href="https://github.com/smallnest/gosercomp">gosercomp</a>对比了各种go的序列化库，包括序列化和反序列的性能，以及序列化后的数据大小。总体来说Protobuf序列化和反序列的性能都是比较高的，编码后的数据大小也不错。</p>
+<p><font color="blue">如果你并不希望一定要在传输过程中消息数据可读，那么可以用 Protocal Buffer 来代替 Json 。</font></p>
+<h2 id="Demo"><a href="#Demo" class="headerlink" title="Demo"></a>Demo</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">syntax &#x3D; &quot;proto3&quot;;      &#x2F;&#x2F; 版本定义</span><br><span class="line"></span><br><span class="line">message SearchRequest &#123;</span><br><span class="line">  int32  id &#x3D; 1;</span><br><span class="line">  string name &#x3D; 2;</span><br><span class="line">  bool   rich &#x3D; 3;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>第一行指定<code>protobuf</code>的版本，这里是以proto3格式定义。</p>
+<p>第三行 <code>message</code> 表示定义了一个结构体，在这个结构体里，最常见的类型有以下几种</p>
+<ol>
+<li><font color="#FFB90F">数值型</font> ，如 double, float, int32, int64 …</li>
+<li><font color="#FFB90F">布尔型</font>，bool 只有True和False</li>
+<li><font color="#FFB90F">字符型</font>，string 表示任意字符，但是长度不可超过2的32次方</li>
+<li><font color="#FFB90F">字节型</font>，bytes表示任意的byte数组序列，但是长度也不可以超过2的32次方，比如可以用来传递一个图片。</li>
+<li><font color="#FFB90F">枚举型</font>，enum 表示枚举。可独立在 message 之外。可通过 <code>option allow_alias = true;</code> 给枚举定义别名。</li>
+<li>字典型，map类型需要设置键和值的类型。</li>
+<li><font color="#FFB90F">Well-Known类型</font>, Protobuf也提供了定义，比如Timestamp和Duration。这些定义被放在<code>github.com/golang/protobuf/ptypes/</code>。</li>
+</ol>
+<p><strong>引入其它proto文件</strong></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">import  &quot;other.proto&quot;;</span><br><span class="line">import public &quot;other2.proto&quot;;</span><br><span class="line">import weak &quot;other.proto&quot;;</span><br></pre></td></tr></table></figure>
+<p>比较少使用的是public和weak关键字。默认情况下weak引入的文件允许不存在(missing)，只为了google内部使用。public具有传递性，如果你在文件中通过public引入第三方的proto文件，那么引入你这个文件同时也会引入第三方的proto。</p>
+<p><strong>关键字：</strong></p>
+<ol>
+<li><font color="#FFB90F"> option</font> ：option可以用在proto的scope中，或者message、enum、service的定义中。一般常用的就是定义某语言生成后的package名，最常见的用法，如 <code>option go_package = &quot;xxx&quot;;</code></li>
+<li><font color="#FFB90F">repeated</font> : 指定某一个字段可以存放同一个类型的多个数据, 相当于golang里的slice。可采用<code>[packed=true]</code>以实现更高<br>效的编码。<code>repeated int32 samples = 4 [packed=true];</code></li>
+<li><font color="#FFB90F"> reserved</font> : 保护某字段或定义，如在message中指定 数字1 被保护，或变量名 person 被保护。一般用来保护废弃的数字定义。如<code>reserved 5;  reserved &quot;salary&quot;;</code> 如果再使用5 或者 salary 则会报错。</li>
+</ol>
+<p><strong>demo</strong></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br></pre></td><td class="code"><pre><span class="line">syntax &#x3D; &quot;proto3&quot;;</span><br><span class="line"></span><br><span class="line">package my.project; </span><br><span class="line"></span><br><span class="line">import &quot;google&#x2F;protobuf&#x2F;timestamp.proto&quot;;</span><br><span class="line"></span><br><span class="line">option go_package &#x3D; &quot;pb&quot;;</span><br><span class="line"></span><br><span class="line">message PersonMessage &#123;</span><br><span class="line">  int32   id &#x3D; 1;</span><br><span class="line">  bool    is_adult &#x3D;2;</span><br><span class="line">  string  name &#x3D; 3;</span><br><span class="line">  float   height &#x3D; 4;</span><br><span class="line">  float   weight &#x3D; 5;</span><br><span class="line">  bytes   avatar &#x3D; 6;</span><br><span class="line">  string  email &#x3D; 7;</span><br><span class="line">  bool    email_verified &#x3D; 8;</span><br><span class="line">  repeated string phone_numbers &#x3D; 9;  &#x2F;&#x2F; packed</span><br><span class="line">  Gender  gender &#x3D; 11;</span><br><span class="line">  Date    birthday &#x3D; 12;</span><br><span class="line">  repeated Address addresses &#x3D; 13;</span><br><span class="line">  google.protobuf.Timestamp lastModified &#x3D; 14;</span><br><span class="line"></span><br><span class="line">  enum Gender &#123;</span><br><span class="line">    option allow_alias &#x3D; true;</span><br><span class="line">    Not_SPECIFIED &#x3D; 0;</span><br><span class="line">    MALE &#x3D; 1;</span><br><span class="line">    FEMALE &#x3D; 2;</span><br><span class="line">    MAN &#x3D; 1;</span><br><span class="line">    WOMAN &#x3D; 2;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  message Address &#123;</span><br><span class="line">    string province &#x3D; 1;</span><br><span class="line">    string city &#x3D; 2;</span><br><span class="line">    string zip_code &#x3D; 3;</span><br><span class="line">    string street &#x3D; 4;</span><br><span class="line">    string number &#x3D; 5;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  reserved 10, 20 to 100, 200 to max;</span><br><span class="line">  reserved &quot;foo&quot;,&quot;bar&quot;;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">message Date &#123;</span><br><span class="line">  int32 year &#x3D; 1;</span><br><span class="line">  int32 month &#x3D; 2;</span><br><span class="line">  int32 day &#x3D; 3;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h2 id="Golang-protocol-buffer"><a href="#Golang-protocol-buffer" class="headerlink" title="Golang protocol buffer"></a>Golang protocol buffer</h2><p>定义 <code>.proto</code> 文件后，使用命令<br><code>protoc --protoc_path src/ -go_out=src/ src/person.proto</code> 生成golang 文件</p>
+<p><strong>定义一个pb</strong></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">NewPersonMessage</span><span class="params">()</span> *<span class="title">pb</span>.<span class="title">PersonMessage</span></span> &#123;</span><br><span class="line">	<span class="keyword">return</span> &amp;pb.PersonMessage&#123;</span><br><span class="line">		Id: <span class="number">1</span>,</span><br><span class="line">		IsAdult: <span class="literal">true</span>,</span><br><span class="line">		Name: <span class="string">&quot;Kiosk&quot;</span>,</span><br><span class="line">		Height: <span class="number">177</span>,</span><br><span class="line">		Weight: <span class="number">140</span>,</span><br><span class="line">		Gender: pb.PersonMessage_MALE,</span><br><span class="line">		PhoneNumbers: []<span class="keyword">string</span>&#123;<span class="string">&quot;15667026708&quot;</span>,<span class="string">&quot;17610660213&quot;</span>&#125;,</span><br><span class="line">		Email: <span class="string">&quot;weijiaxiang007@foxmail.com&quot;</span>,</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>** 将 pb 写入文件 **</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">writeToFile</span><span class="params">(filename <span class="keyword">string</span>, pb proto.Message)</span> <span class="title">error</span></span> &#123;</span><br><span class="line">	dataBytes, err := proto.Marshal(pb)</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123; log.Fatalln(<span class="string">&quot;无法序列化&quot;</span>) &#125;</span><br><span class="line">	<span class="keyword">if</span> err := ioutil.WriteFile(filename, dataBytes, <span class="number">0644</span>); err != <span class="literal">nil</span> &#123;</span><br><span class="line">		log.Fatalln(<span class="string">&quot;无法写入文件&quot;</span>)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	log.Println(<span class="string">&quot;成功写入到文件&quot;</span>)</span><br><span class="line">	<span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">	pm := NewPersonMessage()</span><br><span class="line">	_ = writeToFile(<span class="string">&quot;person.bin&quot;</span>,pm)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>** 从文件读出 pb **</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">readFromFile</span><span class="params">(filename <span class="keyword">string</span>, pb proto.Message)</span> <span class="title">error</span></span> &#123;</span><br><span class="line">	dataBytes, err := ioutil.ReadFile(filename)</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123; log.Fatalln(<span class="string">&quot;读取文件错误&quot;</span>,err.Error()) &#125;</span><br><span class="line">	<span class="keyword">if</span> err := proto.Unmarshal(dataBytes, pb); err != <span class="literal">nil</span> &#123;</span><br><span class="line">		log.Fatalln(<span class="string">&quot;反序列化失败&quot;</span>)</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">	pm := &amp;demo.PersonMessage&#123;&#125;</span><br><span class="line">	_ = readFromFile(<span class="string">&quot;person.bin&quot;</span>, pm)</span><br><span class="line">	fmt.Println(pm)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><strong>pb 转 json &amp;&amp; json 转 pb</strong></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">toJson</span><span class="params">(pb proto.Message)</span> <span class="title">string</span></span> &#123;</span><br><span class="line">	marshaler := jsonpb.Marshaler&#123;Indent: <span class="string">&quot;    &quot;</span>&#125;</span><br><span class="line"></span><br><span class="line">	str ,err := marshaler.MarshalToString(pb)</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123; log.Fatalln(<span class="string">&quot;转换为JSON时发生错误&quot;</span>,err.Error()) &#125;</span><br><span class="line">	<span class="keyword">return</span> str</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">fromJson</span><span class="params">(in <span class="keyword">string</span>, pb proto.Message)</span> <span class="title">error</span></span> &#123;</span><br><span class="line">	<span class="keyword">return</span> jsonpb.UnmarshalString(in, pb)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><strong>gogo库</strong></p>
+<p>虽然官方库 <font color="#68228B"><a target="_blank" rel="noopener" href="https://github.com/golang/protobuf">golang/protobu</a> </font>提供了对Protobuf的支持，但是使用最多还是第三方实现的库<a target="_blank" rel="noopener" href="https://github.com/gogo/protobuf">gogo/protobuf</a>。</p>
+<p>gogo库基于官方库开发，增加了很多的功能，包括：</p>
+<ol>
+<li>快速的序列化和反序列化</li>
+<li>更规范的Go数据结构</li>
+<li>goprotobuf兼容</li>
+<li>可选择的产生一些辅助方法，减少使用中的代码输入</li>
+<li>可以选择产生测试代码和benchmark代码</li>
+<li>其它序列化格式</li>
+</ol>
+<blockquote>
+<p>更多参考github： <a target="_blank" rel="noopener" href="http://github.com/gogo/protobuf">http://github.com/gogo/protobuf</a></p>
+</blockquote>
+<h1 id="gRPC-Start"><a href="#gRPC-Start" class="headerlink" title="gRPC Start"></a>gRPC Start</h1><p>进入主题了, gRPC 是Google发布的基于HTTP 2.0传输层协议承载的高性能开源软件框架。提供了支持多种编程语言的、对网络设备进行配置和纳管的方法。</p>
+<p>RPC是远程函数调用，因此每次调用的函数参数和返回值不能太大，否则将严重影响每次调用的响应时间。因此传统的RPC方法调用对于上传和下载较大数据量场景并不适合。同时传统RPC模式也不适用于对时间不确定的订阅和发布模式。为此，gRPC框架针对服务器端和客户端分别提供了流特性。<br><font color="#483D8B">支持 服务端 推送流， 客户端 推送流 ，双向流。</font></p>
+<img alt="Smiley face" height="420" src="/images/network/gRPC/grpc_concept_diagram.png">
+
+<h2 id="install"><a href="#install" class="headerlink" title="install"></a>install</h2><p>gRPC要求 Go 版本 &gt;= 1.6</p>
+<ol>
+<li>安装grpc<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ go get -u -v google.golang.org/grpc</span><br></pre></td></tr></table></figure></li>
+<li>安装 Protocol Buffers v3、protoc-gen-go:<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ go get -v -u github.com/golang/protobuf/protoc-gen-go</span><br></pre></td></tr></table></figure></li>
+<li>生成grpc代码<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ protoc -I. --go_out=plugins=grpc:. helloworld.proto</span><br></pre></td></tr></table></figure>
+<h2 id="define-proto"><a href="#define-proto" class="headerlink" title="define proto"></a>define proto</h2></li>
+</ol>
+<p>gRPC需要事先定义proto文件，如下所示。定义完成后需要执行命令 <code>protoc --go_out=plugins=grpc:. message.proto</code> 生成相关的go语言代码。更多详细的操作参考官方例子 <a target="_blank" rel="noopener" href="https://grpc.io/docs/languages/go/quickstart/">Quick start - gRPC</a><br>              <br><a href="/images/network/gRPC/message.proto">点击查看</a></p>
+<h2 id="gRPC-server"><a href="#gRPC-server" class="headerlink" title="gRPC server"></a>gRPC server</h2><p>gRPC服务的启动流程和标准库的RPC服务启动流程类似：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> port  = <span class="string">&quot;:5001&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">	listen, err := net.Listen(<span class="string">&quot;tcp&quot;</span>, port)</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;  log.Fatalln(err.Error() &#125;</span><br><span class="line">	<span class="keyword">var</span> options []grpc.ServerOption</span><br><span class="line">	options = <span class="built_in">append</span>(options, grpc.HeaderTableSize(<span class="number">2048</span>))</span><br><span class="line"></span><br><span class="line">	server := grpc.NewServer(options...)</span><br><span class="line">	pb.RegisterEmployeeServiceServer(server, <span class="built_in">new</span>(example.EmployeeService))</span><br><span class="line">	log.Printf(<span class="string">&quot;gRPC Server started ...\n Listen on port %s&quot;</span>, port)</span><br><span class="line"></span><br><span class="line">	_ = server.Serve(listen)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<ul>
+<li>这里设置监听在 tcp 的 5001 端口.</li>
+<li><code>grpc.ServerOption</code> 可以设置gRPC的服务端监听参数， 这里我仅设置了 H2 的 header 动态表大小。除此之外，如设置 TLS证书载入：<code>grpc.Creds(c credentials.TransportCredentials)</code>。<br>最大并发数、收发最大消息Size等等，详见 <a target="_blank" rel="noopener" href="https://godoc.org/google.golang.org/grpc#ServerOption">https://godoc.org/google.golang.org/grpc#ServerOption</a></li>
+<li><code>pb.RegisterEmployeeServiceServer</code> 是proto生成的 message.pb.go 提供的服务端注册方法。<code>example.EmployeeService</code> 是我们后面手动创建的空结构，后面的函数方法都需要基于这个空结构实现。</li>
+<li>server.Serve 将监听套接字传入。</li>
+</ul>
+<p><strong>实现 EmployeeService</strong></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">service EmployeeService &#123;</span><br><span class="line">  rpc GetByNo(GetByNoRequest) returns (EmployeeResponse);         &#x2F;&#x2F; 一元请求</span><br><span class="line">  rpc GetAll(GetAllRequest) returns (stream EmployeeResponse);    &#x2F;&#x2F; 客户端推送流</span><br><span class="line">  rpc AddPhoto(stream AddPhotoRequest) returns (AddPhotoResponse); &#x2F;&#x2F; 服务端推送流</span><br><span class="line">  rpc SaveAll(stream EmployeeRequest) returns (stream EmployeeResponse); &#x2F;&#x2F; 双向流</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">对应的pb生成代码</span><br><span class="line">&#x2F;&#x2F; EmployeeServiceServer is the server API for EmployeeService service.</span><br><span class="line">type EmployeeServiceServer interface &#123;</span><br><span class="line">	GetByNo(context.Context, *GetByNoRequest) (*EmployeeResponse, error)</span><br><span class="line">	GetAll(*GetAllRequest, EmployeeService_GetAllServer) error</span><br><span class="line">	AddPhoto(EmployeeService_AddPhotoServer) error</span><br><span class="line">	SaveAll(EmployeeService_SaveAllServer) error</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>首先需要定义 <code>type EmployeeService struct &#123;&#125;</code> 后面的所有方法都需要基于这个实现，这个也是服务端注册的参数。</p>
+<ul>
+<li>**一元请求 <code>GetByNo()</code> **<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(s *EmployeeService)</span> <span class="title">GetByNo</span><span class="params">(ctx context.Context, request *pb.GetByNoRequest)</span> <span class="params">(*pb.EmployeeResponse, error)</span></span> &#123;</span><br><span class="line">	log.Println(request.No)</span><br><span class="line">	<span class="keyword">for</span> _,e := <span class="keyword">range</span> employees &#123;</span><br><span class="line">		<span class="keyword">if</span> request.No == e.No &#123;</span><br><span class="line">			<span class="keyword">return</span> &amp;pb.EmployeeResponse&#123;</span><br><span class="line">				Employee:           &amp;e,</span><br><span class="line">			&#125;, <span class="literal">nil</span></span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> <span class="literal">nil</span>, errors.New(<span class="string">&quot;the employee does not exist&quot;</span>)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+请求参数是 <code>GetByNoRequest</code>， 通过上面的pb定义得知，这个message是有一个No参数。所以可以取出来当请求参数。返回的参数是<code>EmployeeResponse</code>，通过pb定义得知，其返回参数是 <code>Employee</code> 对象。</li>
+</ul>
+<ul>
+<li><p><strong>服务端返回流 <code>GetAll()</code></strong></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(s *EmployeeService)</span> <span class="title">GetAll</span><span class="params">(request *pb.GetAllRequest, stream pb.EmployeeService_GetAllServer)</span> <span class="title">error</span></span> &#123;</span><br><span class="line">	<span class="keyword">for</span> _,e := <span class="keyword">range</span> employees &#123;</span><br><span class="line">		err := stream.Send(&amp;pb.EmployeeResponse&#123;</span><br><span class="line">			Employee: &amp;e,</span><br><span class="line">		&#125;)</span><br><span class="line">		<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">			log.Println(err.Error())</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>注意，返回的参数是一条流，其流发送的方法也可以使用Send函数，这里是一个循环，将employee对象循环写入这条流中。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">type EmployeeService_GetAllServer interface &#123;</span><br><span class="line">	Send(*EmployeeResponse) error</span><br><span class="line">	grpc.ServerStream</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
+<li><p><strong>客户端推送流 <code>AddPhoto()</code></strong></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(s *EmployeeService)</span> <span class="title">AddPhoto</span><span class="params">(stream pb.EmployeeService_AddPhotoServer)</span> <span class="title">error</span></span> &#123;</span><br><span class="line">	md, ok := metadata.FromIncomingContext(stream.Context())</span><br><span class="line">	<span class="keyword">if</span> ok &#123; fmt.Printf(<span class="string">&quot;employee: %s&quot;</span>, md[<span class="string">&quot;no&quot;</span>][<span class="number">0</span>]) &#125;</span><br><span class="line">	<span class="keyword">var</span> images []<span class="keyword">byte</span></span><br><span class="line">	<span class="keyword">for</span> &#123;</span><br><span class="line">		data, err := stream.Recv()</span><br><span class="line">		<span class="keyword">if</span> err == io.EOF &#123;</span><br><span class="line">			fmt.Printf(<span class="string">&quot;File Size %d\n&quot;</span>, <span class="built_in">len</span>(images))</span><br><span class="line">			<span class="keyword">return</span> stream.SendAndClose(&amp;pb.AddPhotoResponse&#123;IsOk: <span class="literal">true</span>&#125;)</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">			<span class="keyword">return</span> err</span><br><span class="line">		&#125;</span><br><span class="line">		fmt.Printf(<span class="string">&quot;File received: %d\n&quot;</span>, <span class="built_in">len</span>(data.Data))</span><br><span class="line">		images = <span class="built_in">append</span>(images, data.Data...)</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这个函数实现了客户端将一张图片拆分成 bytes 再一点一点发送给服务端的demo。读到EOF表示成功读完。Data正是在 pb 里定义的<code>AddPhotoRequest</code>的客户端请求内容。</p>
+</li>
+<li><p><strong>双向流 <code>SaveAll()</code></strong></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(s *EmployeeService)</span> <span class="title">SaveAll</span><span class="params">(stream pb.EmployeeService_SaveAllServer)</span> <span class="title">error</span></span> &#123;</span><br><span class="line">	<span class="keyword">for</span> &#123;</span><br><span class="line">		empReq, err := stream.Recv()</span><br><span class="line">		<span class="keyword">if</span> err == io.EOF &#123;</span><br><span class="line">			<span class="keyword">break</span></span><br><span class="line">		&#125;<span class="keyword">else</span> <span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">			<span class="keyword">return</span> err</span><br><span class="line">		&#125;</span><br><span class="line">		employees = <span class="built_in">append</span>(employees, *empReq.Employee)</span><br><span class="line">		time.Sleep(<span class="number">1000</span> * time.Microsecond)</span><br><span class="line">		_ = stream.Send(&amp;pb.EmployeeResponse&#123;Employee: empReq.Employee&#125;)</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">for</span> _ , emp := <span class="keyword">range</span> employees &#123;</span><br><span class="line">		fmt.Println(emp)</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>在这个方法中，服务端每读一份数据，休眠100ms，再将读入的数据原封不动的返回给客户端。</p>
+</li>
+</ul>
+<h2 id="gRPC-client"><a href="#gRPC-client" class="headerlink" title="gRPC client"></a>gRPC client</h2><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">	<span class="keyword">var</span> options []grpc.DialOption</span><br><span class="line">	options = <span class="built_in">append</span>(options, grpc.WithInsecure())</span><br><span class="line"></span><br><span class="line">	conn, err := grpc.Dial(<span class="string">&quot;localhost&quot;</span> + port, options...)</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		log.Fatalln(<span class="string">&quot;can&#x27;t dial server &quot;</span> + err.Error())</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">defer</span> conn.Close()</span><br><span class="line">	client := pb.NewEmployeeServiceClient(conn)</span><br><span class="line">	<span class="comment">// GetByNo(client)</span></span><br><span class="line">	<span class="comment">// getAll(client)</span></span><br><span class="line">	<span class="comment">//addPhoto(client)</span></span><br><span class="line">	saveAll(client)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>客户端也有一个类似Server端的<code>grpc.DialOption</code>, 这里因为服务端没有使用证书，所以客户端必须添加 <code>WithInsecure</code> 选项。调用 <code>pb.NewEmployeeServiceClient(conn)</code> 会返回一个 Client <code>employeeServiceClient</code>。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> employeeServiceClient <span class="keyword">struct</span> &#123;</span><br><span class="line">	cc grpc.ClientConnInterface</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这个client拥有之前定义的客户端可调用的 RPC 方法。如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;&#x2F; For semantics around ctx use and closing&#x2F;ending streaming RPCs, please refer to https:&#x2F;&#x2F;godoc.org&#x2F;google.golang.org&#x2F;grpc#ClientConn.NewStream.</span><br><span class="line">type EmployeeServiceClient interface &#123;</span><br><span class="line">	GetByNo(ctx context.Context, in *GetByNoRequest, opts ...grpc.CallOption) (*EmployeeResponse, error)</span><br><span class="line">	GetAll(ctx context.Context, in *GetAllRequest, opts ...grpc.CallOption) (EmployeeService_GetAllClient, error)</span><br><span class="line">	AddPhoto(ctx context.Context, opts ...grpc.CallOption) (EmployeeService_AddPhotoClient, error)</span><br><span class="line">	SaveAll(ctx context.Context, opts ...grpc.CallOption) (EmployeeService_SaveAllClient, error)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><strong>实现 Client 调用</strong></p>
+<ul>
+<li><strong>一元请求 <code>GetByNo()</code></strong><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">GetByNo</span><span class="params">(client pb.EmployeeServiceClient)</span></span> &#123;</span><br><span class="line">	res, err := client.GetByNo(context.Background(), &amp;pb.GetByNoRequest&#123;No: <span class="number">1996</span>&#125;)</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		log.Fatalln(err.Error())</span><br><span class="line">	&#125;</span><br><span class="line">	fmt.Println(res.Employee)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+传入的参数拥有 <code>GetByNo()</code> 这个方法，直接调用即可。</li>
+</ul>
+<p>抓包可以看到，整个gRPC的调用过程是基于HTTP2的, 本质是发起了一个H2的POST请求, 和传统H2不同的是，response 的 Header帧有2个，结尾处还有一个。第2个表示调用结束。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">Stream: HEADERS, Stream ID: 1, Length 80, POST /employee.EmployeeService/GetByNo</span><br><span class="line">    Length: 80</span><br><span class="line">    Type: HEADERS (1)</span><br><span class="line">    Flags: 0x04</span><br><span class="line">    0... .... .... .... .... .... .... .... = Reserved: 0x0</span><br><span class="line">    .000 0000 0000 0000 0000 0000 0000 0001 = Stream Identifier: 1</span><br><span class="line">    [Pad Length: 0]</span><br><span class="line">    Header Block Fragment: 3fe10f8386459960b4d741fd14abe0a6ba0fe8a5dc5b3b98…</span><br><span class="line">    [Header Length: 202]</span><br><span class="line">    [Header Count: 8]</span><br><span class="line">    Header table size update</span><br><span class="line">    Header: :method: POST</span><br><span class="line">    Header: :scheme: http</span><br><span class="line">    Header: :path: /employee.EmployeeService/GetByNo</span><br><span class="line">    Header: :authority: localhost:5001</span><br><span class="line">    Header: content-type: application/grpc</span><br><span class="line">    Header: user-agent: grpc-go/1.33.2</span><br><span class="line">    Header: te: trailers</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p><img src="/images/network/gRPC/grpc_v1.png"></p>
+<ul>
+<li><strong>服务端返回流 <code>GetAll()</code></strong><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">getAll</span><span class="params">(client pb.EmployeeServiceClient)</span></span> &#123;</span><br><span class="line">	stream, err := client.GetAll(context.Background(), &amp;pb.GetAllRequest&#123;&#125;)</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		log.Fatalln(err.Error())</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">for</span> &#123;</span><br><span class="line">		res, err := stream.Recv()</span><br><span class="line">		<span class="keyword">if</span> err == io.EOF &#123;</span><br><span class="line">			<span class="keyword">return</span></span><br><span class="line">		&#125;<span class="keyword">else</span> <span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">			log.Fatalln(err.Error())</span><br><span class="line">		&#125;</span><br><span class="line">		fmt.Println(res.Employee)</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+服务端返回的流可以使用 <code>stream.Recv()</code> 循环接收。<br><img src="/images/network/gRPC/grpc_v2.png"></li>
+</ul>
+<ul>
+<li><strong>客户端推送流 <code>AddPhoto()</code></strong><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">addPhoto</span><span class="params">(client pb.EmployeeServiceClient)</span></span> &#123;</span><br><span class="line">	imgFile,err := os.Open(<span class="string">&quot;/home/kiosk007/Pictures/2020-09-22_00-15.png&quot;</span>)</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		log.Fatalln(err.Error())</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">defer</span> imgFile.Close()</span><br><span class="line"></span><br><span class="line">	md := metadata.New(<span class="keyword">map</span>[<span class="keyword">string</span>]<span class="keyword">string</span>&#123;<span class="string">&quot;no&quot;</span>: <span class="string">&quot;1996&quot;</span>&#125;)</span><br><span class="line">	context := context.Background()</span><br><span class="line">	context = metadata.NewOutgoingContext(context, md)</span><br><span class="line">	stream,err := client.AddPhoto(context)</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		log.Fatalln(err.Error())</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">for</span> &#123;</span><br><span class="line">		chunk := <span class="built_in">make</span>([]<span class="keyword">byte</span>, <span class="number">128</span>*<span class="number">24</span>)</span><br><span class="line">		chunkSize,err := imgFile.Read(chunk)</span><br><span class="line">		<span class="keyword">if</span> err == io.EOF &#123;</span><br><span class="line">			<span class="keyword">break</span></span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">			log.Fatalln(err.Error())</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">if</span> chunkSize &lt; <span class="built_in">len</span>(chunk) &#123;</span><br><span class="line">			chunk = chunk[:chunkSize]</span><br><span class="line">		&#125;</span><br><span class="line">		_ = stream.Send(&amp;pb.AddPhotoRequest&#123;Data: chunk&#125;)</span><br><span class="line">	&#125;</span><br><span class="line">	res, err := stream.CloseAndRecv()</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		log.Fatalln(err.Error())</span><br><span class="line">	&#125;</span><br><span class="line">	fmt.Println(res.IsOk)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+客户端推送流实现了一个照片流式上传的功能。每次发送 3072字节 (128*24)。</li>
+</ul>
+<ul>
+<li><strong>双向流 <code>SaveAll()</code></strong><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">saveAll</span><span class="params">(client pb.EmployeeServiceClient)</span></span> &#123;</span><br><span class="line">	employees := []pb.Employee&#123;</span><br><span class="line">		pb.Employee&#123;</span><br><span class="line">			Id:                   <span class="number">300</span>,</span><br><span class="line">			No:                   <span class="number">5001</span>,</span><br><span class="line">			FirstName:            <span class="string">&quot;Monica&quot;</span>,</span><br><span class="line">			LastName:             <span class="string">&quot;Geller&quot;</span>,</span><br><span class="line">			MonthSalary:          <span class="number">15500</span>,</span><br><span class="line">			Status:               pb.EmployeeStatus_RETIRED,</span><br><span class="line">			LastModified:         &amp;timestamp.Timestamp&#123; Seconds: time.Now().Unix() &#125;,</span><br><span class="line">		&#125;,</span><br><span class="line">		pb.Employee&#123;</span><br><span class="line">			Id:                   <span class="number">301</span>,</span><br><span class="line">			No:                   <span class="number">5002</span>,</span><br><span class="line">			FirstName:            <span class="string">&quot;Joey&quot;</span>,</span><br><span class="line">			LastName:             <span class="string">&quot;Green&quot;</span>,</span><br><span class="line">			MonthSalary:          <span class="number">200</span>,</span><br><span class="line">			Status:               pb.EmployeeStatus_RESIGNED,</span><br><span class="line">			LastModified:         &amp;timestamp.Timestamp&#123; Seconds: time.Now().Unix() &#125;,</span><br><span class="line">		&#125;,</span><br><span class="line">	&#125;</span><br><span class="line">	stream, err := client.SaveAll(context.Background())</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		log.Fatalln(err.Error())</span><br><span class="line">	&#125;</span><br><span class="line">	finishChannel := <span class="built_in">make</span>(<span class="keyword">chan</span> <span class="keyword">struct</span>&#123;&#125;)</span><br><span class="line">	<span class="keyword">go</span> <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">		<span class="keyword">for</span> &#123;</span><br><span class="line">			res,err := stream.Recv()</span><br><span class="line">			<span class="keyword">if</span> err == io.EOF &#123;</span><br><span class="line">				finishChannel &lt;- <span class="keyword">struct</span>&#123;&#125;&#123;&#125;</span><br><span class="line">				<span class="keyword">break</span></span><br><span class="line">			&#125;<span class="keyword">else</span> <span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">				log.Fatalln(err.Error())</span><br><span class="line">			&#125;</span><br><span class="line">			fmt.Println(res.Employee)</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;()</span><br><span class="line"></span><br><span class="line">	<span class="keyword">for</span> _,e := <span class="keyword">range</span> employees &#123;</span><br><span class="line">		err := stream.Send(&amp;pb.EmployeeRequest&#123;Employee: &amp;e&#125;)</span><br><span class="line">		time.Sleep(<span class="number">500</span> * time.Microsecond)</span><br><span class="line">		<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">			log.Fatalln(err.Error())</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	_ = stream.CloseSend()</span><br><span class="line">	&lt;- finishChannel</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</li>
+</ul>
+<p><strong>参考：</strong></p>
+<ol>
+<li><a target="_blank" rel="noopener" href="https://colobu.com/2019/10/03/protobuf-ultimate-tutorial-in-go">Protobuf 终极教程  – 鸟窝</a></li>
+</ol>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/grpc/" rel="tag"># grpc</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/11/16/%E5%9F%BA%E4%BA%8ENginx%E5%AE%9E%E7%8E%B0%E7%9A%84RTMP%E6%9C%8D%E5%8A%A1/" rel="prev" title="基于Nginx的实时音频直播服务">
+      <i class="fa fa-chevron-left"></i> 基于Nginx的实时音频直播服务
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/12/19/Git-Quick-Start/" rel="next" title="Git Quick Start">
+      Git Quick Start <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Context"><span class="nav-number">1.</span> <span class="nav-text">Context</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Protocal-Buffer"><span class="nav-number">2.</span> <span class="nav-text">Protocal Buffer</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Profile"><span class="nav-number">2.1.</span> <span class="nav-text">Profile</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Demo"><span class="nav-number">2.2.</span> <span class="nav-text">Demo</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Golang-protocol-buffer"><span class="nav-number">2.3.</span> <span class="nav-text">Golang protocol buffer</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#gRPC-Start"><span class="nav-number">3.</span> <span class="nav-text">gRPC Start</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#install"><span class="nav-number">3.1.</span> <span class="nav-text">install</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#define-proto"><span class="nav-number">3.2.</span> <span class="nav-text">define proto</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#gRPC-server"><span class="nav-number">3.3.</span> <span class="nav-text">gRPC server</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#gRPC-client"><span class="nav-number">3.4.</span> <span class="nav-text">gRPC client</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="kiosk"
+      src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">kiosk</p>
+  <div class="site-description" itemprop="description">NoOps</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">26</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">10</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">20</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+  <div class="links-of-blogroll motion-element">
+    <div class="links-of-blogroll-title"><i class="fa fa-link fa-fw"></i>
+      Links
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="https://github.com/weijiaxiang007" title="https://github.com/weijiaxiang007" rel="noopener" target="_blank">Github</a>
+        </li>
+    </ul>
+  </div>
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-blog"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">kiosk</span>
+</div>
+
+<div class="BbeiAn-info">
+   	京ICP备 -
+	<a target="_blank" href="http://beian.miit.gov.cn/" text-decoration:none;padding-left:30px;background:url(https://s1.ax1x.com/2018/09/29/ilmwIH.png) no-repeat left center" rel="nofollow">京ICP备20015006号-1</a>	 
+</div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/medium-zoom@1/dist/medium-zoom.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+<script src="/js/bookmark.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+<script>
+if (document.querySelectorAll('pre.mermaid').length) {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/mermaid@8/dist/mermaid.min.js', () => {
+    mermaid.initialize({
+      theme    : 'neutral',
+      logLevel : 3,
+      flowchart: { curve     : 'linear' },
+      gantt    : { axisFormat: '%m/%d/%Y' },
+      sequence : { actorMargin: 50 }
+    });
+  }, window.mermaid);
+}
+</script>
+
+
+  
+
+  
+
+  
+
+  
+
+  <canvas id="evanyou"></canvas>
+  <style>
+    #evanyou {
+      position: fixed;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      z-index: -1;
+    }
+  </style>
+  <script src="/js/evan-you.js"></script>
+
+
+
+
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('https://cdn.jsdelivr.net/npm/valine@1.3.10/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'XhYn8GEq1Sg7ufJQAVmR4dWN-gzGzoHsz',
+      appKey     : 'r42k4lqU022wD7IvtwGaQfjN',
+      placeholder: "Just go go",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : false,
+      lang       : 'zh-cn' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
+</script>
+
+
+  <script src="https://libs.baidu.com/jquery/2.0.0/jquery.min.js"></script>
+  <script src="https://unpkg.com/mermaid@8.4.6/dist/mermaid.min.js"></script>
+  <script>mermaid.initialize({startOnLoad:true});</script>
+</body>
+</html>

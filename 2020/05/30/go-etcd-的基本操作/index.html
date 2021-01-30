@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-dragon.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-dragon.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <link rel="manifest" href="/images/manifest.json">
+  <meta name="msapplication-config" content="/images/browserconfig.xml">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/pace-js@1/themes/blue/pace-theme-minimal.css">
+  <script src="//cdn.jsdelivr.net/npm/pace-js@1/pace.min.js"></script>
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"kiosk007.top","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"right","display":"always","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":true,"color":"#484891","save":"auto"},"fancybox":false,"mediumzoom":true,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="etcd 是一个强一致性的分布式键值存储系统，可以提供可靠的分布式集群的数据访问方式。 etcd is a strongly consistent, distributed key-value store that provides a reliable way to store data that needs to be accessed by a distributed system or c">
+<meta property="og:type" content="article">
+<meta property="og:title" content="etcd 的基本入门">
+<meta property="og:url" content="http://kiosk007.top/2020/05/30/go-etcd-%E7%9A%84%E5%9F%BA%E6%9C%AC%E6%93%8D%E4%BD%9C/index.html">
+<meta property="og:site_name" content="kiosk007&#39;s Blog">
+<meta property="og:description" content="etcd 是一个强一致性的分布式键值存储系统，可以提供可靠的分布式集群的数据访问方式。 etcd is a strongly consistent, distributed key-value store that provides a reliable way to store data that needs to be accessed by a distributed system or c">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://kiosk007.top/images/etcd/etcd.png">
+<meta property="og:image" content="http://kiosk007.top/images/etcd/raft_a_consensus_algorithm_for_replicated_logs_1440-21.jpg">
+<meta property="article:published_time" content="2020-05-30T13:01:00.000Z">
+<meta property="article:modified_time" content="2020-05-30T13:01:00.000Z">
+<meta property="article:author" content="kiosk">
+<meta property="article:tag" content="etcd">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://kiosk007.top/images/etcd/etcd.png">
+
+<link rel="canonical" href="http://kiosk007.top/2020/05/30/go-etcd-%E7%9A%84%E5%9F%BA%E6%9C%AC%E6%93%8D%E4%BD%9C/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>etcd 的基本入门 | kiosk007's Blog</title>
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?6f3d277b6c83066a05a8b7db067b2308";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<link rel="alternate" href="/atom.xml" title="kiosk007's Blog" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">kiosk007's Blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">专注! 量变产生质变 !</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://kiosk007.top/2020/05/30/go-etcd-%E7%9A%84%E5%9F%BA%E6%9C%AC%E6%93%8D%E4%BD%9C/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="kiosk">
+      <meta itemprop="description" content="NoOps">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="kiosk007's Blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          etcd 的基本入门
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-05-30 21:01:00" itemprop="dateCreated datePublished" datetime="2020-05-30T21:01:00+08:00">2020-05-30</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/etcd/" itemprop="url" rel="index"><span itemprop="name">etcd</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/2020/05/30/go-etcd-%E7%9A%84%E5%9F%BA%E6%9C%AC%E6%93%8D%E4%BD%9C/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2020/05/30/go-etcd-%E7%9A%84%E5%9F%BA%E6%9C%AC%E6%93%8D%E4%BD%9C/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p><strong>etcd</strong> 是一个强一致性的分布式键值存储系统，可以提供可靠的分布式集群的数据访问方式。</p>
+<p>etcd is a strongly consistent, distributed key-value store that provides a reliable way to store data that needs to be accessed by a distributed system or cluster of machines.</p>
+<p>refer: <a target="_blank" rel="noopener" href="https://etcd.io/">https://etcd.io/</a></p>
+<a id="more"></a>
+
+<hr>
+<img src="/images/etcd/etcd.png">
+
+<h1 id="etcd简介"><a href="#etcd简介" class="headerlink" title="etcd简介"></a>etcd简介</h1><p>etcd 诞生于 CoreOS 公司，它最初是用于解决集群管理系统中 OS 升级的<strong>分布式并发控制</strong>、<strong>服务发现</strong>、<strong>集群状态存储</strong> 以及 <strong>配置文件的存储与分发</strong>等问题。基于此，etcd 被设计为提供高可用、强一致的小型 keyvalue 数据存储服务。</p>
+<p>项目当前隶属于 CNCF 基金会，被 AWS、Google、Microsoft、Alibaba 等大型互联网公司广泛使用。</p>
+<h1 id="核心特性"><a href="#核心特性" class="headerlink" title="核心特性"></a>核心特性</h1><ul>
+<li>数据存储在集群中的高可用K-V存储</li>
+<li>允许应用实时监听存储中的K-V的变化</li>
+<li>能够容忍单点故障，能够应对网络分区</li>
+</ul>
+<blockquote>
+<p>分布式的容灾策略是基于 <a target="_blank" rel="noopener" href="https://www.cnblogs.com/ECJTUACM-873284962/p/7215942.html">鸽巢理论</a> ，假设一个班级有60人，我将一个秘密告诉31人，那么随便在这个班级挑出30人来，肯定至少有一个人指导这个秘密。</p>
+</blockquote>
+<p><strong>etcd与Raft的关系</strong></p>
+<p>Raft是强一致性的集群日志同步算法，etcd是一个分布式KV存储，etcd利用raft算法在集群中同步key-value 。etcd集群需要2N+1个节点。</p>
+<img src="/images/etcd/raft_a_consensus_algorithm_for_replicated_logs_1440-21.jpg">
+日志一旦由 leader节点 复制到了大多数 follower节点 即可完成提交。
+上图可以看到7个节点的集群，log index 为9 的数据已经同步给 a,c,d 所以index 9 属于整个集群，index为11 的几个数据leader 不认，所以这个数据不属于集群。
+
+<blockquote>
+<p><code>Raft 可以保证，给客户端承诺过的请求一定是不会丢失的</code><br><code>各个节点的数据一定是最终一致的</code> </p>
+</blockquote>
+<p><a target="_blank" rel="noopener" href="http://thesecretlivesofdata.com/raft/">raft 算法英文动画演示</a></p>
+<h1 id="交互协议"><a href="#交互协议" class="headerlink" title="交互协议"></a>交互协议</h1><ul>
+<li>HTTP 基于JSON请求，例如 curl，简单通用。</li>
+<li>SDK 内置GRPC协议，性能高效</li>
+</ul>
+<h1 id="etcd-功能"><a href="#etcd-功能" class="headerlink" title="etcd 功能"></a>etcd 功能</h1><p>refer： <a target="_blank" rel="noopener" href="https://etcd.io/docs/v3.4.0/demo/">etcd 文档演示</a></p>
+<ul>
+<li><p>put、get、del 操作<br>   数据库普通的增加，查找，删除操作，如果想要更新，依旧使用put。</p>
+</li>
+<li><p>watch 监听</p>
+<p> 支持监听某一key的变化，有变化即产生回调，另外还支持查找key 的历史版本。</p>
+</li>
+<li><p>lease 租约</p>
+<p>  申请定时器，举例：申请一个TTL为10s的租约 lease，当 put 一个 key 时，携带该租约，当TTL到期时，key也会被删除，一个 lease id 可以关联多个key，也就是租约到期，多个key 可以被删除，想要防止被删除，可以用keepalive定期续租。
+  </p>
+</li>
+<li><p>txn 事物、loack 分布式锁<br>  etcd 支持将多个请求包装到一个事务中，或者添加一个分布式锁。</p>
+</li>
+</ul>
+<h1 id="安装部署"><a href="#安装部署" class="headerlink" title="安装部署"></a>安装部署</h1><ul>
+<li>安装etcd</li>
+</ul>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">➜  wget https://github.com/etcd-io/etcd/releases/download/v3.4.9/etcd-v3.4.9-linux-amd64.tar.gz</span><br><span class="line">➜  tar -xf etcd-v3.4.9-linux-amd64.tar.gz</span><br><span class="line">➜  <span class="built_in">cd</span> etcd-v3.4.9-linux-amd64/</span><br><span class="line">➜  sudo cp etcd /usr/<span class="built_in">local</span>/sbin/</span><br><span class="line">➜  sudo cp etcdctl /usr/<span class="built_in">local</span>/sbin/</span><br></pre></td></tr></table></figure>
+<ul>
+<li>设置集群信息</li>
+</ul>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">TOKEN=token-01</span><br><span class="line">CLUSTER_STATE=new</span><br><span class="line">NAME_1=machine-1</span><br><span class="line">NAME_2=machine-2</span><br><span class="line">NAME_3=machine-3</span><br><span class="line">HOST_1=127.0.0.1</span><br><span class="line">HOST_2=127.0.0.1</span><br><span class="line">HOST_3=127.0.0.1</span><br><span class="line">CLUSTER=<span class="variable">$&#123;NAME_1&#125;</span>=http://<span class="variable">$&#123;HOST_1&#125;</span>:2381,<span class="variable">$&#123;NAME_2&#125;</span>=http://<span class="variable">$&#123;HOST_2&#125;</span>:2382,<span class="variable">$&#123;NAME_3&#125;</span>=http://<span class="variable">$&#123;HOST_3&#125;</span>:2383</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<ul>
+<li>启动集群</li>
+</ul>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># For machine 1</span></span><br><span class="line">THIS_NAME=<span class="variable">$&#123;NAME_1&#125;</span></span><br><span class="line">THIS_IP=<span class="variable">$&#123;HOST_1&#125;</span></span><br><span class="line">etcd --data-dir=data.etcd1 --name <span class="variable">$&#123;THIS_NAME&#125;</span> \</span><br><span class="line">	--initial-advertise-peer-urls http://<span class="variable">$&#123;THIS_IP&#125;</span>:2381 --listen-peer-urls http://<span class="variable">$&#123;THIS_IP&#125;</span>:2381 \</span><br><span class="line">	--advertise-client-urls http://<span class="variable">$&#123;THIS_IP&#125;</span>:2371 --listen-client-urls http://<span class="variable">$&#123;THIS_IP&#125;</span>:2371 \</span><br><span class="line">	--initial-cluster <span class="variable">$&#123;CLUSTER&#125;</span> \</span><br><span class="line">	--initial-cluster-state <span class="variable">$&#123;CLUSTER_STATE&#125;</span> --initial-cluster-token <span class="variable">$&#123;TOKEN&#125;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># For machine 2</span></span><br><span class="line">THIS_NAME=<span class="variable">$&#123;NAME_2&#125;</span></span><br><span class="line">THIS_IP=<span class="variable">$&#123;HOST_2&#125;</span></span><br><span class="line">etcd --data-dir=data.etcd2 --name <span class="variable">$&#123;THIS_NAME&#125;</span> \</span><br><span class="line">	--initial-advertise-peer-urls http://<span class="variable">$&#123;THIS_IP&#125;</span>:2382 --listen-peer-urls http://<span class="variable">$&#123;THIS_IP&#125;</span>:2382 \</span><br><span class="line">	--advertise-client-urls http://<span class="variable">$&#123;THIS_IP&#125;</span>:2372 --listen-client-urls http://<span class="variable">$&#123;THIS_IP&#125;</span>:2372 \</span><br><span class="line">	--initial-cluster <span class="variable">$&#123;CLUSTER&#125;</span> \</span><br><span class="line">	--initial-cluster-state <span class="variable">$&#123;CLUSTER_STATE&#125;</span> --initial-cluster-token <span class="variable">$&#123;TOKEN&#125;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># For machine 3</span></span><br><span class="line">THIS_NAME=<span class="variable">$&#123;NAME_3&#125;</span></span><br><span class="line">THIS_IP=<span class="variable">$&#123;HOST_3&#125;</span></span><br><span class="line">etcd --data-dir=data.etcd3 --name <span class="variable">$&#123;THIS_NAME&#125;</span> \</span><br><span class="line">	--initial-advertise-peer-urls http://<span class="variable">$&#123;THIS_IP&#125;</span>:2383 --listen-peer-urls http://<span class="variable">$&#123;THIS_IP&#125;</span>:2383 \</span><br><span class="line">	--advertise-client-urls http://<span class="variable">$&#123;THIS_IP&#125;</span>:2373 --listen-client-urls http://<span class="variable">$&#123;THIS_IP&#125;</span>:2373 \</span><br><span class="line">	--initial-cluster <span class="variable">$&#123;CLUSTER&#125;</span> \</span><br><span class="line">	--initial-cluster-state <span class="variable">$&#123;CLUSTER_STATE&#125;</span> --initial-cluster-token <span class="variable">$&#123;TOKEN&#125;</span></span><br></pre></td></tr></table></figure>
+<ul>
+<li>使用etcdctl 连接到etcd</li>
+</ul>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">export</span> ETCDCTL_API=3</span><br><span class="line">HOST_1=127.0.0.1</span><br><span class="line">HOST_2=127.0.0.1</span><br><span class="line">HOST_3=127.0.0.1</span><br><span class="line">ENDPOINTS=<span class="variable">$HOST_1</span>:2371,<span class="variable">$HOST_2</span>:2372,<span class="variable">$HOST_3</span>:2373</span><br><span class="line"></span><br><span class="line">etcdctl --endpoints=<span class="variable">$ENDPOINTS</span> member list</span><br></pre></td></tr></table></figure>
+<ul>
+<li>尝试添加一个key</li>
+</ul>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">➜  etcdctl --endpoints=<span class="variable">$ENDPOINTS</span> put <span class="string">&quot;key&quot;</span> <span class="string">&quot;hello&quot;</span></span><br><span class="line">OK</span><br></pre></td></tr></table></figure>
+<h1 id="golang-操作-etcd"><a href="#golang-操作-etcd" class="headerlink" title="golang 操作 etcd"></a>golang 操作 etcd</h1><p>github 官方示例代码：<a target="_blank" rel="noopener" href="https://github.com/etcd-io/etcd/tree/master/clientv3">https://github.com/etcd-io/etcd/tree/master/clientv3</a></p>
+<p>使用前先安装 </p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">go get go.etcd.io/etcd/clientv3</span><br></pre></td></tr></table></figure>
+<p>解决Golang1.14 etcd/clientv3报错：etcd undefined: resolver.BuildOption</p>
+<p>refer: <a target="_blank" rel="noopener" href="https://blog.csdn.net/qq_43442524/article/details/104997539">https://blog.csdn.net/qq_43442524/article/details/104997539</a></p>
+<h2 id="连接"><a href="#连接" class="headerlink" title="连接"></a>连接</h2><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> client *clientv3.Client</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">Conn</span><span class="params">()</span></span> &#123;</span><br><span class="line">	cli, err := clientv3.New(clientv3.Config&#123;</span><br><span class="line">		Endpoints:   []<span class="keyword">string</span>&#123;<span class="string">&quot;localhost:2371&quot;</span>, <span class="string">&quot;localhost:2372&quot;</span>, <span class="string">&quot;localhost:2373&quot;</span>&#125;,</span><br><span class="line">		DialTimeout: <span class="number">5</span> * time.Second,</span><br><span class="line">	&#125;)</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="comment">// handle error!</span></span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">defer</span> cli.Close()</span><br><span class="line">	client = cli</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="简单操作-GET，PUT，DEL"><a href="#简单操作-GET，PUT，DEL" class="headerlink" title="简单操作 GET，PUT，DEL"></a>简单操作 GET，PUT，DEL</h2><p>refer：<a target="_blank" rel="noopener" href="https://godoc.org/go.etcd.io/etcd/clientv3">https://godoc.org/go.etcd.io/etcd/clientv3</a></p>
+<p>etcd的操作强大在可以添加 <code>WithOption</code> 比如 <code>WithPrevKV()</code> 获取前一个Key 和 <code>WithPrefix()</code> 遍历</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> EtcdApi <span class="keyword">struct</span> &#123;</span><br><span class="line">	KV clientv3.KV</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(e EtcdApi)</span> <span class="title">PutKey</span><span class="params">(key <span class="keyword">string</span>, value <span class="keyword">string</span>)</span> <span class="title">error</span></span> &#123;</span><br><span class="line">	ctx, _ := context.WithTimeout(context.Background(),<span class="number">2</span> * time.Second)</span><br><span class="line"></span><br><span class="line"><span class="comment">// clientv3.WithPrevKV() 获取到删KV之前的值</span></span><br><span class="line">	<span class="keyword">if</span> putResp, err := e.KV.Put(ctx,key,value,clientv3.WithPrevKV()); err != <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> err</span><br><span class="line">	&#125;<span class="keyword">else</span> &#123;</span><br><span class="line">		<span class="keyword">if</span> putResp.PrevKv != <span class="literal">nil</span> &#123;</span><br><span class="line">			fmt.Println(<span class="string">&quot;PrevValue: &quot;</span>, <span class="keyword">string</span>(putResp.PrevKv.Value))</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(e EtcdApi)</span> <span class="title">GetKey</span><span class="params">(key <span class="keyword">string</span>)</span> <span class="params">(value <span class="keyword">string</span>, err error)</span></span> &#123;</span><br><span class="line">	ctx, _ := context.WithTimeout(context.Background(),<span class="number">2</span> * time.Second)</span><br><span class="line"></span><br><span class="line"><span class="comment">// 可以遍历目录</span></span><br><span class="line">	<span class="keyword">if</span> getResp, err := e.KV.Get(ctx,key,clientv3.WithPrefix());err != <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> <span class="string">&quot;&quot;</span>, err</span><br><span class="line">	&#125;<span class="keyword">else</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> fmt.Sprintf(<span class="string">&quot;%s&quot;</span>, getResp.Kvs),err</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(e EtcdApi)</span> <span class="title">DelKey</span><span class="params">(key <span class="keyword">string</span>)</span> <span class="params">(value <span class="keyword">string</span>, err error)</span></span> &#123;</span><br><span class="line">	ctx, _ := context.WithTimeout(context.Background(),<span class="number">2</span> * time.Second)</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> delResp, err := e.KV.Delete(ctx,key,clientv3.WithPrevKV());err != <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> value,<span class="literal">nil</span></span><br><span class="line">	&#125;<span class="keyword">else</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> fmt.Sprintf(<span class="string">&quot;%s&quot;</span>,delResp.PrevKvs),<span class="literal">nil</span></span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h2 id="Lease-租期"><a href="#Lease-租期" class="headerlink" title="Lease 租期"></a>Lease 租期</h2><ul>
+<li>创建租约</li>
+</ul>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(e EtcdApi)</span> <span class="title">GrantLease</span><span class="params">()</span> <span class="params">(lease clientv3.Lease, leaseId clientv3.LeaseID,err error)</span></span> &#123;</span><br><span class="line">	<span class="keyword">var</span> leaseGrantResp *clientv3.LeaseGrantResponse</span><br><span class="line">	</span><br><span class="line">	lease = clientv3.NewLease(e.Client)</span><br><span class="line"></span><br><span class="line">	<span class="comment">// 申请一个10s的租约</span></span><br><span class="line">	<span class="keyword">if</span> leaseGrantResp, err = lease.Grant(e.Ctx,<span class="number">10</span>); err != <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> </span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	leaseId = leaseGrantResp.ID</span><br><span class="line"></span><br><span class="line">	<span class="comment">// Put 一个KV, 关联租约，从而实现10s自动过期</span></span><br><span class="line">	<span class="keyword">if</span> putResp,err := e.KV.Put(e.Ctx,<span class="string">&quot;/key1/lease&quot;</span>,<span class="string">&quot;v1&quot;</span>,clientv3.WithLease(leaseId)); err != <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> </span><br><span class="line">	&#125;<span class="keyword">else</span> &#123;</span><br><span class="line">		fmt.Println(putResp.Header.Revision)</span><br><span class="line">		<span class="keyword">return</span> </span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<ul>
+<li>续租</li>
+</ul>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(e *EtcdApi)</span> <span class="title">KeepAlive</span><span class="params">(leaseId clientv3.LeaseID)</span></span> &#123;</span><br><span class="line">	<span class="comment">// 自动续期</span></span><br><span class="line">	<span class="keyword">var</span> keepResp *clientv3.LeaseKeepAliveResponse</span><br><span class="line">	keepRespChan,err := e.Lease.KeepAlive(context.TODO(), leaseId)</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		log.Fatal(<span class="string">&quot;ERROR :&quot;</span>, err)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">go</span> <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">		<span class="keyword">for</span> &#123;</span><br><span class="line">			<span class="keyword">select</span>&#123;</span><br><span class="line">			<span class="keyword">case</span> keepResp = &lt;- keepRespChan:</span><br><span class="line">				<span class="keyword">if</span> keepRespChan == <span class="literal">nil</span> &#123;</span><br><span class="line">					fmt.Println(<span class="string">&quot;租约实效&quot;</span>)</span><br><span class="line">					<span class="keyword">goto</span> END</span><br><span class="line">				&#125;<span class="keyword">else</span> &#123; <span class="comment">// 每秒续租一次</span></span><br><span class="line">					fmt.Println(<span class="string">&quot;续租&quot;</span>, keepResp.ID)</span><br><span class="line">				&#125;</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	END:</span><br><span class="line">		fmt.Println(<span class="string">&quot;Return&quot;</span>)</span><br><span class="line">	&#125;()</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="Watch-监听"><a href="#Watch-监听" class="headerlink" title="Watch 监听"></a>Watch 监听</h2><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(e *EtcdApi)</span> <span class="title">Watch</span><span class="params">()</span></span> &#123;</span><br><span class="line">	<span class="comment">// 创建一个watcher</span></span><br><span class="line">	e.Watcher = clientv3.Watcher(e.Client)</span><br><span class="line"></span><br><span class="line">	<span class="comment">// 30 s 后取消监听</span></span><br><span class="line">	ctx, cancelFunc := context.WithCancel(context.TODO())</span><br><span class="line">	time.AfterFunc(<span class="number">30</span>*time.Second, <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">		cancelFunc()</span><br><span class="line">	&#125;)</span><br><span class="line"></span><br><span class="line">	<span class="comment">// 启动监听</span></span><br><span class="line">	watchRespChan := e.Watcher.Watch(ctx,<span class="string">&quot;/key1/watcher&quot;</span>)</span><br><span class="line"></span><br><span class="line">	<span class="comment">// 处理kv变化事件</span></span><br><span class="line">	<span class="keyword">for</span> watchResp := <span class="keyword">range</span> watchRespChan &#123;</span><br><span class="line">		<span class="keyword">for</span> _,event := <span class="keyword">range</span> watchResp.Events &#123;</span><br><span class="line">			<span class="keyword">switch</span> event.Type &#123;</span><br><span class="line">			<span class="keyword">case</span> mvccpb.PUT: &#123;</span><br><span class="line">				fmt.Println(<span class="string">&quot; 修改为： &quot;</span>, <span class="keyword">string</span>(event.Kv.Value), <span class="string">&quot;Revision: &quot;</span>, event.Kv.CreateRevision , event.Kv.ModRevision)</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">case</span> mvccpb.DELETE: &#123;</span><br><span class="line">				fmt.Println(<span class="string">&quot; 删除： Revision: &quot;</span>, event.Kv.ModRevision)</span><br><span class="line">			&#125;</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="Operation"><a href="#Operation" class="headerlink" title="Operation"></a>Operation</h2><p>可以将上面提到的 <code>Get</code>、<code>Put</code>、<code>Delete</code>等操作抽象成一个Operation。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(e EtcdApi)</span> <span class="title">Op</span><span class="params">()</span></span> &#123;</span><br><span class="line">	<span class="comment">// 创建一个OP：operation</span></span><br><span class="line">	putOp := clientv3.OpPut(<span class="string">&quot;/key1/op&quot;</span>,<span class="string">&quot;value_op&quot;</span>)</span><br><span class="line"></span><br><span class="line">	<span class="comment">// 执行OP</span></span><br><span class="line">	opResp, err := e.KV.Do(e.Ctx,putOp)</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		fmt.Println(err)</span><br><span class="line">		<span class="keyword">return</span></span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	fmt.Println(<span class="string">&quot;写入Revision： &quot;</span>, &amp;opResp.Put().Header.Revision)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="Txn"><a href="#Txn" class="headerlink" title="Txn"></a>Txn</h2><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 处理业务</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(e *EtcdApi)</span> <span class="title">DoTxn</span><span class="params">(leaseId clientv3.LeaseID)</span></span> &#123;</span><br><span class="line">	<span class="comment">// 创建事物</span></span><br><span class="line">	txn := e.KV.Txn(e.Ctx)</span><br><span class="line">	</span><br><span class="line">	<span class="comment">// 定义事物</span></span><br><span class="line">	txn.If(clientv3.Compare(clientv3.CreateRevision(<span class="string">&quot;/key1/lease&quot;</span>),<span class="string">&quot;=&quot;</span>,<span class="string">&quot;0&quot;</span>)).</span><br><span class="line">		Then(clientv3.OpPut(<span class="string">&quot;/key1/lease&quot;</span>,<span class="string">&quot;value1&quot;</span>,clientv3.WithLease(leaseId))).</span><br><span class="line">		Else(clientv3.OpGet(<span class="string">&quot;/key1/lease&quot;</span>))  <span class="comment">//抢锁失败</span></span><br><span class="line">	</span><br><span class="line">	txnResp,err := txn.Commit()</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		log.Fatal(err.Error())</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="comment">// 是否抢到锁</span></span><br><span class="line">	<span class="keyword">if</span> !txnResp.Succeeded &#123;</span><br><span class="line">		fmt.Println(<span class="string">&quot;抢锁失败,锁被占用：&quot;</span> , <span class="keyword">string</span>(txnResp.Responses[<span class="number">0</span>].GetResponseRange().Kvs[<span class="number">0</span>].Value))</span><br><span class="line">		<span class="keyword">return</span></span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/etcd/" rel="tag"># etcd</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/05/30/VMTrafficShark-%E8%87%AA%E5%88%B6%E5%BC%B1%E7%BD%91%E6%A8%A1%E6%8B%9F%E5%99%A8/" rel="prev" title="VMTrafficShark 自制弱网模拟器">
+      <i class="fa fa-chevron-left"></i> VMTrafficShark 自制弱网模拟器
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/06/01/%E6%80%A7%E8%83%BD%E5%A4%A7%E6%9D%80%E5%99%A8epoll/" rel="next" title="性能大杀器epoll">
+      性能大杀器epoll <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#etcd%E7%AE%80%E4%BB%8B"><span class="nav-number">1.</span> <span class="nav-text">etcd简介</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%A0%B8%E5%BF%83%E7%89%B9%E6%80%A7"><span class="nav-number">2.</span> <span class="nav-text">核心特性</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BA%A4%E4%BA%92%E5%8D%8F%E8%AE%AE"><span class="nav-number">3.</span> <span class="nav-text">交互协议</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#etcd-%E5%8A%9F%E8%83%BD"><span class="nav-number">4.</span> <span class="nav-text">etcd 功能</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%AE%89%E8%A3%85%E9%83%A8%E7%BD%B2"><span class="nav-number">5.</span> <span class="nav-text">安装部署</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#golang-%E6%93%8D%E4%BD%9C-etcd"><span class="nav-number">6.</span> <span class="nav-text">golang 操作 etcd</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%BF%9E%E6%8E%A5"><span class="nav-number">6.1.</span> <span class="nav-text">连接</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AE%80%E5%8D%95%E6%93%8D%E4%BD%9C-GET%EF%BC%8CPUT%EF%BC%8CDEL"><span class="nav-number">6.2.</span> <span class="nav-text">简单操作 GET，PUT，DEL</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Lease-%E7%A7%9F%E6%9C%9F"><span class="nav-number">6.3.</span> <span class="nav-text">Lease 租期</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Watch-%E7%9B%91%E5%90%AC"><span class="nav-number">6.4.</span> <span class="nav-text">Watch 监听</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Operation"><span class="nav-number">6.5.</span> <span class="nav-text">Operation</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Txn"><span class="nav-number">6.6.</span> <span class="nav-text">Txn</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="kiosk"
+      src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">kiosk</p>
+  <div class="site-description" itemprop="description">NoOps</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">26</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">10</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">20</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+  <div class="links-of-blogroll motion-element">
+    <div class="links-of-blogroll-title"><i class="fa fa-link fa-fw"></i>
+      Links
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="https://github.com/weijiaxiang007" title="https://github.com/weijiaxiang007" rel="noopener" target="_blank">Github</a>
+        </li>
+    </ul>
+  </div>
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-blog"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">kiosk</span>
+</div>
+
+<div class="BbeiAn-info">
+   	京ICP备 -
+	<a target="_blank" href="http://beian.miit.gov.cn/" text-decoration:none;padding-left:30px;background:url(https://s1.ax1x.com/2018/09/29/ilmwIH.png) no-repeat left center" rel="nofollow">京ICP备20015006号-1</a>	 
+</div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/medium-zoom@1/dist/medium-zoom.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+<script src="/js/bookmark.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+<script>
+if (document.querySelectorAll('pre.mermaid').length) {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/mermaid@8/dist/mermaid.min.js', () => {
+    mermaid.initialize({
+      theme    : 'neutral',
+      logLevel : 3,
+      flowchart: { curve     : 'linear' },
+      gantt    : { axisFormat: '%m/%d/%Y' },
+      sequence : { actorMargin: 50 }
+    });
+  }, window.mermaid);
+}
+</script>
+
+
+  
+
+  
+
+  
+
+  
+
+  <canvas id="evanyou"></canvas>
+  <style>
+    #evanyou {
+      position: fixed;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      z-index: -1;
+    }
+  </style>
+  <script src="/js/evan-you.js"></script>
+
+
+
+
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('https://cdn.jsdelivr.net/npm/valine@1.3.10/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'XhYn8GEq1Sg7ufJQAVmR4dWN-gzGzoHsz',
+      appKey     : 'r42k4lqU022wD7IvtwGaQfjN',
+      placeholder: "Just go go",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : false,
+      lang       : 'zh-cn' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
+</script>
+
+
+  <script src="https://libs.baidu.com/jquery/2.0.0/jquery.min.js"></script>
+  <script src="https://unpkg.com/mermaid@8.4.6/dist/mermaid.min.js"></script>
+  <script>mermaid.initialize({startOnLoad:true});</script>
+</body>
+</html>
