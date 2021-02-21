@@ -1,1 +1,85 @@
-"use strict";!function(){function t(t,e,n){return!0===n?t.getAttribute(e)||n:Number(t.getAttribute(e))||n}var o,c,e=document.getElementById("ribbon"),n={z:t(e,"zIndex",-1),a:t(e,"alpha",.6),s:t(e,"size",90),c:t(e,"data-click",!0)},i=document.createElement("canvas"),a=i.getContext("2d"),l=window.devicePixelRatio||1,d=window.innerWidth,r=window.innerHeight,s=n.s,u=Math,h=0,x=2*u.PI,g=u.cos,m=u.random;function y(){for(a.clearRect(0,0,d,r),o=[{x:0,y:.7*r+s},{x:0,y:.7*r-s}];o[1].x<d+s;)f(o[0],o[1])}function f(t,e){a.beginPath(),a.moveTo(t.x,t.y),a.lineTo(e.x,e.y);var n=e.x+(2*m()-.25)*s,i=function t(e){c=e+(2*m()-1.1)*s;return r<c||c<0?t(e):c}(e.y);a.lineTo(n,i),a.closePath(),h-=x/-50,a.fillStyle="#"+(127*g(h)+128<<16|127*g(h+x/3)+128<<8|127*g(h+x/3*2)+128).toString(16),a.fill(),o[0]=o[1],o[1]={x:n,y:i}}i.width=d*l,i.height=r*l,a.scale(l,l),a.globalAlpha=n.a,i.style.cssText="opacity: "+n.a+";position:fixed;top:0;left:0;z-index: "+n.z+";width:100%;height:100%;pointer-events:none;",document.getElementsByTagName("body")[0].appendChild(i),"false"!==n.c&&(document.onclick=y,document.ontouchstart=y),y()}();
+/**
+ * Copyright (c) 2016 hustcc
+ * License: MIT
+ * Version: v1.0.1
+ * GitHub: https://github.com/hustcc/ribbon.js
+ **/
+// changed by Molunerfinn
+!(function () {
+  function attr (node, attr, default_value) {
+    if (default_value === true) {
+      return node.getAttribute(attr) || default_value
+    }
+    return Number(node.getAttribute(attr)) || default_value
+  }
+
+  // get user config
+  var script = document.getElementById('ribbon'),
+    config = {
+      z: attr(script, 'zIndex', -1), // z-index
+      a: attr(script, 'alpha', 0.6), // alpha
+      s: attr(script, 'size', 90), // size
+      c: attr(script, 'data-click', true) // click-to-change
+    }
+
+  var canvas = document.createElement('canvas'),
+    g2d = canvas.getContext('2d'),
+    pr = window.devicePixelRatio || 1,
+    width = window.innerWidth,
+    height = window.innerHeight,
+    f = config.s,
+    q,
+    t,
+    m = Math,
+    r = 0,
+    pi = m.PI * 2,
+    cos = m.cos,
+    random = m.random
+  canvas.width = width * pr
+  canvas.height = height * pr
+  g2d.scale(pr, pr)
+  g2d.globalAlpha = config.a
+  canvas.style.cssText =
+    'opacity: ' +
+    config.a +
+    ';position:fixed;top:0;left:0;z-index: ' +
+    config.z +
+    ';width:100%;height:100%;pointer-events:none;'
+  // create canvas
+  document.getElementsByTagName('body')[0].appendChild(canvas)
+
+  function redraw () {
+    g2d.clearRect(0, 0, width, height)
+    q = [{ x: 0, y: height * 0.7 + f }, { x: 0, y: height * 0.7 - f }]
+    while (q[1].x < width + f) draw(q[0], q[1])
+  }
+  function draw (i, j) {
+    g2d.beginPath()
+    g2d.moveTo(i.x, i.y)
+    g2d.lineTo(j.x, j.y)
+    var k = j.x + (random() * 2 - 0.25) * f,
+      n = line(j.y)
+    g2d.lineTo(k, n)
+    g2d.closePath()
+    r -= pi / -50
+    g2d.fillStyle =
+      '#' +
+      (
+        ((cos(r) * 127 + 128) << 16) |
+        ((cos(r + pi / 3) * 127 + 128) << 8) |
+        (cos(r + (pi / 3) * 2) * 127 + 128)
+      ).toString(16)
+    g2d.fill()
+    q[0] = q[1]
+    q[1] = { x: k, y: n }
+  }
+  function line (p) {
+    t = p + (random() * 2 - 1.1) * f
+    return t > height || t < 0 ? line(p) : t
+  }
+  if (config.c !== 'false') {
+    document.onclick = redraw
+    document.ontouchstart = redraw
+  }
+  redraw()
+})()

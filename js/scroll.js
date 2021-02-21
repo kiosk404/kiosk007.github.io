@@ -1,1 +1,179 @@
-"use strict";$(function(){var d=0;function e(e){var i;try{i=$(e)}catch(t){i=$(decodeURI(e))}i.velocity("stop").velocity("scroll",{duration:500,easing:"easeInOutQuart"})}$(".toc-child").hide(),$(window).scroll(throttle(function(t){var e,i,o,a,s,c,n=$(this).scrollTop();isMobile()||(e=n,i=$("#content-outer").height(),a=e/((o=$(window).height())<i?i-o:$(document).height()-o),c=100<(s=Math.round(100*a))?100:s<=0?0:s,$(".progress-num").text(c),$(".sidebar-toc__progress-bar").velocity("stop").velocity({width:c+"%"},{duration:100,easing:"easeInOutQuart"}),function(e){if(0!==$(".toc-link").length){var t=$("#post-content").find("h1,h2,h3,h4,h5,h6"),i="";t.each(function(){var t=$(this);e>t.offset().top-25&&(i="#"+$(this).attr("id"))}),""===i&&($(".toc-link").removeClass("active"),$(".toc-child").hide()),"5"===GLOBAL_CONFIG.hexoVersion[0]&&(i=encodeURI(i));var o,a,s=$(".toc-link.active");if(i&&s.attr("href")!==i){a=i,window.history.replaceState&&a!==window.location.hash&&window.history.replaceState(void 0,void 0,a),$(".toc-link").removeClass("active");var c=$('.toc-link[href="'+i+'"]');c.addClass("active");var n=c.parents(".toc-child"),l=0<n.length?n.last():c;(o=l.closest(".toc-item").find(".toc-child")).is(":visible")||o.velocity("stop").velocity("transition.fadeIn",{duration:500,easing:"easeInQuart"}),l.closest(".toc-item").siblings(".toc-item").find(".toc-child").hide()}}}(n));var l,r,h=(r=d<(l=n),d=l,r);56<n?(h?$("#page-header").hasClass("visible")?$("#page-header").removeClass("visible"):console.log():$("#page-header").hasClass("visible")?console.log():$("#page-header").addClass("visible"),$("#page-header").addClass("fixed"),"0"===$("#go-up").css("opacity")&&$("#go-up").velocity("stop").velocity({translateX:-30,rotateZ:360,opacity:1},{easing:"easeOutQuart",duration:200})):(0===n&&$("#page-header").removeClass("fixed").removeClass("visible"),$("#go-up").velocity("stop").velocity({translateX:0,rotateZ:180,opacity:0},{easing:"linear",duration:200}))},50,100)),$("#go-up").on("click",function(){$("body").velocity("stop").velocity("scroll",{duration:500,easing:"easeOutQuart"})}),$("#post-content").find("h1,h2,h3,h4,h5,h6").on("click",function(t){e("#"+$(this).attr("id"))}),$(".toc-link").on("click",function(t){t.preventDefault(),e($(this).attr("href"))})});
+$(function () {
+  var initTop = 0
+  $('.toc-child').hide()
+
+  // main of scroll
+  $(window).scroll(throttle(function (event) {
+    var currentTop = $(this).scrollTop()
+    if (!isMobile()) {
+      // percentage inspired by hexo-theme-next
+      scrollPercent(currentTop)
+      // head position
+      findHeadPosition(currentTop)
+    }
+    var isUp = scrollDirection(currentTop)
+    if (currentTop > 56) {
+      if (isUp) {
+        $('#page-header').hasClass('visible') ? $('#page-header').removeClass('visible') : console.log()
+      } else {
+        $('#page-header').hasClass('visible') ? console.log() : $('#page-header').addClass('visible')
+      }
+      $('#page-header').addClass('fixed')
+      if ($('#go-up').css('opacity') === '0') {
+        $('#go-up').velocity('stop').velocity({
+          translateX: -30,
+          rotateZ: 360,
+          opacity: 1
+        }, {
+          easing: 'easeOutQuart',
+          duration: 200
+        })
+      }
+    } else {
+      if (currentTop === 0) {
+        $('#page-header').removeClass('fixed').removeClass('visible')
+      }
+      $('#go-up').velocity('stop').velocity({
+        translateX: 0,
+        rotateZ: 180,
+        opacity: 0
+      }, {
+        easing: 'linear',
+        duration: 200
+      })
+    }
+  }, 50, 100))
+
+  // go up smooth scroll
+  $('#go-up').on('click', function () {
+    $('body').velocity('stop').velocity('scroll', {
+      duration: 500,
+      easing: 'easeOutQuart'
+    })
+  })
+
+  // head scroll
+  $('#post-content').find('h1,h2,h3,h4,h5,h6').on('click', function (e) {
+    scrollToHead('#' + $(this).attr('id'))
+  })
+
+  // head scroll
+  $('.toc-link').on('click', function (e) {
+    e.preventDefault()
+    scrollToHead($(this).attr('href'))
+  })
+
+  // find the scroll direction
+  function scrollDirection (currentTop) {
+    var result = currentTop > initTop // true is down & false is up
+    initTop = currentTop
+    return result
+  }
+
+  // scroll to a head(anchor)
+  function scrollToHead (anchor) {
+    var item
+    try {
+      item = $(anchor)
+    } catch (e) {
+      // fix #286 support hexo v5
+      item = $(decodeURI(anchor))
+    }
+    item.velocity('stop').velocity('scroll', {
+      duration: 500,
+      easing: 'easeInOutQuart'
+    })
+  }
+
+  // expand toc-item
+  function expandToc ($item) {
+    if ($item.is(':visible')) {
+      return
+    }
+    $item.velocity('stop').velocity('transition.fadeIn', {
+      duration: 500,
+      easing: 'easeInQuart'
+    })
+  }
+
+  function scrollPercent (currentTop) {
+    var docHeight = $('#content-outer').height()
+    var winHeight = $(window).height()
+    var contentMath = (docHeight > winHeight) ? (docHeight - winHeight) : ($(document).height() - winHeight)
+    var scrollPercent = (currentTop) / (contentMath)
+    var scrollPercentRounded = Math.round(scrollPercent * 100)
+    var percentage = (scrollPercentRounded > 100) ? 100
+      : (scrollPercentRounded <= 0) ? 0
+        : scrollPercentRounded
+    $('.progress-num').text(percentage)
+    $('.sidebar-toc__progress-bar').velocity('stop')
+      .velocity({
+        width: percentage + '%'
+      }, {
+        duration: 100,
+        easing: 'easeInOutQuart'
+      })
+  }
+
+  function updateAnchor (anchor) {
+    if (window.history.replaceState && anchor !== window.location.hash) {
+      window.history.replaceState(undefined, undefined, anchor)
+    }
+  }
+
+  // find head position & add active class
+  // DOM Hierarchy:
+  // ol.toc > (li.toc-item, ...)
+  // li.toc-item > (a.toc-link, ol.toc-child > (li.toc-item, ...))
+  function findHeadPosition (top) {
+    // assume that we are not in the post page if no TOC link be found,
+    // thus no need to update the status
+    if ($('.toc-link').length === 0) {
+      return false
+    }
+
+    var list = $('#post-content').find('h1,h2,h3,h4,h5,h6')
+    var currentId = ''
+    list.each(function () {
+      var head = $(this)
+      if (top > head.offset().top - 25) {
+        currentId = '#' + $(this).attr('id')
+      }
+    })
+
+    if (currentId === '') {
+      $('.toc-link').removeClass('active')
+      $('.toc-child').hide()
+    }
+
+    // fix #286 since hexo v5.0.0 will
+    // encodeURI the toc-item href
+    var hexoVersion = GLOBAL_CONFIG.hexoVersion[0]
+
+    if (hexoVersion === '5') {
+      currentId = encodeURI(currentId)
+    }
+
+    var currentActive = $('.toc-link.active')
+    if (currentId && currentActive.attr('href') !== currentId) {
+      updateAnchor(currentId)
+
+      $('.toc-link').removeClass('active')
+      var _this = $('.toc-link[href="' + currentId + '"]')
+      _this.addClass('active')
+
+      var parents = _this.parents('.toc-child')
+      // Returned list is in reverse order of the DOM elements
+      // Thus `parents.last()` is the outermost .toc-child container
+      // i.e. list of subsections
+      var topLink = (parents.length > 0) ? parents.last() : _this
+      expandToc(topLink.closest('.toc-item').find('.toc-child'))
+      topLink
+        // Find all top-level .toc-item containers, i.e. sections
+        // excluding the currently active one
+        .closest('.toc-item').siblings('.toc-item')
+        // Hide their respective list of subsections
+        .find('.toc-child').hide()
+    }
+  }
+})
