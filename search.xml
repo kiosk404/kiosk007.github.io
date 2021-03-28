@@ -1,10 +1,165 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>搭建我的ELK 7.12</title>
+    <url>/2021/03/27/%E6%90%AD%E5%BB%BA%E6%88%91%E7%9A%84ELK-7-2/</url>
+    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script><p>Elasticsearch 是一个实时的分布式搜索分析引擎，它能让你以前所未有的速度和规模，去探索你的数据。</p>
+<p>“ELK”是三个开源项目的首字母缩写，这三个项目分别是：Elasticsearch、Logstash 和 Kibana。Elasticsearch 是一个搜索和分析引擎。Logstash 是服务器端数据处理管道，能够同时从多个来源采集数据，转换数据，然后将数据发送到诸如 Elasticsearch 等“存储库”中。Kibana 则可以让用户在 Elasticsearch 中使用图形和图表对数据进行可视化。</p>
+<p>引用官网的一句话：</p>
+<blockquote>
+<p>Elasticsearch 是一个分布式、RESTful 风格的搜索和数据分析引擎，能够解决不断涌现出的各种用例。 作为 Elastic Stack 的核心，它集中存储您的数据，帮助您发现意料之中以及意料之外的情况。</p>
+</blockquote>
+<a id="more"></a>
+<h1 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h1><p><img src="https://img1.kiosk007.top/static/images/elk/elk.png" style="height:500px"></p>
+<p><strong>ElasticSearch 的目录结构</strong></p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>目录</th>
+<th style="text-align:right">配置文件</th>
+<th style="text-align:center">描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>bin</td>
+<td style="text-align:right"></td>
+<td style="text-align:center">脚本文件，包括启动elasticsearch，安装插件，运行统计数据等 </td>
+</tr>
+<tr>
+<td>config</td>
+<td style="text-align:right">elasticsearch.yml</td>
+<td style="text-align:center">集群配置文件，user，role based 相关配置</td>
+</tr>
+<tr>
+<td>JDK</td>
+<td style="text-align:right"></td>
+<td style="text-align:center">java 运行环境</td>
+</tr>
+<tr>
+<td>data</td>
+<td style="text-align:right">path.data</td>
+<td style="text-align:center">数据文件</td>
+</tr>
+<tr>
+<td>lib</td>
+<td style="text-align:right"></td>
+<td style="text-align:center">java 类库</td>
+</tr>
+<tr>
+<td>logs</td>
+<td style="text-align:right">path.log</td>
+<td style="text-align:center">日志文件</td>
+</tr>
+<tr>
+<td>modules</td>
+<td style="text-align:right"></td>
+<td style="text-align:center">包含所有ES模块</td>
+</tr>
+<tr>
+<td>plugins</td>
+<td style="text-align:right"></td>
+<td style="text-align:center">包含所有已经安装的插件</td>
+</tr>
+</tbody>
+</table>
+</div>
+<h1 id="开始安装"><a href="#开始安装" class="headerlink" title="开始安装"></a>开始安装</h1><p>官方文档 Set up Elasticsearch 有各个 OS 的安装指导，页面 <a href="https://www.elastic.co/guide/en/elasticsearch/reference/7.3/install-elasticsearch.html">Installing Elasticsearch</a> 中提供了多种安装包对应的指导链接！</p>
+<p>本文选择绿色安装包的的方式（tar.gz）安装。</p>
+<ul>
+<li>安装环境： ubuntu 20.04</li>
+<li>下载链接： <a href="https://mirrors.huaweicloud.com/elasticsearch/">华为镜像站</a> 速度能快一点</li>
+</ul>
+<p>说明：ElasticSearch使用java语言开发，所以默认需要安装并配置JDK，设置 JAVA_HOME, 但是从 7.0 开始，ElasticSearch 内置了Java环境，无需再安装。另外ES启动不能使用root用户</p>
+<p>内核参数修改（32C + 128G参考）</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#修改文件描述符数量</span></span><br><span class="line">grep <span class="string">&quot;* - nofile 512000&quot;</span> /etc/security/limits.conf || <span class="built_in">echo</span>  <span class="string">&quot;* - nofile 512000&quot;</span>  &gt;&gt; /etc/security/limits.conf  </span><br><span class="line"></span><br><span class="line"><span class="comment">#修改最大打开进程数数量</span></span><br><span class="line">grep <span class="string">&quot;work - nproc unlimited&quot;</span> /etc/security/limits.conf || <span class="built_in">echo</span> <span class="string">&quot;elasticsearch - nproc unlimited&quot;</span>   &gt;&gt; /etc/security/limits.conf  </span><br><span class="line"><span class="comment">#配合es mem lock，centos6无须添加</span></span><br><span class="line">grep <span class="string">&quot;* soft memlock unlimited&quot;</span> /etc/security/limits.conf || <span class="built_in">echo</span> <span class="string">&quot;* soft memlock unlimited&quot;</span>   &gt;&gt; /etc/security/limits.conf  </span><br><span class="line"></span><br><span class="line"><span class="comment">#配合es mem lock，centos6无须添加</span></span><br><span class="line">grep <span class="string">&quot;* hard memlock unlimited&quot;</span> /etc/security/limits.conf || <span class="built_in">echo</span> <span class="string">&quot;* hard memlock unlimited&quot;</span>   &gt;&gt; /etc/security/limits.conf  </span><br><span class="line"></span><br><span class="line"><span class="comment">#修改系统文件描述符</span></span><br><span class="line">grep <span class="string">&quot;fs.file-max = 1024000&quot;</span> /etc/sysctl.conf || <span class="built_in">echo</span> <span class="string">&quot;fs.file-max = 1024000&quot;</span>  &gt;&gt; /etc/sysctl.conf </span><br><span class="line"></span><br><span class="line"><span class="comment">#修改程序最大管理的vm</span></span><br><span class="line">grep <span class="string">&quot;vm.max_map_count = 262144&quot;</span> /etc/sysctl.conf || <span class="built_in">echo</span> <span class="string">&quot;vm.max_map_count = 262144&quot;</span>  &gt;&gt;  /etc/sysctl.conf  </span><br><span class="line"></span><br><span class="line">grep  <span class="string">&quot;vm.min_free_kbytes = 2097152&quot;</span> /etc/sysctl.conf || <span class="built_in">echo</span> <span class="string">&quot;vm.min_free_kbytes = 2097152&quot;</span>  &gt;&gt;  /etc/sysctl.conf</span><br><span class="line"></span><br><span class="line">grep  <span class="string">&quot;vm.zone_reclaim_mode = 0&quot;</span> /etc/sysctl.conf || <span class="built_in">echo</span> <span class="string">&quot;vm.zone_reclaim_mode = 0&quot;</span>  &gt;&gt;  /etc/sysctl.conf</span><br><span class="line"></span><br><span class="line">sysctl -p</span><br><span class="line"></span><br><span class="line">swapoff -a   <span class="comment">#关闭虚拟内存</span></span><br></pre></td></tr></table></figure>
+<h2 id="1-安装-elasticsearch"><a href="#1-安装-elasticsearch" class="headerlink" title="1. 安装 elasticsearch"></a>1. 安装 elasticsearch</h2><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-7.12.0-linux-x86_64.tar.gz</span><br><span class="line">tar -xf elasticsearch-7.12.0-linux-x86_64.tar.gz -C ~</span><br><span class="line"><span class="built_in">cd</span> ~/elasticsearch-7.12.0</span><br><span class="line">./bin/elasticsearch  <span class="comment"># 启动</span></span><br></pre></td></tr></table></figure>
+<p>启动成功后访问本地的 9200 端口，可以看到</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ curl 127.0.0.1:9200</span><br><span class="line">&#123;</span><br><span class="line">  <span class="string">&quot;name&quot;</span> : <span class="string">&quot;k8s-master&quot;</span>,</span><br><span class="line">  <span class="string">&quot;cluster_name&quot;</span> : <span class="string">&quot;elasticsearch&quot;</span>,</span><br><span class="line">  <span class="string">&quot;cluster_uuid&quot;</span> : <span class="string">&quot;sEn3TgEVSnW4kHpIAU1-5Q&quot;</span>,</span><br><span class="line">  <span class="string">&quot;version&quot;</span> : &#123;</span><br><span class="line">    <span class="string">&quot;number&quot;</span> : <span class="string">&quot;7.12.0&quot;</span>,</span><br><span class="line">    <span class="string">&quot;build_flavor&quot;</span> : <span class="string">&quot;default&quot;</span>,</span><br><span class="line">    <span class="string">&quot;build_type&quot;</span> : <span class="string">&quot;tar&quot;</span>,</span><br><span class="line">    <span class="string">&quot;build_hash&quot;</span> : <span class="string">&quot;78722783c38caa25a70982b5b042074cde5d3b3a&quot;</span>,</span><br><span class="line">    <span class="string">&quot;build_date&quot;</span> : <span class="string">&quot;2021-03-18T06:17:15.410153305Z&quot;</span>,</span><br><span class="line">    <span class="string">&quot;build_snapshot&quot;</span> : <span class="literal">false</span>,</span><br><span class="line">    <span class="string">&quot;lucene_version&quot;</span> : <span class="string">&quot;8.8.0&quot;</span>,</span><br><span class="line">    <span class="string">&quot;minimum_wire_compatibility_version&quot;</span> : <span class="string">&quot;6.8.0&quot;</span>,</span><br><span class="line">    <span class="string">&quot;minimum_index_compatibility_version&quot;</span> : <span class="string">&quot;6.0.0-beta1&quot;</span></span><br><span class="line">  &#125;,</span><br><span class="line">  <span class="string">&quot;tagline&quot;</span> : <span class="string">&quot;You Know, for Search&quot;</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p class="div-border red">如果有安装的错误，参考：</p>
+
+<ul>
+<li><strong>seccomp unavailable 错误</strong><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">解决方法：elasticsearch.yml 配置</span><br><span class="line">bootstrap.memory_lock: false</span><br><span class="line">bootstrap.system_call_filter: false</span><br></pre></td></tr></table></figure></li>
+<li><strong>max file descriptors [4096] for elasticsearch process likely too low, increase to at least [65536]</strong><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">解决方法：修改 &#x2F;etc&#x2F;security&#x2F;limits.conf，配置：</span><br><span class="line">hard nofile 80000</span><br><span class="line">soft nofile 80000</span><br></pre></td></tr></table></figure></li>
+<li><strong>max virtual memory areas vm.max_map_count [65530] is too low</strong><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">解决方法：修改 &#x2F;etc&#x2F;sysctl.conf，添加 ：</span><br><span class="line">vm.max_map_count &#x3D; 262144</span><br><span class="line">然后 sysctl -p 生效</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>安装插件方式：./bin/elasticsearch-plugin install analysis-icu</p>
+</blockquote>
+</li>
+</ul>
+<p><strong>ES 相关配置</strong></p>
+<ul>
+<li>官网关于配置的内容主要有两处：<ul>
+<li><a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/settings.html">Configuring Elasticsearch</a></li>
+<li><a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/important-settings.html">Important Elasticsearch configuration</a></li>
+</ul>
+</li>
+<li>Elasticsearch 主要有三个配置文件：<ul>
+<li><code>elasticsearch.yml</code>：ES的配置文件 <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/important-settings.html">more</a></li>
+<li><code>jvm.options</code>: ES JVM 参数 <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/jvm-options.html#jvm-options">more</a></li>
+<li><code>log4j2.properties</code>: ES log 配置 <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/logging.html#logging">more</a></li>
+</ul>
+</li>
+</ul>
+<p>默认情况，ES 告诉 JVM 使用一个最小和最大都为 4GB 的堆。但是到了生产环境，这个配置就比较重要了，确保 ES 有足够堆空间可用。</p>
+<blockquote>
+<p>但是我的XPS 16G内存。不改堆内存大小的只能起一个实例，再起其他实例，旧的实例总显示 Killed。<br>修复方式，更改 <code>./config/jvm.options</code><br><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">-Xms1g </span><br><span class="line">-Xmx1g</span><br></pre></td></tr></table></figure></p>
+</blockquote>
+<p><strong>运行多个Elasticsearch 实例</strong></p>
+<p>每个实例的配置文件需要不同，这里降低复杂度，不修改配置文件，而是直接用命令行的形式启动一个集群。</p>
+<ul>
+<li>启动实例</li>
+</ul>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># 启动实例1</span></span><br><span class="line">./bin/elasticsearch -E cluster.name=myes -Enode.name=node0 \</span><br><span class="line">-E node.master=<span class="literal">true</span> -E node.data=<span class="literal">false</span> -E node.ingest=<span class="literal">false</span> \</span><br><span class="line">-E network.host=127.0.0.1 \</span><br><span class="line">-E http.port=9200 -E transport.tcp.port=9300 \</span><br><span class="line">-E discovery.seed_hosts=<span class="string">&quot;127.0.0.1:9300&quot;</span>,<span class="string">&quot;127.0.0.1:9301&quot;</span>,<span class="string">&quot;127.0.0.1:9302&quot;</span> \</span><br><span class="line">-E cluster.initial_master_nodes=<span class="string">&quot;node0&quot;</span> -d</span><br><span class="line"></span><br><span class="line"><span class="comment"># 启动实例2 </span></span><br><span class="line">./bin/elasticsearch -E cluster.name=myes -E node.name=node1 \</span><br><span class="line">-E node.master=<span class="literal">true</span> -E node.data=<span class="literal">true</span> -E node.ingest=<span class="literal">false</span> \</span><br><span class="line">-E path.data=./data/data_node1 -E network.host=127.0.0.1 \</span><br><span class="line">-E http.port=9201 -E transport.tcp.port=9301 \</span><br><span class="line">-E discovery.seed_hosts=<span class="string">&quot;127.0.0.1:9300&quot;</span>,<span class="string">&quot;127.0.0.1:9301&quot;</span>,<span class="string">&quot;127.0.0.1:9302&quot;</span> \</span><br><span class="line">-d</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment"># 启动实例3 </span></span><br><span class="line">./bin/elasticsearch -E cluster.name=myes -E node.name=node2 \</span><br><span class="line">-E node.master=<span class="literal">true</span> -E node.data=<span class="literal">true</span> -E node.ingest=<span class="literal">false</span> \</span><br><span class="line">-E path.data=./data/data_node2 -E network.host=127.0.0.1 \</span><br><span class="line">-E http.port=9202 -E transport.tcp.port=9302 \</span><br><span class="line">-E discovery.seed_hosts=<span class="string">&quot;127.0.0.1:9300&quot;</span>,<span class="string">&quot;127.0.0.1:9301&quot;</span>,<span class="string">&quot;127.0.0.1:9302&quot;</span> \</span><br><span class="line">-d</span><br></pre></td></tr></table></figure>
+<blockquote>
+<ul>
+<li>9300端口： ES节点之间通讯使用</li>
+<li>9200端口： ES节点 和 外部 通讯使用</li>
+<li><code>discovery.seed_hosts</code>: 发现设置。有两种重要的发现和集群形成配置，以便集群中的节点能够彼此发现并且选择一个主节点.其中 <code>discovery.seed_hosts</code> 是组件集群时比较重要的配置，用于启动当前节点时，发现其他节点的初始列表。<br>当一个已经加入过集群的节点重启时，如果他无法与之前集群中的节点通信，很可能就会报这个错误 master not discovered or elected yet, an election requires at least 2 nodes with ids from。必须至少配置 [discovery.seed_hosts，discovery.seed_providers，cluster.initial_master_nodes] 中的一个。</li>
+<li><code>cluster.initial_master_nodes</code>: 初始的候选 master 节点列表。初始主节点应通过其 node.name 标识，默认为其主机名。确保 cluster.initial_master_nodes 中的值与 node.name 完全匹配。<p class="div-border red">`cluster.initial_master_nodes` 该配置项并不是需要每个节点设置保持一致，设置需谨慎，如果其中的主节点关闭了，可能会导致其他主节点也会关闭。因为一旦节点初始启动时设置了这个参数，它下次启动时还是会尝试和当初指定的主节点链接，当链接失败时，自己也会关闭！
+因此，为了保证可用性，预备做主节点的节点不用每个上面都配置该配置项！保证有的主节点上就不设置该配置项，这样当有主节点故障时，还有可用的主节点不会一定要去寻找初始节点中的主节点！</p></li>
+<li>详细资料参考：<ul>
+<li><a href="https://www.elastic.co/guide/en/elasticsearch/reference/master/modules-discovery-bootstrap-cluster.html">Bootstrapping a cluster</a></li>
+<li><a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/modules-discovery-settings.html">Discovery and cluster formation settings</a></li>
+</ul>
+</li>
+</ul>
+<p>在新版 7.x 的 ES 中，对 ES 的集群发现系统做了调整，不再有 discovery.zen.minimum_master_nodes 这个控制集群脑裂的配置，转而由集群自主控制，并且新版在启动一个新的集群的时候需要有cluster.initial_master_nodes 初始化集群主节点列表。如果一个集群一旦形成，你不该再设置该配置项，应该移除它。该配置项仅仅是集群第一次创建时设置的！集群形成之后，这个配置也会被忽略的！</p>
+<ul>
+<li><code>discovery.seed_hosts</code>: 提供群集中符合master节点资格的地址列表</li>
+</ul>
+</blockquote>
+<p>node0 节点仅仅是一个 master 节点，它不是一个数据节点。</p>
+<p>先启动 node0 节点，因为它设置了初始主节点的列表。这时候就可以使用 <code>http://&lt;host IP&gt;:9200/</code> 看到结果了。然后逐一启动 node1 和 node2。通过访问 <code>http://127.0.0.1:9200/_cat/nodes</code> 查看集群是否 OK。<br><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ curl 127.0.0.1:9200/_cat/nodes</span><br><span class="line">127.0.0.1 42 49 58 4.45 2.09 1.37 lmr        * node0</span><br><span class="line">127.0.0.1 42 49 54 4.45 2.09 1.37 cdfhlmrstw - node1</span><br><span class="line">127.0.0.1 42 49 45 4.45 2.09 1.37 cdfhlmrstw - node2</span><br></pre></td></tr></table></figure></p>
+<h2 id="2-安装-Kibana"><a href="#2-安装-Kibana" class="headerlink" title="2. 安装 Kibana"></a>2. 安装 Kibana</h2><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">wget https://artifacts.elastic.co/downloads/kibana/kibana-7.12.0-linux-x86_64.tar.gz</span><br><span class="line">tar -xf kibana-7.12.0-linux-x86_64.tar.gz</span><br><span class="line"><span class="built_in">cd</span> kibana-7.12.0-linux-x86_64</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p><strong>启动kibana</strong></p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># 将kibana改成中文</span></span><br><span class="line">vim config/kibana.yml</span><br><span class="line">     i18n.locale: <span class="string">&quot;zh-CN&quot;</span>   <span class="comment">## 最后一行</span></span><br><span class="line">./bin/kibana</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>访问本地的5601端口<br>查看样例。点击右下角的 <code>try out sample data</code> ，可以导入kibana的测试数据。分别是电商网站报表、航空数据、日志<br><img src="https://img1.kiosk007.top/static/images/elk/kinana_home.png"><br>这里分 <a href="https://www.elastic.co/cn/enterprise-search?elektra=home&amp;storm=river1">Enterprise Search(企业搜索)</a>、<a href="https://www.elastic.co/guide/en/observability/7.9/observability-introduction.html">Observability(监控)</a>、<a href="https://www.elastic.co/guide/en/security/7.9/es-overview.html">Security(安全)</a></p>
+<ul>
+<li>Enterprise Search(企业搜索)：可建立强大的搜索体验，当然是付费滴。</li>
+<li>Observability(监控)：日志、APM、站点SLA监控、指标打点。（支持Nginx、MySQL、Redis等日志）</li>
+<li>Security(安全): 安全相关的解决方案</li>
+</ul>
+<p>另外还开以打开 <code>http://127.0.0.1:5601/app/dev_tools#/console</code> 控制台，这个是直接对接 ES 的。可在这里直接使用查询语句。</p>
+<h2 id="3-安装-Logstash"><a href="#3-安装-Logstash" class="headerlink" title="3. 安装 Logstash"></a>3. 安装 Logstash</h2><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">wget https://artifacts.elastic.co/downloads/logstash/logstash-7.12.0-linux-x86_64.tar.gz</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h2 id="4-安装-cerebro"><a href="#4-安装-cerebro" class="headerlink" title="4. 安装 cerebro"></a>4. 安装 cerebro</h2><p>cerebro是专业化项目管理系统，提供一个协作工作环境和项目管理软件，用于处理复杂的视觉材料。它<br>专为 CGI 和动画工作室、广告公司、电视公司和建筑设计公司而开发。也可以说它是一款Elasticsearch监控工具。</p>
+<p>安装<br><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">wget https://github.com/lmenezes/cerebro/releases/download/v0.9.3/cerebro-0.9.3.tgz</span><br><span class="line">tar -xf cerebro-0.9.3.tgz </span><br><span class="line"><span class="built_in">cd</span> cerebro-0.9.3 </span><br><span class="line">./bin/cerebro   <span class="comment"># 启动</span></span><br><span class="line"></span><br></pre></td></tr></table></figure></p>
+<blockquote>
+<p>cerebro 需要 java 才能运行，没有java环境的化，可以执行 <code>sudo apt install openjdk-11-jdk</code> 。 Java 11 是 Java 的一个长期支持版本（LTS）。它同时也是 Ubuntu 20.04的默认 Java 开发和运行环境。</p>
+</blockquote>
+<p>访问 <code>http://127.0.0.1:9000</code> 浏览器打开。</p>
+<p><img src="https://img1.kiosk007.top/static/images/elk/cerebro.png
+ "></p>
+<p>点击左上方 node，可查看节点情况。</p>
+<h2 id="4-测试"><a href="#4-测试" class="headerlink" title="4. 测试"></a>4. 测试</h2><p>下载测试样本 movielens<br><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">wget http://files.grouplens.org/datasets/movielens/ml-20m.zip</span><br><span class="line">unzip ml-20m.zip</span><br></pre></td></tr></table></figure><br>开始配置文件<br><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">input &#123;</span><br><span class="line">  file &#123;</span><br><span class="line">    path =&gt; <span class="string">&quot;/home/work/logs/ml-20m/movies.csv&quot;</span></span><br><span class="line">    start_position =&gt; <span class="string">&quot;beginning&quot;</span></span><br><span class="line">    sincedb_path =&gt; <span class="string">&quot;/dev/null&quot;</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line">filter &#123;</span><br><span class="line">  csv &#123;</span><br><span class="line">    separator =&gt; <span class="string">&quot;,&quot;</span></span><br><span class="line">    columns =&gt; [<span class="string">&quot;id&quot;</span>,<span class="string">&quot;content&quot;</span>,<span class="string">&quot;genre&quot;</span>]</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  mutate &#123;</span><br><span class="line">    split =&gt; &#123; <span class="string">&quot;genre&quot;</span> =&gt; <span class="string">&quot;|&quot;</span> &#125;</span><br><span class="line">    remove_field =&gt; [<span class="string">&quot;path&quot;</span>, <span class="string">&quot;host&quot;</span>,<span class="string">&quot;@timestamp&quot;</span>,<span class="string">&quot;message&quot;</span>]</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  mutate &#123;</span><br><span class="line"></span><br><span class="line">    split =&gt; [<span class="string">&quot;content&quot;</span>, <span class="string">&quot;(&quot;</span>]</span><br><span class="line">    add_field =&gt; &#123; <span class="string">&quot;title&quot;</span> =&gt; <span class="string">&quot;%&#123;[content][0]&#125;&quot;</span>&#125;</span><br><span class="line">    add_field =&gt; &#123; <span class="string">&quot;year&quot;</span> =&gt; <span class="string">&quot;%&#123;[content][1]&#125;&quot;</span>&#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  mutate &#123;</span><br><span class="line">    convert =&gt; &#123;</span><br><span class="line">      <span class="string">&quot;year&quot;</span> =&gt; <span class="string">&quot;integer&quot;</span></span><br><span class="line">    &#125;</span><br><span class="line">    strip =&gt; [<span class="string">&quot;title&quot;</span>]</span><br><span class="line">    remove_field =&gt; [<span class="string">&quot;path&quot;</span>, <span class="string">&quot;host&quot;</span>,<span class="string">&quot;@timestamp&quot;</span>,<span class="string">&quot;message&quot;</span>,<span class="string">&quot;content&quot;</span>]</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line">output &#123;</span><br><span class="line">   elasticsearch &#123;</span><br><span class="line">     hosts =&gt; <span class="string">&quot;http://localhost:9200&quot;</span></span><br><span class="line">     index =&gt; <span class="string">&quot;movies&quot;</span></span><br><span class="line">     document_id =&gt; <span class="string">&quot;%&#123;id&#125;&quot;</span></span><br><span class="line">   &#125;</span><br><span class="line">  stdout &#123;&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure><br>导入测试数据到ES中<br><code>logstash -f log.conf</code></p>
+]]></content>
+  </entry>
+  <entry>
     <title>Worker Pool in Golang</title>
     <url>/2021/03/21/Worker-Pool-in-Golang/</url>
     <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script><p>Go 是一个自动垃圾回收的编程语言，采用三色并发标记算法标记对象并回收。和其它没有自动垃圾回收的编程语言不同，使用 Go 语言创建对象的时候，我们没有回收 / 释放的心理负担，想用就用，想创建就创建。但是，如果你想使用 Go 开发一个高性能的应用程序的话，就必须考虑垃圾回收给性能带来的影响</p>
-<!---->
+<a id="more"></a>
 <h1 id="Pool"><a href="#Pool" class="headerlink" title="Pool"></a>Pool</h1><p>Pool 的出现，可以避免反复的创建一些对象，比如 TCP链接、数据库链接等等，这些对象创建都比较耗时，如果将创建好的对象放入到池子中，需要的时候取，不需要的时候归还池子，将是一个非常不错的实现方式。</p>
 <p>通过创建一个 Worker Pool 来减少 goroutine 的使用。比如，我们实现一个 TCP 服务器，如果每一个连接都要由一个独立的 goroutine 去处理的话，在大量连接的情况下，就会创建大量的 goroutine，这个时候，我们就可以创建一个固定数量的 goroutine（Worker），由这一组 Worker 去处理连接，比如 fasthttp 中的<a href="https://github.com/valyala/fasthttp/blob/9f11af296864153ee45341d3f2fe0f5178fd6210/workerpool.go#L16">Worker Pool</a>。</p>
 <ul>
