@@ -1,6 +1,387 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>设计模式（Design Pattern）</title>
+    <url>/2020/10/24/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F%EF%BC%88Design-Pattern%EF%BC%89/</url>
+    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script><p>设计模式（Design pattern）代表了最佳的实践，通常被有经验的面向对象的软件开发人员所采用。设计模式是软件开发人员在软件开发过程中面临的一般问题的解决方案。这些解决方案是众多软件开发人员经过相当长的一段时间的试验和错误总结出来的。</p>
+<a id="more"></a>
+<h1 id="设计模式概述"><a href="#设计模式概述" class="headerlink" title="设计模式概述"></a>设计模式概述</h1><p>“设计模式”总的来说有设计原则6个.</p>
+<ul>
+<li><strong>单一职责原则(Single Responsibility Principle, SRP)</strong> : 每个模块或类都应该对软件提供的功能的一部分负责，而这个责任应该完全由类来封装。它的所有服务都应严格遵守这一职责。</li>
+<li><strong>开闭原则(Open Close Principle, OCP)</strong> : 软件中的对象(类、模块、函数等)对扩展是开放的，对修改是封闭的。</li>
+<li><strong>里氏替换原则(Liskov Substitution Principle, LSP)</strong> : 所有使用基类的地方必须能透明地使用其子类的对象</li>
+<li><strong>依赖倒转原则(Dependence Inversion Principle, DIP)</strong> : 是指一种特定的解耦（传统的依赖关系建立在高层次上，而具体的策略设置则应用在低层次的模块上）形式，使得高层次的模块不依赖于低层次的模块的实现细节，依赖关系被颠倒（反转），从而使得低层次模块依赖于高层次模块的需求抽象。</li>
+<li><strong>接口隔离原则(Interface Segregation Principle, ISP)</strong> : 客户端不应该依赖它不需要的接口。</li>
+<li><strong>迪米特法则(Law of Demeter, LoD), 最少知识原则(Principle of Least Knowledge)</strong> : 1. 每个对象应该对其他对象尽可能最少的知道 2. 每个对象应该仅和其朋友通信；不和陌生人通信 3. 仅仅和直接朋友通信</li>
+</ul>
+<hr>
+<h1 id="设计模式"><a href="#设计模式" class="headerlink" title="设计模式"></a>设计模式</h1><h2 id="单例模式-Singleton"><a href="#单例模式-Singleton" class="headerlink" title="单例模式 (Singleton)"></a>单例模式 (Singleton)</h2><ul>
+<li><font color="#200000">定义以及使用场景</font>
+</li>
+</ul>
+<ol>
+<li>确保某一个类只有一个实例，而且向整个系统提供这个实例</li>
+<li>确保某个类有且仅有一个对象的场景，避免产生多个对象消耗过多的资源；或者某种类型的对象应该有且只有一个。（如 Logger 实例、Config 实例等）</li>
+</ol>
+<ul>
+<li><font color="#200000">实现单例模式的几个关键点</font>
+</li>
+</ul>
+<ol>
+<li>构造函数不对外开放，一般为private</li>
+<li>通过一个静态方法或者枚举返回单例类对象</li>
+<li>确保单例类的对象有且只有一个，尤其是在多线程环境下</li>
+<li>确保单例类对象在反序列化时不会重新构建对象</li>
+</ol>
+<ul>
+<li><font color="#200000">饥汉模式</font>
+
+</li>
+</ul>
+<p>直接创建好对象，这样不需要判断为空，同时也是线程安全。唯一的缺点是在导入包的同时会创建该对象，并持续占有在内存中。</p>
+<figure class="highlight golang"><table><tr><td class="code"><pre><span class="line"><span class="keyword">var</span> instance Tool</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">GetInstance</span><span class="params">()</span> *<span class="title">Tool</span></span> &#123;</span><br><span class="line">    <span class="keyword">return</span> &amp;instance</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<ul>
+<li><font color="#200000"> 懒汉模式 (Lazy Loading) </font>
+
+</li>
+</ul>
+<p>只有需要时才会初始化，在一定程度上节约了资源。如果不加锁的话非线程安全，即在多线程下可能会创建多次对象。</p>
+<figure class="highlight golang"><table><tr><td class="code"><pre><span class="line"><span class="comment">// private</span></span><br><span class="line"><span class="keyword">var</span> instance *singleton</span><br><span class="line"><span class="keyword">var</span> mu sync.Mutex</span><br><span class="line"></span><br><span class="line"><span class="comment">// public</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">GetInstance</span><span class="params">()</span> *<span class="title">singleton</span></span> &#123;</span><br><span class="line">	mu.Lock()</span><br><span class="line">	<span class="keyword">defer</span> mu.Unlock()</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> instance == <span class="literal">nil</span> &#123;</span><br><span class="line">		instance = &amp;singleton&#123;&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> instance</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<ul>
+<li><font color="#200000"> DCL(双重检查)模式 (推荐) </font>
+
+</li>
+</ul>
+<p>DCL的优点就是资源利用率高，只有第一次执行getInstance才会初始化。</p>
+<figure class="highlight golang"><table><tr><td class="code"><pre><span class="line"><span class="keyword">var</span> lock sync.Mutex</span><br><span class="line"><span class="keyword">var</span> instance Tool</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment">* 第一次判断不加锁，第二次加锁保证线程安全，一旦对象建立后,获取对象就不用加锁了</span></span><br><span class="line"><span class="comment">*/</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">GetInstance</span><span class="params">()</span> *<span class="title">Tool</span></span> &#123;</span><br><span class="line">    <span class="keyword">if</span> instance == <span class="literal">nil</span> &#123;</span><br><span class="line">        lock.Lock()</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> instance == <span class="literal">nil</span> &#123;</span><br><span class="line">            instance = <span class="built_in">new</span>(Tool)</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        lock.Unlock()</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> instance</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>或者在golang中还可以使用 <code>sync.Once</code> 保证单例。</p>
+<pre><code>
+var once sync.Once
+
+func GetInstance() *Tool &#123;
+    once.Do(func() &#123;
+        instance = new(Tool)
+    &#125;)
+    return instance
+&#125;
+</code></pre>
+
+<hr>
+<h2 id="工厂方法模式-Factory-method"><a href="#工厂方法模式-Factory-method" class="headerlink" title="工厂方法模式(Factory method)"></a>工厂方法模式(Factory method)</h2><ul>
+<li><font color="#808080"> 定义以及使用场景</font>
+
+</li>
+</ul>
+<p>创建一个用户创建对象的接口，让子类决定实例化哪个类。工厂方法使一个类的实例化延迟到其子类。</p>
+<p><strong>使用场景</strong>：</p>
+<ol>
+<li>工厂方法模式通过依赖抽象来达到解耦的效果，并且将实例化的任务交给子类去完成，有非常好的扩展性</li>
+<li>在任何需要生成复杂对象的地方，都可以使用工厂方法模式。复杂对象适合使用工厂模式，用new就可以完成创建的对象无需使用工厂方法</li>
+<li>工厂方法模式的应用非常广泛，然而缺点也很明显，就是每次我们为工厂方法添加新的产品时，都需要编写一个新的产品类，所以要根据实际情况来权衡是否要用工厂方法模式</li>
+</ol>
+<p>类似我要造汽车，将造汽车的通用的几个方法定义好，就可以创建一个接口。任何实现了这套造汽车标准的厂商都可以被初始化。并造出一辆汽车。</p>
+<ul>
+<li><font color="#808080"> 举例实现工厂方法模式 </font>
+
+</li>
+</ul>
+<p>假设我们在做一款小型翻译软件，软件可以将德语、英语、日语都翻译成目标中文，并显示在前端。</p>
+<ul>
+<li><font color="#200000"> 简单工厂模式 </font>
+
+</li>
+</ul>
+<p>我们会有三个具体的语言翻译结构体，或许以后还有更多，但现在分别是GermanTranslater、EnglishTranslater、JapaneseTranslater，他们都共同实现了一个接口Translator。</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="comment">//翻译接口</span></span><br><span class="line"><span class="keyword">type</span> Translator <span class="keyword">interface</span> &#123;</span><br><span class="line">	Translate(<span class="keyword">string</span>) <span class="keyword">string</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">//德语翻译类</span></span><br><span class="line"><span class="keyword">type</span> GermanTranslator <span class="keyword">struct</span>&#123;&#125;</span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(*GermanTranslator)</span> <span class="title">Translate</span><span class="params">(words <span class="keyword">string</span>)</span> <span class="title">string</span></span> &#123;</span><br><span class="line">	<span class="keyword">return</span> <span class="string">&quot;德语&quot;</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">//英语翻译类</span></span><br><span class="line"><span class="keyword">type</span> EnglishTranslator <span class="keyword">struct</span>&#123;&#125;</span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(*EnglishTranslator)</span> <span class="title">Translate</span><span class="params">(words <span class="keyword">string</span>)</span> <span class="title">string</span></span> &#123;</span><br><span class="line">	<span class="keyword">return</span> <span class="string">&quot;英语&quot;</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>接下来在程序入口获取用户输入的文本，并将其翻译</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">	<span class="keyword">defer</span> <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">		<span class="keyword">if</span> err := <span class="built_in">recover</span>(); err != <span class="literal">nil</span> &#123;</span><br><span class="line">			fmt.Println(err)</span><br><span class="line">		&#125;</span><br><span class="line">		time.Sleep(<span class="number">3</span> * time.Second)</span><br><span class="line">	&#125;()</span><br><span class="line"></span><br><span class="line">	<span class="keyword">var</span> lan <span class="keyword">int</span></span><br><span class="line">	fmt.Printf(<span class="string">&quot;%s ,%s&quot;</span>, <span class="string">&quot;以下是可翻译的语言种类，请输入代表数字&quot;</span>, <span class="string">&quot;1：德语、2：英语&quot;</span>)</span><br><span class="line">	_, _ = fmt.Scanln(&amp;lan)</span><br><span class="line"></span><br><span class="line">	fmt.Println(<span class="string">&quot;请输入要翻译成中文的文本：&quot;</span>)</span><br><span class="line">	<span class="keyword">var</span> inputWords <span class="keyword">string</span></span><br><span class="line">	_, _ = fmt.Scanln(&amp;inputWords)</span><br><span class="line"></span><br><span class="line">	<span class="keyword">var</span> translator Translator</span><br><span class="line"></span><br><span class="line">	<span class="comment">//根据不同的语言种类，实例化不同的翻译类</span></span><br><span class="line">	<span class="keyword">switch</span> lan &#123;</span><br><span class="line">	<span class="keyword">case</span> <span class="number">1</span>:</span><br><span class="line">		translator = <span class="built_in">new</span>(GermanTranslator)</span><br><span class="line">	<span class="keyword">case</span> <span class="number">2</span>:</span><br><span class="line">		translator = <span class="built_in">new</span>(EnglishTranslator)</span><br><span class="line">	<span class="keyword">default</span>:</span><br><span class="line">		<span class="built_in">panic</span>(<span class="string">&quot;no such translator&quot;</span>)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	fmt.Println(translator.Translate(inputWords))</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p><strong>缺点</strong></p>
+<ol>
+<li>违背了开闭原则，以后还可能有法语、俄语、阿拉伯语等其他翻译器，每一次添加翻译器都要在客户端代码增加对应的switch分支，维护成本高。倘若还有不止一处调用了创建逻辑，还要维护多处代码。</li>
+<li>违背了单一职责原则，客户端处理类的职责应该只是负责接收用户的输入并将其打印，现在还负责翻译类的创建逻辑，导致这个类的职责过多。</li>
+</ol>
+<p>改造</p>
+<pre>
+// 工厂函数
+func CreateTranslator(lan int) Translator {
+    var translator Translator
+
+    switch lan {
+    case 1:
+        translator = new(GermanTranslator)
+    case 2:
+        translator = new(EnglishTranslator)
+    default:
+        panic("no such translator")
+    }
+
+    return translator
+}
+
+// 主函数
+...
+    fmt.Println("请输入要翻译成中文的文本：")
+    var inputWords string
+    fmt.Scanln(&inputWords)
+
+    //客户端只关注如何获取翻译类，而不用关注创建翻译类的细节
+    translator:=CreateTranslator(lan)
+
+    fmt.Println(translator.Translate(inputWords))
+...
+</pre>
+
+<hr>
+<h2 id="建造者模式-Builder"><a href="#建造者模式-Builder" class="headerlink" title="建造者模式(Builder)"></a>建造者模式(Builder)</h2><ul>
+<li><strong>定义以及使用场景</strong> </li>
+</ul>
+<p>将一个复杂对象的构建与它的表示分离，使得同样的构建过程可以创建不同的表示。</p>
+<p><strong>使用场景</strong></p>
+<ol>
+<li>相同的方法，不同的执行顺序，产生不同的事件结果时</li>
+<li>多个部件或零件，都可以装配到一个对象中，但是产生的运行结果却又不相同时<br>产品类非常复杂，或者产品类中的调用顺序不同产生了不同的结果，这个时候使用建造者模式非常合适</li>
+<li>当初始化一个对象特别复杂，如参数多，且很多参数都具有默认值时</li>
+</ol>
+<blockquote>
+<p><strong>Product</strong> 产品类——产品的抽象类<br><strong>Builder</strong> 抽象Builder类，规范产品的组建，一般由子类实现具体的组建过程<br><strong>ConcreteBuilder</strong> 具体的Builder类<br><strong>Director</strong> 统一组装过程</p>
+</blockquote>
+<ul>
+<li><strong>举个例子</strong> </li>
+</ul>
+<p>我们需要创建汽车，而汽车有轮胎的个数以及车身的颜色可定制，那么用Builder模式可以这样。</p>
+<p>我们的目标是建一辆车</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="comment">// 定义一辆车</span></span><br><span class="line"><span class="keyword">type</span> Car <span class="keyword">struct</span> &#123;</span><br><span class="line">	Wheels 	<span class="keyword">string</span></span><br><span class="line">	Chassis <span class="keyword">string</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(c *Car)</span> <span class="title">Show</span><span class="params">()</span></span> &#123;</span><br><span class="line">	fmt.Println(<span class="string">&quot;Builder Complete ...&quot;</span>)</span><br><span class="line">	fmt.Printf(<span class="string">&quot;Wheels : %s Chassis: %s \n&quot;</span>, c.Wheels, c.Chassis)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>设计出完整的建设规划</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="comment">// 为建造者实现 Builder 接口</span></span><br><span class="line"><span class="keyword">type</span> Builder <span class="keyword">interface</span> &#123;</span><br><span class="line">	NewProduct()       	<span class="comment">// 创建一个空产品</span></span><br><span class="line">	BuildWheels()      	<span class="comment">// 建造轮子</span></span><br><span class="line">	BuildChassis()    	<span class="comment">// 建造底盘</span></span><br><span class="line">	GetResult() <span class="keyword">interface</span>&#123;&#125;  <span class="comment">// 获取建造好的产品</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>按照Builder规划一个大型项目构造者CarBuilder, 包含如何具体实现Build</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="comment">// 定义汽车建造项目 CarBuilder</span></span><br><span class="line"><span class="keyword">type</span> CarBuilder <span class="keyword">struct</span> &#123;</span><br><span class="line">	Car *Car</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(cb *CarBuilder)</span> <span class="title">GetResult</span><span class="params">()</span> <span class="title">interface</span></span>&#123;&#125; &#123;</span><br><span class="line">	<span class="keyword">return</span> cb.Car</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(cb *CarBuilder)</span> <span class="title">NewProduct</span><span class="params">()</span></span> &#123;</span><br><span class="line">	cb.Car = <span class="built_in">new</span>(Car)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(cb *CarBuilder)</span> <span class="title">BuildWheels</span><span class="params">()</span></span> &#123;</span><br><span class="line">	cb.Car.Wheels = <span class="string">&quot;米其林轮胎&quot;</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(cb *CarBuilder)</span> <span class="title">BuildChassis</span><span class="params">()</span></span> &#123;</span><br><span class="line">	cb.Car.Chassis = <span class="string">&quot;沃尔沃底盘&quot;</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>下面要把具体建造者传入指挥者:</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="comment">// 把建造者传入指挥者</span></span><br><span class="line"><span class="keyword">type</span> Director <span class="keyword">struct</span> &#123;</span><br><span class="line">	builder Builder</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(d *Director)</span> <span class="title">SetBuilder</span><span class="params">(builder Builder)</span></span> &#123;</span><br><span class="line">	d.builder = builder</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>建造实施</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(d *Director)</span> <span class="title">CarBuilderImpl</span><span class="params">()</span> *<span class="title">Car</span></span> &#123;</span><br><span class="line">	d.builder.NewProduct()</span><br><span class="line">	d.builder.BuildChassis()</span><br><span class="line">	d.builder.BuildWheels()</span><br><span class="line">	<span class="keyword">return</span> d.builder.GetResult().(*Car)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>完整过程</p>
+<pre>
+func main() {
+    // 创建一个指挥者
+    director := new(Director)
+    // 创建建造者
+    builder := new(CarBuilder)
+
+    director.SetBuilder(builder)
+    car := director.CarBuilderImpl()
+    car.Show()
+}
+</pre>
+
+<hr>
+<h2 id="原型模式-Prototype"><a href="#原型模式-Prototype" class="headerlink" title="原型模式(Prototype)"></a>原型模式(Prototype)</h2><ul>
+<li><font color="#808080">**定义以及使用场景**</font>
+
+</li>
+</ul>
+<p>原型模式用于创建重复的对象。当一个类在创建时开销比较大时(比如大量数据准备，数据库连接)，我们可以缓存该对象，当下一次调用时，返回该对象的克隆。</p>
+<blockquote>
+<p><strong>不过大多数原型模式不在日常中使用，一般会使用 <code>sync.pool</code> 替代，详见 <a href="Worker Pool in Golang">https://kiosk007.top/2021/03/21/Worker-Pool-in-Golang/#Pool</a></strong></p>
+</blockquote>
+<p><strong>使用场景</strong></p>
+<ol>
+<li>类初始化需要消耗非常多的资源，这个资源包括数据、硬件资源等，通过原型拷贝避免这些消耗</li>
+<li>原型模式是在内存中二进制流的拷贝，要比直接new一个对象性能好很多，特别是要在一个循环体内产生大量的对象时，原型模式可以更好滴体现其优点</li>
+<li>一个对象需要提供给其他对象访问，而且各个调用者可能需要修改其值时，可以考虑使用原型模式拷贝多个对象供调用者使用，即保护性拷贝</li>
+</ol>
+<ul>
+<li><font color="#200000">**举个例子**</font>
+
+</li>
+</ul>
+<p>定义一个原型管理器</p>
+<pre>
+// 样品（原型）Clone能力约定类
+type Cloneable interface {
+    Clone() Cloneable
+}
+
+// 样品（原型）管理器类
+type PrototypeManager struct {
+    prototypes map[string]Cloneable
+}
+
+func (that *PrototypeManager) Set( cloneName string, cloneable Cloneable) {
+    that.prototypes[cloneName] = cloneable
+}
+
+func (that *PrototypeManager) Get(cloneName string) (prototype Cloneable, err error) {
+    if prototype, ok:=that.prototypes[cloneName]; ok {
+        return prototype, nil
+    } else {
+        return nil, errors.New(fmt.Sprintf("%s 不存在", cloneName))
+    }
+}
+</pre>
+
+<p>获取一个样品（原型）管理器</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="comment">// 获取一个样品（原型）管理器</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">NewPrototypeManager</span> <span class="params">()</span> *<span class="title">PrototypeManager</span></span> &#123;</span><br><span class="line">	<span class="keyword">return</span> &amp;PrototypeManager&#123;</span><br><span class="line">		prototypes:<span class="built_in">make</span>(<span class="keyword">map</span>[<span class="keyword">string</span>]Cloneable),</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> manager *PrototypeManager</span><br></pre></td></tr></table></figure>
+<p>定义一个样品原型</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="comment">// 定义一个样品（原型） 实现 Clone 方法 相当于把自己做成了一个样品</span></span><br><span class="line"><span class="keyword">type</span> PT <span class="keyword">struct</span> &#123;&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span><span class="params">(that *PT)</span> <span class="title">Clone</span><span class="params">()</span> <span class="title">Cloneable</span></span> &#123;</span><br><span class="line">	temp := *that</span><br><span class="line">	<span class="keyword">return</span> &amp;temp</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>测试</p>
+<pre>
+func Test() {
+    prototypeOne,_ := manager.Get("prototypeOne")
+    prototypeTwo := prototypeOne.Clone()
+    prototypeThree := prototypeOne.Clone()
+    fmt.Printf(" prototypeOne地址:%v \n " +
+        "prototypeTwo地址: %v \n " +
+        "prototypeThree地址: %v \n", &prototypeOne, &prototypeTwo, &prototypeThree)
+}
+
+func main() {
+    manager = NewPrototypeManager()
+    pt1 := &PT{}
+    manager.Set("prototypeOne", pt1)
+    Test()
+}
+
+// 输出
+ prototypeOne地址:   0xc000010200 
+ prototypeTwo地址:   0xc000010210 
+ prototypeThree地址: 0xc000010220 
+
+</pre>
+
+<hr>
+<h2 id="过滤器模式-Pipe-filter"><a href="#过滤器模式-Pipe-filter" class="headerlink" title="过滤器模式 (Pipe-filter)"></a>过滤器模式 (Pipe-filter)</h2><ul>
+<li><font color="#808080">**定义以及使用场景**</font>
+
+</li>
+</ul>
+<p>对一数据需要经过顺序的多个过滤器函数处理。</p>
+<p><strong>使用场景</strong></p>
+<ol>
+<li>多个对象可以处理同一请求，其架构适用于 解析，过滤，处理，返回这样的架构，如数据分析。</li>
+<li>在请求处理者不明确的情况下向多个对象中的一个提交一个请求需要动态指定一组对象处理请求<br><img style="height:320px" src="https://img1.kiosk007.top/static/images/design_pattern/pipe_filter.webp"></li>
+</ol>
+<ul>
+<li><font color="#200000">**举个例子**</font>
+
+</li>
+</ul>
+<p>下面的例子是一个将 字符串“1，2，3” 按逗号切分后，再字符转数字相加的过程。</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="string">&quot;1,2,3&quot;</span> --&gt; [SplitFilter] --&gt; [<span class="string">&quot;1&quot;</span>,<span class="string">&quot;2&quot;</span>,<span class="string">&quot;3&quot;</span>] --&gt; [ToIntFilter] --&gt; [1,2,3] -&gt; [SumFilter] --&gt; 6</span><br></pre></td></tr></table></figure>
+<p>首先实现一个 filter 的接口。该接口定义了数据的来源接口，输出接口，该filter接口必须拥有的处理方法, 所有的过滤器必须参考这个接口实现。<br><figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="comment">// Request is the input of the filter</span></span><br><span class="line"><span class="keyword">type</span> Request <span class="keyword">interface</span>&#123;&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Response is the output of the filter</span></span><br><span class="line"><span class="keyword">type</span> Response <span class="keyword">interface</span>&#123;&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Filter interface is the definition of the data processing components</span></span><br><span class="line"><span class="comment">// Pipe-Filter structure</span></span><br><span class="line"><span class="keyword">type</span> Filter <span class="keyword">interface</span> &#123;</span><br><span class="line">    Process(data Request) (Response, error)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><br>实现SplitFilter，SplitFilter必须实现处理器Process。<br><figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="keyword">var</span> SplitFilterWrongFormatError = errors.New(<span class="string">&quot;input data should be string&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> SplitFilter <span class="keyword">struct</span> &#123;</span><br><span class="line">    delimiter <span class="keyword">string</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">NewSplitFilter</span><span class="params">(delimiter <span class="keyword">string</span>)</span> *<span class="title">SplitFilter</span></span> &#123;</span><br><span class="line">    <span class="keyword">return</span> &amp;SplitFilter&#123;delimiter&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(sf *SplitFilter)</span> <span class="title">Process</span><span class="params">(data Request)</span> <span class="params">(Response, error)</span></span> &#123;</span><br><span class="line">    str, ok := data.(<span class="keyword">string</span>) <span class="comment">//检查数据格式/类型，是否可以处理</span></span><br><span class="line">    <span class="keyword">if</span> !ok &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">nil</span>, SplitFilterWrongFormatError</span><br><span class="line">    &#125;</span><br><span class="line">    parts := strings.Split(str, sf.delimiter)</span><br><span class="line">    <span class="keyword">return</span> parts, <span class="literal">nil</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><br>实现ToIntFilter</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="keyword">var</span> ToIntFilterWrongFormatError = errors.New(<span class="string">&quot;input data should be []string&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> ToIntFilter <span class="keyword">struct</span> &#123;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">NewToIntFilter</span><span class="params">()</span> *<span class="title">ToIntFilter</span></span> &#123;</span><br><span class="line">    <span class="keyword">return</span> &amp;ToIntFilter&#123;&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(tif *ToIntFilter)</span> <span class="title">Process</span><span class="params">(data Request)</span> <span class="params">(Response, error)</span></span> &#123;</span><br><span class="line">    parts, ok := data.([]<span class="keyword">string</span>)</span><br><span class="line">    <span class="keyword">if</span> !ok &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">nil</span>, ToIntFilterWrongFormatError</span><br><span class="line">    &#125;</span><br><span class="line">    ret := []<span class="keyword">int</span>&#123;&#125;</span><br><span class="line">    <span class="keyword">for</span> _, part := <span class="keyword">range</span> parts &#123;</span><br><span class="line">        s, err := strconv.Atoi(part)</span><br><span class="line">        <span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">nil</span>, err</span><br><span class="line">        &#125;</span><br><span class="line">        ret = <span class="built_in">append</span>(ret, s)</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> ret, <span class="literal">nil</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>实现 SumFilter</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="keyword">var</span> SumFilterWrongFormatError = errors.New(<span class="string">&quot;input data should be []int&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> SumFilter <span class="keyword">struct</span> &#123;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">NewSumFilter</span><span class="params">()</span> *<span class="title">SumFilter</span></span> &#123;</span><br><span class="line">    <span class="keyword">return</span> &amp;SumFilter&#123;&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(sf *SumFilter)</span> <span class="title">Process</span><span class="params">(data Request)</span> <span class="params">(Response, error)</span></span> &#123;</span><br><span class="line">    elems, ok := data.([]<span class="keyword">int</span>)</span><br><span class="line">    <span class="keyword">if</span> !ok &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">nil</span>, SumFilterWrongFormatError</span><br><span class="line">    &#125;</span><br><span class="line">    ret := <span class="number">0</span></span><br><span class="line">    <span class="keyword">for</span> _, elem := <span class="keyword">range</span> elems &#123;</span><br><span class="line">        ret += elem</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> ret, <span class="literal">nil</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>定义一个pipe-line， 目的是为了将所有的filter串起来。循环遍历整个filter并执行。</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="comment">// NewStraightPipeline create a new StraightPipelineWithWallTime</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">NewStraightPipeline</span><span class="params">(name <span class="keyword">string</span>, filters ...Filter)</span> *<span class="title">StraightPipeline</span></span> &#123;</span><br><span class="line">    <span class="keyword">return</span> &amp;StraightPipeline&#123;</span><br><span class="line">        Name:    name,</span><br><span class="line">        Filters: &amp;filters,</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// StraightPipeline is composed of the filters, and the filters are piled as a straigt line.</span></span><br><span class="line"><span class="keyword">type</span> StraightPipeline <span class="keyword">struct</span> &#123;</span><br><span class="line">    Name    <span class="keyword">string</span></span><br><span class="line">    Filters *[]Filter</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Process is to process the coming data by the pipeline</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(f *StraightPipeline)</span> <span class="title">Process</span><span class="params">(data Request)</span> <span class="params">(Response, error)</span></span> &#123;</span><br><span class="line">    <span class="keyword">var</span> ret <span class="keyword">interface</span>&#123;&#125;</span><br><span class="line">    <span class="keyword">var</span> err error</span><br><span class="line">    <span class="keyword">for</span> _, filter := <span class="keyword">range</span> *f.Filters &#123;</span><br><span class="line">        ret, err = filter.Process(data)</span><br><span class="line">        <span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">            <span class="keyword">return</span> ret, err</span><br><span class="line">        &#125;</span><br><span class="line">        data = ret</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> ret, err</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>执行</p>
+<pre>
+func main() {
+    spliter := pipe_filter.NewSplitFilter(",")
+    converter := pipe_filter.NewToIntFilter()
+    sum := pipe_filter.NewSumFilter()
+    sp := pipe_filter.NewStraightPipeline("p1", spliter, converter, sum)
+    ret, err := sp.Process("1,2,3")
+    if err != nil {
+        log.Fatal(err)
+    }
+    if ret != 6 {
+        log.Fatalf("The expected is 6, but the actual is %d", ret)
+    }
+    fmt.Println(ret)
+}
+
+执行结果：
+6
+
+</pre>
+
+<hr>
+<h2 id="微内核模式-Micro-Kernel"><a href="#微内核模式-Micro-Kernel" class="headerlink" title="微内核模式 (Micro Kernel)"></a>微内核模式 (Micro Kernel)</h2><ul>
+<li><font color="#808080"> 定义以及使用场景 </font>
+
+</li>
+</ul>
+<p>可以将 微核心架构理解成一个 核心要添加新功能就是加插件。其特点为 易扩展，错误隔离，保持架构的一致性。</p>
+<p><strong>使用场景</strong></p>
+<ol>
+<li>如Nginx，启动前可以加载多个某块功能在应用上，不需要的时候可以剔除，但不影响整个应用的生命周期，适合一个应用的整体架构设计</li>
+</ol>
+<ul>
+<li><font color="#200000"> 举个例子 </font>
+
+</li>
+</ul>
+<p><strong>Agent</strong>: agent 相当于一个注册中心，所有要Agent去做的事情都注册到Agent里面来，注册进Agent的操作叫做 Collector 。每个Collector有一个名字。用map存储。</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="keyword">type</span> Agent <span class="keyword">struct</span> &#123;</span><br><span class="line">    collectors <span class="keyword">map</span>[<span class="keyword">string</span>]Collector  <span class="comment">//  注册进 Agent的collector</span></span><br><span class="line">    evtBuf     <span class="keyword">chan</span> Event            <span class="comment">//  collector 回传给 Agent 的事件</span></span><br><span class="line">    cancel     context.CancelFunc <span class="comment">//  任务取消的方法</span></span><br><span class="line">    ctx        context.Context    <span class="comment">//  任务取消的上下文</span></span><br><span class="line">    state      <span class="keyword">int</span>                <span class="comment">//  Agent 的运行状态</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><strong>Collector</strong>: Collector 是一个执行器，是需要注册进上面的Agent的。每个Collector需要实现 Init，Start，Stop，Destroy 方法，到时候由 Agent 统一进行Init，Start等操作，这里在Init中提到了 EventReceiver，所有的Collector在初始化的时候传入一个事件接收源</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="keyword">type</span> Collector <span class="keyword">interface</span> &#123;</span><br><span class="line">    Init(evtReceiver EventReceiver) error    <span class="comment">// Collector 将收集到的数据回传到 Agent （任何实现EventReceiver的对象）</span></span><br><span class="line">    Start(agtCtx context.Context) error      <span class="comment">// 启动所有的Collector（参数为agent中的取消上下文）</span></span><br><span class="line">    Stop() error                              <span class="comment">//   停止</span></span><br><span class="line">    Destroy() error                           <span class="comment">//   摧毁</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><strong>Event</strong>: Agent 实现了 OnEvent 方法，所以Agent 可以作为上面Init 方法的参数，作为事件的接收者。</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="keyword">type</span> Event <span class="keyword">struct</span> &#123;</span><br><span class="line">    Source  <span class="keyword">string</span>   <span class="comment">// 事件源</span></span><br><span class="line">    Content <span class="keyword">string</span>   <span class="comment">// 事件内容</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> EventReceiver <span class="keyword">interface</span> &#123;</span><br><span class="line">    OnEvent(evt Event)  <span class="comment">// 实现OnEvent 既可以作为 EventReciver来接收事件 如下面的 Agent</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(agt *Agent)</span> <span class="title">OnEvent</span><span class="params">(evt Event)</span></span> &#123;</span><br><span class="line">    agt.evtBuf &lt;- evt  <span class="comment">// Agent 可以来接收事件</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><strong>开始起一个微内核</strong>: 整个 微内核的架构就是这样了，刚才提到了，Agent会统一对注册进去的Collector进行初始化（Init），启动（Start），停止（Stop）的操作。 所以这里还差一个注册函数。</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(agt *Agent)</span> <span class="title">RegisterCollector</span><span class="params">(name <span class="keyword">string</span>, collector Collector)</span> <span class="title">error</span></span> &#123;</span><br><span class="line">    <span class="keyword">if</span> agt.state != Waiting &#123;</span><br><span class="line">        <span class="keyword">return</span> WrongStateError</span><br><span class="line">    &#125;</span><br><span class="line">    agt.collectors[name] = collector   <span class="comment">// agent map注册</span></span><br><span class="line">    <span class="keyword">return</span> collector.Init(agt)  <span class="comment">// 注册完立即进行Init 操作。且事件接收者为Agent</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p><strong>启动、停止、摧毁</strong><br>启动会将所有的Controller都拉起来，同理停止和摧毁。</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(agt *Agent)</span> <span class="title">Start</span><span class="params">()</span> <span class="title">error</span></span> &#123;</span><br><span class="line">    <span class="keyword">if</span> agt.state != Waiting &#123;     <span class="comment">// 状态不对，直接报错</span></span><br><span class="line">        <span class="keyword">return</span> WrongStateError</span><br><span class="line">    &#125;</span><br><span class="line">    agt.state = Running    <span class="comment">// 启动了，更改状态</span></span><br><span class="line">    agt.ctx, agt.cancel = context.WithCancel(context.Background())  <span class="comment">// 来一个取消的上下文和取消函数</span></span><br><span class="line">    <span class="keyword">go</span> agt.EventProcessGroutine()    <span class="comment">// 收集事件 (具体业务了)</span></span><br><span class="line">    <span class="keyword">return</span> agt.startCollectors()    <span class="comment">//  启动所有的Collector</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 模拟的收集具体的业务事件。这里的事件是由各个 collector 上报的</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(agt *Agent)</span> <span class="title">EventProcessGroutine</span><span class="params">()</span></span> &#123;</span><br><span class="line">    <span class="keyword">var</span> evtSeg [<span class="number">10</span>]Event</span><br><span class="line">    <span class="keyword">for</span> &#123;</span><br><span class="line">        <span class="keyword">for</span> i := <span class="number">0</span>; i &lt; <span class="number">10</span>; i++ &#123;</span><br><span class="line">            <span class="keyword">select</span> &#123;</span><br><span class="line">            <span class="keyword">case</span> evtSeg[i] = &lt;-agt.evtBuf:   <span class="comment">// 将 collector 收集的事件放到 evtBuf 中</span></span><br><span class="line">            <span class="keyword">case</span> &lt;-agt.ctx.Done():           <span class="comment">// 执行上下文完成，结束 </span></span><br><span class="line">                <span class="keyword">return</span></span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        fmt.Println(evtSeg)   <span class="comment">// 当 collector 收集的事件满 10 个，打印一次。</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Agent 来拉起所有的 Collectors</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(agt *Agent)</span> <span class="title">startCollectors</span><span class="params">()</span> <span class="title">error</span></span> &#123;</span><br><span class="line">    <span class="keyword">var</span> err error</span><br><span class="line">    <span class="keyword">var</span> errs CollectorsError</span><br><span class="line">    <span class="keyword">var</span> mutex sync.Mutex</span><br><span class="line">    <span class="keyword">for</span> name, collector := <span class="keyword">range</span> agt.collectors &#123;</span><br><span class="line">        <span class="keyword">go</span> <span class="function"><span class="keyword">func</span><span class="params">(name <span class="keyword">string</span>, collector Collector, ctx context.Context)</span></span> &#123;</span><br><span class="line">            <span class="keyword">defer</span> <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">                mutex.Unlock()</span><br><span class="line">            &#125;()</span><br><span class="line">            err = collector.Start(ctx)</span><br><span class="line">            mutex.Lock()</span><br><span class="line">            <span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">                errs.CollectorErrors = <span class="built_in">append</span>(errs.CollectorErrors,</span><br><span class="line">                    errors.New(name+<span class="string">&quot;:&quot;</span>+err.Error()))</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;(name, collector, agt.ctx)</span><br><span class="line">    &#125;</span><br><span class="line">        <span class="keyword">if</span> <span class="built_in">len</span>(errs.CollectorErrors) == <span class="number">0</span> &#123;     <span class="comment">// 这里需要判断有没有错误，确定没有错误，返回nil。否则其实返回的也不是nil</span></span><br><span class="line">        <span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> errs</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><strong>模拟</strong></p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="keyword">type</span> DemoCollector <span class="keyword">struct</span> &#123;      <span class="comment">// 示例 Collector</span></span><br><span class="line">    evtReceiver microkernel.EventReceiver   <span class="comment">// 事件发给这里</span></span><br><span class="line">    stopChan    <span class="keyword">chan</span> <span class="keyword">struct</span>&#123;&#125;    <span class="comment">// 用来停止该Collector</span></span><br><span class="line">    name        <span class="keyword">string</span>    <span class="comment">// Collector 名字</span></span><br><span class="line">    content     <span class="keyword">string</span>    <span class="comment">// Collector 的要做的内容（假设，这个根据业务场景，都不一定是string）</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">NewCollect</span><span class="params">(name <span class="keyword">string</span>, content <span class="keyword">string</span>)</span> *<span class="title">DemoCollector</span></span> &#123;   <span class="comment">// 创建一个 Collect</span></span><br><span class="line">    <span class="keyword">return</span> &amp;DemoCollector&#123;</span><br><span class="line">        stopChan: <span class="built_in">make</span>(<span class="keyword">chan</span> <span class="keyword">struct</span>&#123;&#125;),</span><br><span class="line">        name:     name,</span><br><span class="line">        content:  content,</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(c *DemoCollector)</span> <span class="title">Init</span><span class="params">(evtReceiver microkernel.EventReceiver)</span> <span class="title">error</span></span> &#123;   <span class="comment">// 初始化一个这个 Collect</span></span><br><span class="line">    fmt.Println(<span class="string">&quot;initialize collector&quot;</span>, c.name)</span><br><span class="line">    c.evtReceiver = evtReceiver    <span class="comment">// Agent 作为数据的上报源</span></span><br><span class="line">    <span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(c *DemoCollector)</span> <span class="title">Start</span><span class="params">(agtCtx context.Context)</span> <span class="title">error</span></span> &#123;   <span class="comment">// 拉起一个 Collect</span></span><br><span class="line">    fmt.Println(<span class="string">&quot;start collector&quot;</span>, c.name)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> &#123;    <span class="comment">// 死循环</span></span><br><span class="line">        <span class="keyword">select</span> &#123;</span><br><span class="line">        <span class="keyword">case</span> &lt;-agtCtx.Done():      <span class="comment">// 收到 Done 了</span></span><br><span class="line">            c.stopChan &lt;- <span class="keyword">struct</span>&#123;&#125;&#123;&#125;  <span class="comment">// 停掉该 Collect （Stop 方法那里会等 stopChan 这个信号）</span></span><br><span class="line">            <span class="keyword">break</span></span><br><span class="line">        <span class="keyword">default</span>:</span><br><span class="line">            time.Sleep(time.Millisecond * <span class="number">50</span>)</span><br><span class="line">            c.evtReceiver.OnEvent(microkernel.Event&#123;c.name, c.content&#125;) <span class="comment">// 向 Agent 上报事件</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(c *DemoCollector)</span> <span class="title">Stop</span><span class="params">()</span> <span class="title">error</span></span> &#123;</span><br><span class="line">    fmt.Println(<span class="string">&quot;stop collector&quot;</span>, c.name)</span><br><span class="line">    <span class="keyword">select</span> &#123;</span><br><span class="line">    <span class="keyword">case</span> &lt;-c.stopChan:   <span class="comment">// 收到停止信号了，停掉</span></span><br><span class="line">        <span class="keyword">return</span> <span class="literal">nil</span>  <span class="comment">// 一般停完再做点啥，在这做些善后吧</span></span><br><span class="line">    <span class="keyword">case</span> &lt;-time.After(time.Second * <span class="number">1</span>):</span><br><span class="line">        <span class="keyword">return</span> errors.New(<span class="string">&quot;failed to stop for timeout&quot;</span>)</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(c *DemoCollector)</span> <span class="title">Destroy</span><span class="params">()</span> <span class="title">error</span></span> &#123;</span><br><span class="line">    fmt.Println(c.name, <span class="string">&quot;released resources.&quot;</span>)</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">    <span class="keyword">var</span> err error = <span class="literal">nil</span></span><br><span class="line">    agt := microkernel.NewAgent(<span class="number">100</span>)</span><br><span class="line">    c1 := NewCollect(<span class="string">&quot;c1&quot;</span>, <span class="string">&quot;1a&quot;</span>)</span><br><span class="line">    c2 := NewCollect(<span class="string">&quot;c2&quot;</span>, <span class="string">&quot;2b&quot;</span>)</span><br><span class="line">    <span class="keyword">if</span> err = agt.RegisterCollector(<span class="string">&quot;c1&quot;</span>, c1);err != <span class="literal">nil</span> &#123;</span><br><span class="line">        <span class="keyword">goto</span> ERR</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> err = agt.RegisterCollector(<span class="string">&quot;c2&quot;</span>, c2);err != <span class="literal">nil</span> &#123;</span><br><span class="line">        <span class="keyword">goto</span> ERR</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> err = agt.Start();err != <span class="literal">nil</span> &#123;</span><br><span class="line">        <span class="keyword">goto</span> ERR</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    time.Sleep(time.Second * <span class="number">2</span>)</span><br><span class="line">    <span class="keyword">if</span> err = agt.Stop();err != <span class="literal">nil</span> &#123;</span><br><span class="line">        <span class="keyword">goto</span> ERR</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span></span><br><span class="line"></span><br><span class="line">ERR:</span><br><span class="line">    fmt.Println(<span class="string">&quot;An Error Occur :&quot;</span>,err)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<hr>
+<h2 id="命令模式-Command"><a href="#命令模式-Command" class="headerlink" title="命令模式 (Command)"></a>命令模式 (Command)</h2><ul>
+<li><font color="#808080">**定义以及使用场景**</font>
+
+</li>
+</ul>
+<p>它可将请求或简单操作转换为一个对象。此类转换让你能够延迟进行或远程执行请求， 还可将其放入队列中。</p>
+<p><strong>使用场景</strong></p>
+<ol>
+<li>需要抽象出待执行的行动，然后以参数的形式提供出来——类似于过程设计中的回调机制，而命令模式正是回调机制的一个面向对象的代替品。</li>
+<li>在不同的时刻指定、排列和执行请求，一个命令对象可以有与初始请求无关的生存期</li>
+<li>需要支持事务操作</li>
+</ol>
+<ul>
+<li><font color="#200000">**举个例子**</font>
+
+</li>
+</ul>
+<p><strong>电视遥控器</strong>:</p>
+<p>遥控器从实现 ON 命令对象并以电视机作为接收者入手。 当在此命令上调用 execute执行方法时， 方法会调用 TV.on打开电视函数。 最后的工作是定义请求者： 这里实际上有两个请求者： 遥控器和电视机。 两者都将嵌入 ON 命令对象。</p>
+<ul>
+<li>实现 command 和 device </li>
+</ul>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="comment">// command define</span></span><br><span class="line"><span class="keyword">type</span> command <span class="keyword">interface</span> &#123;</span><br><span class="line">	execute()</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">type</span> button <span class="keyword">struct</span> &#123;</span><br><span class="line">	command command</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(b *button)</span> <span class="title">press</span><span class="params">()</span></span> &#123;</span><br><span class="line">	b.command.execute()</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// device define ， 设备可执行的命令</span></span><br><span class="line"><span class="keyword">type</span> device <span class="keyword">interface</span> &#123;</span><br><span class="line">	on()</span><br><span class="line">	off()</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 具体实现要执行命令</span></span><br><span class="line"><span class="keyword">type</span> onCommand <span class="keyword">struct</span> &#123;</span><br><span class="line">	device device</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(c *onCommand)</span> <span class="title">execute</span><span class="params">()</span></span> &#123;</span><br><span class="line">	c.device.on()</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> offCommand <span class="keyword">struct</span> &#123;</span><br><span class="line">	device device</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(c *offCommand)</span> <span class="title">execute</span><span class="params">()</span></span> &#123;</span><br><span class="line">	c.device.off()</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>创建命令的发出者和执行者</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="comment">// 命令的执行者</span></span><br><span class="line"><span class="keyword">type</span> tv <span class="keyword">struct</span> &#123;</span><br><span class="line">	isRunning <span class="keyword">bool</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(t *tv)</span> <span class="title">on</span><span class="params">()</span></span> &#123;</span><br><span class="line">	t.isRunning = <span class="literal">true</span></span><br><span class="line">	fmt.Println(<span class="string">&quot;Turning tv on&quot;</span>)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(t *tv)</span> <span class="title">off</span><span class="params">()</span></span> &#123;</span><br><span class="line">	t.isRunning = <span class="literal">false</span></span><br><span class="line">	fmt.Println(<span class="string">&quot;Turning tv off&quot;</span>)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 执行者就是按下按钮</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">	tv := &amp;tv&#123;&#125;</span><br><span class="line"></span><br><span class="line">	onButton := &amp;button&#123;</span><br><span class="line">		command: &amp;onCommand&#123; device: tv &#125;,</span><br><span class="line">	&#125;</span><br><span class="line">	onButton.press()</span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<hr>
+<h2 id="桥接模式-Bridge"><a href="#桥接模式-Bridge" class="headerlink" title="桥接模式 (Bridge)"></a>桥接模式 (Bridge)</h2><ul>
+<li><strong>定义以及使用场景</strong> </li>
+</ul>
+<p>将抽象与实现分离，使它们可以独立变化。</p>
+<p><strong>使用场景</strong></p>
+<ol>
+<li>抽象化（Abstraction）角色：定义抽象类，并包含一个对实现化对象的引用。</li>
+<li>扩展抽象化（Refined Abstraction）角色：是抽象化角色的子类，实现父类中的业务方法，并通过组合关系调用实现化角色中的业务方法。</li>
+<li>实现化（Implementor）角色：定义实现化角色的接口，供扩展抽象化角色调用。</li>
+<li>具体实现化（Concrete Implementor）角色：给出实现化角色接口的具体实现。</li>
+</ol>
+<figure class="highlight golang"><table><tr><td class="code"><pre><span class="line"><span class="keyword">package</span> bridge</span><br><span class="line"></span><br><span class="line"><span class="comment">// IMsgSender IMsgSender</span></span><br><span class="line"><span class="keyword">type</span> IMsgSender <span class="keyword">interface</span> &#123;</span><br><span class="line">	Send(msg <span class="keyword">string</span>) error</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// EmailMsgSender 发送邮件</span></span><br><span class="line"><span class="comment">// 可能还有 电话、短信等各种实现</span></span><br><span class="line"><span class="keyword">type</span> EmailMsgSender <span class="keyword">struct</span> &#123;</span><br><span class="line">	emails []<span class="keyword">string</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// NewEmailMsgSender NewEmailMsgSender</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">NewEmailMsgSender</span><span class="params">(emails []<span class="keyword">string</span>)</span> *<span class="title">EmailMsgSender</span></span> &#123;</span><br><span class="line">	<span class="keyword">return</span> &amp;EmailMsgSender&#123;emails: emails&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Send Send</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(s *EmailMsgSender)</span> <span class="title">Send</span><span class="params">(msg <span class="keyword">string</span>)</span> <span class="title">error</span></span> &#123;</span><br><span class="line">	<span class="comment">// 这里去发送消息</span></span><br><span class="line">	<span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// INotification 通知接口</span></span><br><span class="line"><span class="keyword">type</span> INotification <span class="keyword">interface</span> &#123;</span><br><span class="line">	Notify(msg <span class="keyword">string</span>) error</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// ErrorNotification 错误通知</span></span><br><span class="line"><span class="comment">// 后面可能还有 warning 各种级别</span></span><br><span class="line"><span class="keyword">type</span> ErrorNotification <span class="keyword">struct</span> &#123;</span><br><span class="line">	sender IMsgSender</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// NewErrorNotification NewErrorNotification</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">NewErrorNotification</span><span class="params">(sender IMsgSender)</span> *<span class="title">ErrorNotification</span></span> &#123;</span><br><span class="line">	<span class="keyword">return</span> &amp;ErrorNotification&#123;sender: sender&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Notify 发送通知</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(n *ErrorNotification)</span> <span class="title">Notify</span><span class="params">(msg <span class="keyword">string</span>)</span> <span class="title">error</span></span> &#123;</span><br><span class="line">	<span class="keyword">return</span> n.sender.Send(msg)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>单元测试<br><figure class="highlight golang"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">TestErrorNotification_Notify</span><span class="params">(t *testing.T)</span></span> &#123;</span><br><span class="line">	sender := NewEmailMsgSender([]<span class="keyword">string</span>&#123;<span class="string">&quot;test@test.com&quot;</span>&#125;)</span><br><span class="line">	n := NewErrorNotification(sender)</span><br><span class="line">	err := n.Notify(<span class="string">&quot;test msg&quot;</span>)</span><br><span class="line"></span><br><span class="line">	assert.Nil(t, err)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<hr>
+<h2 id="访问者模式-visitor"><a href="#访问者模式-visitor" class="headerlink" title="访问者模式 (visitor)"></a>访问者模式 (visitor)</h2><ul>
+<li><strong>定义以及使用场景</strong> </li>
+</ul>
+<p>由于没有函数重载，所以我们并不知道传递过来的对象是什么类型，这个时候只能采用类型断言的方式来对不同的类型做不同的操作，但是正式由于没有函数重载，所以其实完全可以不用访问者模式直接传入参数。</p>
+<p><strong>使用场景</strong></p>
+<p>访问者模式一共有五种角色：</p>
+<p>(1) Vistor（抽象访问者）：为该对象结构中具体元素角色声明一个访问操作接口。<br>(2) ConcreteVisitor（具体访问者）：每个具体访问者都实现了Vistor中定义的操作。<br>(3) Element（抽象元素）：定义了一个accept操作，以Visitor作为参数。<br>(4) ConcreteElement（具体元素）：实现了Element中的accept()方法，调用Vistor的访问方法以便完成对一个元素的操作。</p>
+<figure class="highlight golang"><table><tr><td class="code"><pre><span class="line"><span class="keyword">package</span> visitor</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> (</span><br><span class="line">	<span class="string">&quot;fmt&quot;</span></span><br><span class="line">	<span class="string">&quot;path&quot;</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="comment">// Visitor 访问者</span></span><br><span class="line"><span class="keyword">type</span> Visitor <span class="keyword">interface</span> &#123;</span><br><span class="line">	Visit(IResourceFile) error</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// IResourceFile IResourceFile</span></span><br><span class="line"><span class="keyword">type</span> IResourceFile <span class="keyword">interface</span> &#123;</span><br><span class="line">	Accept(Visitor) error</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// NewResourceFile NewResourceFile</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">NewResourceFile</span><span class="params">(filepath <span class="keyword">string</span>)</span> <span class="params">(IResourceFile, error)</span></span> &#123;</span><br><span class="line">	<span class="keyword">switch</span> path.Ext(filepath) &#123;</span><br><span class="line">	<span class="keyword">case</span> <span class="string">&quot;.ppt&quot;</span>:</span><br><span class="line">		<span class="keyword">return</span> &amp;PPTFile&#123;path: filepath&#125;, <span class="literal">nil</span></span><br><span class="line">	<span class="keyword">case</span> <span class="string">&quot;.pdf&quot;</span>:</span><br><span class="line">		<span class="keyword">return</span> &amp;PdfFile&#123;path: filepath&#125;, <span class="literal">nil</span></span><br><span class="line">	<span class="keyword">default</span>:</span><br><span class="line">		<span class="keyword">return</span> <span class="literal">nil</span>, fmt.Errorf(<span class="string">&quot;not found file type: %s&quot;</span>, filepath)</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// PdfFile PdfFile</span></span><br><span class="line"><span class="keyword">type</span> PdfFile <span class="keyword">struct</span> &#123;</span><br><span class="line">	path <span class="keyword">string</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Accept Accept</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(f *PdfFile)</span> <span class="title">Accept</span><span class="params">(visitor Visitor)</span> <span class="title">error</span></span> &#123;</span><br><span class="line">	<span class="keyword">return</span> visitor.Visit(f)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// PPTFile PPTFile</span></span><br><span class="line"><span class="keyword">type</span> PPTFile <span class="keyword">struct</span> &#123;</span><br><span class="line">	path <span class="keyword">string</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Accept Accept</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(f *PPTFile)</span> <span class="title">Accept</span><span class="params">(visitor Visitor)</span> <span class="title">error</span></span> &#123;</span><br><span class="line">	<span class="keyword">return</span> visitor.Visit(f)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Compressor 实现压缩功能</span></span><br><span class="line"><span class="keyword">type</span> Compressor <span class="keyword">struct</span>&#123;&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Visit 实现访问者模式方法</span></span><br><span class="line"><span class="comment">// 我们可以发现由于没有函数重载，我们只能通过断言来根据不同的类型调用不同函数</span></span><br><span class="line"><span class="comment">// 但是我们即使不采用访问者模式，我们其实也是可以这么操作的</span></span><br><span class="line"><span class="comment">// 并且由于采用了类型断言，所以如果需要操作的对象比较多的话，这个函数其实也会膨胀的比较厉害</span></span><br><span class="line"><span class="comment">// 后续可以考虑按照命名约定使用 generate 自动生成代码</span></span><br><span class="line"><span class="comment">// 或者是使用反射简化</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(c *Compressor)</span> <span class="title">Visit</span><span class="params">(r IResourceFile)</span> <span class="title">error</span></span> &#123;</span><br><span class="line">	<span class="keyword">switch</span> f := r.(<span class="keyword">type</span>) &#123;</span><br><span class="line">	<span class="keyword">case</span> *PPTFile:</span><br><span class="line">		<span class="keyword">return</span> c.VisitPPTFile(f)</span><br><span class="line">	<span class="keyword">case</span> *PdfFile:</span><br><span class="line">		<span class="keyword">return</span> c.VisitPDFFile(f)</span><br><span class="line">	<span class="keyword">default</span>:</span><br><span class="line">		<span class="keyword">return</span> fmt.Errorf(<span class="string">&quot;not found resource typr: %#v&quot;</span>, r)</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// VisitPPTFile VisitPPTFile</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(c *Compressor)</span> <span class="title">VisitPPTFile</span><span class="params">(f *PPTFile)</span> <span class="title">error</span></span> &#123;</span><br><span class="line">	fmt.Println(<span class="string">&quot;this is ppt file&quot;</span>)</span><br><span class="line">	<span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// VisitPDFFile VisitPDFFile</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(c *Compressor)</span> <span class="title">VisitPDFFile</span><span class="params">(f *PdfFile)</span> <span class="title">error</span></span> &#123;</span><br><span class="line">	fmt.Println(<span class="string">&quot;this is pdf file&quot;</span>)</span><br><span class="line">	<span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>单元测试<br><figure class="highlight golang"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">TestCompressor_Visit</span><span class="params">(t *testing.T)</span></span> &#123;</span><br><span class="line">	tests := []<span class="keyword">struct</span> &#123;</span><br><span class="line">		name    <span class="keyword">string</span></span><br><span class="line">		path    <span class="keyword">string</span></span><br><span class="line">		wantErr <span class="keyword">string</span></span><br><span class="line">	&#125;&#123;</span><br><span class="line">		&#123;</span><br><span class="line">			name: <span class="string">&quot;pdf&quot;</span>,</span><br><span class="line">			path: <span class="string">&quot;./xx.pdf&quot;</span>,</span><br><span class="line">		&#125;,</span><br><span class="line">		&#123;</span><br><span class="line">			name: <span class="string">&quot;ppt&quot;</span>,</span><br><span class="line">			path: <span class="string">&quot;./xx.ppt&quot;</span>,</span><br><span class="line">		&#125;,</span><br><span class="line">		&#123;</span><br><span class="line">			name:    <span class="string">&quot;404&quot;</span>,</span><br><span class="line">			path:    <span class="string">&quot;./xx.xx&quot;</span>,</span><br><span class="line">			wantErr: <span class="string">&quot;not found file type&quot;</span>,</span><br><span class="line">		&#125;,</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">for</span> _, tt := <span class="keyword">range</span> tests &#123;</span><br><span class="line">		t.Run(tt.name, <span class="function"><span class="keyword">func</span><span class="params">(t *testing.T)</span></span> &#123;</span><br><span class="line">			f, err := NewResourceFile(tt.path)</span><br><span class="line">			<span class="keyword">if</span> tt.wantErr != <span class="string">&quot;&quot;</span> &#123;</span><br><span class="line">				require.Error(t, err)</span><br><span class="line">				require.Contains(t, err.Error(), tt.wantErr)</span><br><span class="line">				<span class="keyword">return</span></span><br><span class="line">			&#125;</span><br><span class="line"></span><br><span class="line">			require.NoError(t, err)</span><br><span class="line">			compressor := &amp;Compressor&#123;&#125;</span><br><span class="line">			f.Accept(compressor)</span><br><span class="line">		&#125;)</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+]]></content>
+      <categories>
+        <category>algorithm</category>
+      </categories>
+      <tags>
+        <tag>design pattern</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>搭建我的ELK 7.12</title>
     <url>/2021/03/27/%E6%90%AD%E5%BB%BA%E6%88%91%E7%9A%84ELK-7-2/</url>
     <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script><p>Elasticsearch 是一个实时的分布式搜索分析引擎，它能让你以前所未有的速度和规模，去探索你的数据。</p>
@@ -840,6 +1221,11 @@ Identity中包含的是客户端愿意进行协商的服务器身份列表。PSK
 </ul>
 <p>参考: <a href="https://mp.weixin.qq.com/s/J7sVxIoIVClEirClBQoUtA">https://mp.weixin.qq.com/s/J7sVxIoIVClEirClBQoUtA</a><br>参考：<a href="https://zhuanlan.zhihu.com/p/156726632">https://zhuanlan.zhihu.com/p/156726632</a></p>
 <h2 id="指定文件不需要git管理"><a href="#指定文件不需要git管理" class="headerlink" title="指定文件不需要git管理"></a><font color="#FF4500"><strong>指定文件不需要git管理</strong></font></h2><p>在项目根目录下创建 <strong><code>.gitignore</code></strong> ,写入不需管理的文件名即可</p>
+<h2 id="Git创建本地分支并关联远程分支"><a href="#Git创建本地分支并关联远程分支" class="headerlink" title="Git创建本地分支并关联远程分支"></a><font color="#FF4500"><strong><code>Git创建本地分支并关联远程分支</code></strong></font></h2><p>当我想从远程仓库里拉取一条本地不存在的分支时：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ git checkout -b 本地分支名 origin/远程分支名</span><br></pre></td></tr></table></figure>
+<p>如果出现以下报错<br><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">fatal: Cannot update paths and switch to branch &#39;dev2&#39; at the same time.</span><br><span class="line">Did you intend to checkout &#39;origin&#x2F;dev2&#39; which can not be resolved as commit?</span><br></pre></td></tr></table></figure><br>表示拉取不成功。我们需要先执行<br><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ git fetch</span><br></pre></td></tr></table></figure><br>再执行</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ git checkout -b 本地分支名 origin/远程分支名</span><br></pre></td></tr></table></figure>
+<p>修改之后再推送的话，可以执行<br><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ git push --set-upstream origin </span><br></pre></td></tr></table></figure></p>
 <h1 id="git目录功能"><a href="#git目录功能" class="headerlink" title=".git目录功能"></a>.git目录功能</h1><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">➜ .git git:(master) ls   </span><br><span class="line">branches  COMMIT_EDITMSG  config  description  gitk.cache  HEAD  hooks  index  info  logs  objects  refs</span><br></pre></td></tr></table></figure>
 <ul>
 <li><code>HEAD</code>: 当前工作的分支</li>
@@ -1203,374 +1589,6 @@ reserved &quot;salary&quot;;</code> 如果再使用5 或者 salary 则会报错�
       <categories>
         <category>network</category>
       </categories>
-  </entry>
-  <entry>
-    <title>设计模式（Design Pattern）</title>
-    <url>/2020/10/24/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F%EF%BC%88Design-Pattern%EF%BC%89/</url>
-    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script><p>设计模式（Design pattern）代表了最佳的实践，通常被有经验的面向对象的软件开发人员所采用。设计模式是软件开发人员在软件开发过程中面临的一般问题的解决方案。这些解决方案是众多软件开发人员经过相当长的一段时间的试验和错误总结出来的。</p>
-<a id="more"></a>
-<h1 id="设计模式概述"><a href="#设计模式概述" class="headerlink" title="设计模式概述"></a>设计模式概述</h1><p>“设计模式”总的来说有设计原则6个.</p>
-<ul>
-<li><strong>单一职责原则(Single Responsibility Principle, SRP)</strong> : 每个模块或类都应该对软件提供的功能的一部分负责，而这个责任应该完全由类来封装。它的所有服务都应严格遵守这一职责。</li>
-<li><strong>开闭原则(Open Close Principle, OCP)</strong> : 软件中的对象(类、模块、函数等)对扩展是开放的，对修改是封闭的。</li>
-<li><strong>里氏替换原则(Liskov Substitution Principle, LSP)</strong> : 所有使用基类的地方必须能透明地使用其子类的对象</li>
-<li><strong>依赖倒转原则(Dependence Inversion Principle, DIP)</strong> : 是指一种特定的解耦（传统的依赖关系建立在高层次上，而具体的策略设置则应用在低层次的模块上）形式，使得高层次的模块不依赖于低层次的模块的实现细节，依赖关系被颠倒（反转），从而使得低层次模块依赖于高层次模块的需求抽象。</li>
-<li><strong>接口隔离原则(Interface Segregation Principle, ISP)</strong> : 客户端不应该依赖它不需要的接口。</li>
-<li><strong>迪米特法则(Law of Demeter, LoD), 最少知识原则(Principle of Least Knowledge)</strong> : 1. 每个对象应该对其他对象尽可能最少的知道 2. 每个对象应该仅和其朋友通信；不和陌生人通信 3. 仅仅和直接朋友通信</li>
-</ul>
-<hr>
-<h1 id="设计模式"><a href="#设计模式" class="headerlink" title="设计模式"></a>设计模式</h1><h2 id="单例模式-Singleton"><a href="#单例模式-Singleton" class="headerlink" title="单例模式 (Singleton)"></a>单例模式 (Singleton)</h2><ul>
-<li><font color="#200000">定义以及使用场景</font>
-</li>
-</ul>
-<ol>
-<li>确保某一个类只有一个实例，而且向整个系统提供这个实例</li>
-<li>确保某个类有且仅有一个对象的场景，避免产生多个对象消耗过多的资源；或者某种类型的对象应该有且只有一个。（如 Logger 实例、Config 实例等）</li>
-</ol>
-<ul>
-<li><font color="#200000">实现单例模式的几个关键点</font>
-</li>
-</ul>
-<ol>
-<li>构造函数不对外开放，一般为private</li>
-<li>通过一个静态方法或者枚举返回单例类对象</li>
-<li>确保单例类的对象有且只有一个，尤其是在多线程环境下</li>
-<li>确保单例类对象在反序列化时不会重新构建对象</li>
-</ol>
-<ul>
-<li><font color="#200000">饥汉模式</font>
-
-</li>
-</ul>
-<p>直接创建好对象，这样不需要判断为空，同时也是线程安全。唯一的缺点是在导入包的同时会创建该对象，并持续占有在内存中。</p>
-<figure class="highlight golang"><table><tr><td class="code"><pre><span class="line"><span class="keyword">var</span> instance Tool</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">GetInstance</span><span class="params">()</span> *<span class="title">Tool</span></span> &#123;</span><br><span class="line">    <span class="keyword">return</span> &amp;instance</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<ul>
-<li><font color="#200000"> 懒汉模式 (Lazy Loading) </font>
-
-</li>
-</ul>
-<p>只有需要时才会初始化，在一定程度上节约了资源。如果不加锁的话非线程安全，即在多线程下可能会创建多次对象。</p>
-<figure class="highlight golang"><table><tr><td class="code"><pre><span class="line"><span class="comment">// private</span></span><br><span class="line"><span class="keyword">var</span> instance *singleton</span><br><span class="line"><span class="keyword">var</span> mu sync.Mutex</span><br><span class="line"></span><br><span class="line"><span class="comment">// public</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">GetInstance</span><span class="params">()</span> *<span class="title">singleton</span></span> &#123;</span><br><span class="line">	mu.Lock()</span><br><span class="line">	<span class="keyword">defer</span> mu.Unlock()</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> instance == <span class="literal">nil</span> &#123;</span><br><span class="line">		instance = &amp;singleton&#123;&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> instance</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<ul>
-<li><font color="#200000"> DCL(双重检查)模式 (推荐) </font>
-
-</li>
-</ul>
-<p>DCL的优点就是资源利用率高，只有第一次执行getInstance才会初始化。</p>
-<figure class="highlight golang"><table><tr><td class="code"><pre><span class="line"><span class="keyword">var</span> lock sync.Mutex</span><br><span class="line"><span class="keyword">var</span> instance Tool</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment">* 第一次判断不加锁，第二次加锁保证线程安全，一旦对象建立后,获取对象就不用加锁了</span></span><br><span class="line"><span class="comment">*/</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">GetInstance</span><span class="params">()</span> *<span class="title">Tool</span></span> &#123;</span><br><span class="line">    <span class="keyword">if</span> instance == <span class="literal">nil</span> &#123;</span><br><span class="line">        lock.Lock()</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> instance == <span class="literal">nil</span> &#123;</span><br><span class="line">            instance = <span class="built_in">new</span>(Tool)</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        lock.Unlock()</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> instance</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>或者在golang中还可以使用 <code>sync.Once</code> 保证单例。</p>
-<pre><code>
-var once sync.Once
-
-func GetInstance() *Tool &#123;
-    once.Do(func() &#123;
-        instance = new(Tool)
-    &#125;)
-    return instance
-&#125;
-</code></pre>
-
-<hr>
-<h2 id="工厂方法模式-Factory-method"><a href="#工厂方法模式-Factory-method" class="headerlink" title="工厂方法模式(Factory method)"></a>工厂方法模式(Factory method)</h2><ul>
-<li><font color="#808080"> 定义以及使用场景</font>
-
-</li>
-</ul>
-<p>创建一个用户创建对象的接口，让子类决定实例化哪个类。工厂方法使一个类的实例化延迟到其子类。</p>
-<p><strong>使用场景</strong>：</p>
-<ol>
-<li>工厂方法模式通过依赖抽象来达到解耦的效果，并且将实例化的任务交给子类去完成，有非常好的扩展性</li>
-<li>在任何需要生成复杂对象的地方，都可以使用工厂方法模式。复杂对象适合使用工厂模式，用new就可以完成创建的对象无需使用工厂方法</li>
-<li>工厂方法模式的应用非常广泛，然而缺点也很明显，就是每次我们为工厂方法添加新的产品时，都需要编写一个新的产品类，所以要根据实际情况来权衡是否要用工厂方法模式</li>
-</ol>
-<p>类似我要造汽车，将造汽车的通用的几个方法定义好，就可以创建一个接口。任何实现了这套造汽车标准的厂商都可以被初始化。并造出一辆汽车。</p>
-<ul>
-<li><font color="#808080"> 举例实现工厂方法模式 </font>
-
-</li>
-</ul>
-<p>假设我们在做一款小型翻译软件，软件可以将德语、英语、日语都翻译成目标中文，并显示在前端。</p>
-<ul>
-<li><font color="#200000"> 简单工厂模式 </font>
-
-</li>
-</ul>
-<p>我们会有三个具体的语言翻译结构体，或许以后还有更多，但现在分别是GermanTranslater、EnglishTranslater、JapaneseTranslater，他们都共同实现了一个接口Translator。</p>
-<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="comment">//翻译接口</span></span><br><span class="line"><span class="keyword">type</span> Translator <span class="keyword">interface</span> &#123;</span><br><span class="line">	Translate(<span class="keyword">string</span>) <span class="keyword">string</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">//德语翻译类</span></span><br><span class="line"><span class="keyword">type</span> GermanTranslator <span class="keyword">struct</span>&#123;&#125;</span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(*GermanTranslator)</span> <span class="title">Translate</span><span class="params">(words <span class="keyword">string</span>)</span> <span class="title">string</span></span> &#123;</span><br><span class="line">	<span class="keyword">return</span> <span class="string">&quot;德语&quot;</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">//英语翻译类</span></span><br><span class="line"><span class="keyword">type</span> EnglishTranslator <span class="keyword">struct</span>&#123;&#125;</span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(*EnglishTranslator)</span> <span class="title">Translate</span><span class="params">(words <span class="keyword">string</span>)</span> <span class="title">string</span></span> &#123;</span><br><span class="line">	<span class="keyword">return</span> <span class="string">&quot;英语&quot;</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>接下来在程序入口获取用户输入的文本，并将其翻译</p>
-<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">	<span class="keyword">defer</span> <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">		<span class="keyword">if</span> err := <span class="built_in">recover</span>(); err != <span class="literal">nil</span> &#123;</span><br><span class="line">			fmt.Println(err)</span><br><span class="line">		&#125;</span><br><span class="line">		time.Sleep(<span class="number">3</span> * time.Second)</span><br><span class="line">	&#125;()</span><br><span class="line"></span><br><span class="line">	<span class="keyword">var</span> lan <span class="keyword">int</span></span><br><span class="line">	fmt.Printf(<span class="string">&quot;%s ,%s&quot;</span>, <span class="string">&quot;以下是可翻译的语言种类，请输入代表数字&quot;</span>, <span class="string">&quot;1：德语、2：英语&quot;</span>)</span><br><span class="line">	_, _ = fmt.Scanln(&amp;lan)</span><br><span class="line"></span><br><span class="line">	fmt.Println(<span class="string">&quot;请输入要翻译成中文的文本：&quot;</span>)</span><br><span class="line">	<span class="keyword">var</span> inputWords <span class="keyword">string</span></span><br><span class="line">	_, _ = fmt.Scanln(&amp;inputWords)</span><br><span class="line"></span><br><span class="line">	<span class="keyword">var</span> translator Translator</span><br><span class="line"></span><br><span class="line">	<span class="comment">//根据不同的语言种类，实例化不同的翻译类</span></span><br><span class="line">	<span class="keyword">switch</span> lan &#123;</span><br><span class="line">	<span class="keyword">case</span> <span class="number">1</span>:</span><br><span class="line">		translator = <span class="built_in">new</span>(GermanTranslator)</span><br><span class="line">	<span class="keyword">case</span> <span class="number">2</span>:</span><br><span class="line">		translator = <span class="built_in">new</span>(EnglishTranslator)</span><br><span class="line">	<span class="keyword">default</span>:</span><br><span class="line">		<span class="built_in">panic</span>(<span class="string">&quot;no such translator&quot;</span>)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	fmt.Println(translator.Translate(inputWords))</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<p><strong>缺点</strong></p>
-<ol>
-<li>违背了开闭原则，以后还可能有法语、俄语、阿拉伯语等其他翻译器，每一次添加翻译器都要在客户端代码增加对应的switch分支，维护成本高。倘若还有不止一处调用了创建逻辑，还要维护多处代码。</li>
-<li>违背了单一职责原则，客户端处理类的职责应该只是负责接收用户的输入并将其打印，现在还负责翻译类的创建逻辑，导致这个类的职责过多。</li>
-</ol>
-<p>改造</p>
-<pre>
-// 工厂函数
-func CreateTranslator(lan int) Translator {
-    var translator Translator
-
-    switch lan {
-    case 1:
-        translator = new(GermanTranslator)
-    case 2:
-        translator = new(EnglishTranslator)
-    default:
-        panic("no such translator")
-    }
-
-    return translator
-}
-
-// 主函数
-...
-    fmt.Println("请输入要翻译成中文的文本：")
-    var inputWords string
-    fmt.Scanln(&inputWords)
-
-    //客户端只关注如何获取翻译类，而不用关注创建翻译类的细节
-    translator:=CreateTranslator(lan)
-
-    fmt.Println(translator.Translate(inputWords))
-...
-</pre>
-
-<hr>
-<h2 id="建造者模式-Builder"><a href="#建造者模式-Builder" class="headerlink" title="建造者模式(Builder)"></a>建造者模式(Builder)</h2><ul>
-<li><strong>定义以及使用场景</strong> </li>
-</ul>
-<p>将一个复杂对象的构建与它的表示分离，使得同样的构建过程可以创建不同的表示。</p>
-<p><strong>使用场景</strong></p>
-<ol>
-<li>相同的方法，不同的执行顺序，产生不同的事件结果时</li>
-<li>多个部件或零件，都可以装配到一个对象中，但是产生的运行结果却又不相同时<br>产品类非常复杂，或者产品类中的调用顺序不同产生了不同的结果，这个时候使用建造者模式非常合适</li>
-<li>当初始化一个对象特别复杂，如参数多，且很多参数都具有默认值时</li>
-</ol>
-<blockquote>
-<p><strong>Product</strong> 产品类——产品的抽象类<br><strong>Builder</strong> 抽象Builder类，规范产品的组建，一般由子类实现具体的组建过程<br><strong>ConcreteBuilder</strong> 具体的Builder类<br><strong>Director</strong> 统一组装过程</p>
-</blockquote>
-<ul>
-<li><strong>举个例子</strong> </li>
-</ul>
-<p>我们需要创建汽车，而汽车有轮胎的个数以及车身的颜色可定制，那么用Builder模式可以这样。</p>
-<p>我们的目标是建一辆车</p>
-<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="comment">// 定义一辆车</span></span><br><span class="line"><span class="keyword">type</span> Car <span class="keyword">struct</span> &#123;</span><br><span class="line">	Wheels 	<span class="keyword">string</span></span><br><span class="line">	Chassis <span class="keyword">string</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(c *Car)</span> <span class="title">Show</span><span class="params">()</span></span> &#123;</span><br><span class="line">	fmt.Println(<span class="string">&quot;Builder Complete ...&quot;</span>)</span><br><span class="line">	fmt.Printf(<span class="string">&quot;Wheels : %s Chassis: %s \n&quot;</span>, c.Wheels, c.Chassis)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>设计出完整的建设规划</p>
-<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="comment">// 为建造者实现 Builder 接口</span></span><br><span class="line"><span class="keyword">type</span> Builder <span class="keyword">interface</span> &#123;</span><br><span class="line">	NewProduct()       	<span class="comment">// 创建一个空产品</span></span><br><span class="line">	BuildWheels()      	<span class="comment">// 建造轮子</span></span><br><span class="line">	BuildChassis()    	<span class="comment">// 建造底盘</span></span><br><span class="line">	GetResult() <span class="keyword">interface</span>&#123;&#125;  <span class="comment">// 获取建造好的产品</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>按照Builder规划一个大型项目构造者CarBuilder, 包含如何具体实现Build</p>
-<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="comment">// 定义汽车建造项目 CarBuilder</span></span><br><span class="line"><span class="keyword">type</span> CarBuilder <span class="keyword">struct</span> &#123;</span><br><span class="line">	Car *Car</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(cb *CarBuilder)</span> <span class="title">GetResult</span><span class="params">()</span> <span class="title">interface</span></span>&#123;&#125; &#123;</span><br><span class="line">	<span class="keyword">return</span> cb.Car</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(cb *CarBuilder)</span> <span class="title">NewProduct</span><span class="params">()</span></span> &#123;</span><br><span class="line">	cb.Car = <span class="built_in">new</span>(Car)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(cb *CarBuilder)</span> <span class="title">BuildWheels</span><span class="params">()</span></span> &#123;</span><br><span class="line">	cb.Car.Wheels = <span class="string">&quot;米其林轮胎&quot;</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(cb *CarBuilder)</span> <span class="title">BuildChassis</span><span class="params">()</span></span> &#123;</span><br><span class="line">	cb.Car.Chassis = <span class="string">&quot;沃尔沃底盘&quot;</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>下面要把具体建造者传入指挥者:</p>
-<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="comment">// 把建造者传入指挥者</span></span><br><span class="line"><span class="keyword">type</span> Director <span class="keyword">struct</span> &#123;</span><br><span class="line">	builder Builder</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(d *Director)</span> <span class="title">SetBuilder</span><span class="params">(builder Builder)</span></span> &#123;</span><br><span class="line">	d.builder = builder</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<p>建造实施</p>
-<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(d *Director)</span> <span class="title">CarBuilderImpl</span><span class="params">()</span> *<span class="title">Car</span></span> &#123;</span><br><span class="line">	d.builder.NewProduct()</span><br><span class="line">	d.builder.BuildChassis()</span><br><span class="line">	d.builder.BuildWheels()</span><br><span class="line">	<span class="keyword">return</span> d.builder.GetResult().(*Car)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>完整过程</p>
-<pre>
-func main() {
-    // 创建一个指挥者
-    director := new(Director)
-    // 创建建造者
-    builder := new(CarBuilder)
-
-    director.SetBuilder(builder)
-    car := director.CarBuilderImpl()
-    car.Show()
-}
-</pre>
-
-<hr>
-<h2 id="原型模式-Prototype"><a href="#原型模式-Prototype" class="headerlink" title="原型模式(Prototype)"></a>原型模式(Prototype)</h2><ul>
-<li><font color="#808080">**定义以及使用场景**</font>
-
-</li>
-</ul>
-<p>原型模式用于创建重复的对象。当一个类在创建时开销比较大时(比如大量数据准备，数据库连接)，我们可以缓存该对象，当下一次调用时，返回该对象的克隆。</p>
-<p><strong>使用场景</strong></p>
-<ol>
-<li>类初始化需要消耗非常多的资源，这个资源包括数据、硬件资源等，通过原型拷贝避免这些消耗</li>
-<li>原型模式是在内存中二进制流的拷贝，要比直接new一个对象性能好很多，特别是要在一个循环体内产生大量的对象时，原型模式可以更好滴体现其优点</li>
-<li>一个对象需要提供给其他对象访问，而且各个调用者可能需要修改其值时，可以考虑使用原型模式拷贝多个对象供调用者使用，即保护性拷贝</li>
-</ol>
-<ul>
-<li><font color="#200000">**举个例子**</font>
-
-</li>
-</ul>
-<p>定义一个原型管理器</p>
-<pre>
-// 样品（原型）Clone能力约定类
-type Cloneable interface {
-    Clone() Cloneable
-}
-
-// 样品（原型）管理器类
-type PrototypeManager struct {
-    prototypes map[string]Cloneable
-}
-
-func (that *PrototypeManager) Set( cloneName string, cloneable Cloneable) {
-    that.prototypes[cloneName] = cloneable
-}
-
-func (that *PrototypeManager) Get(cloneName string) (prototype Cloneable, err error) {
-    if prototype, ok:=that.prototypes[cloneName]; ok {
-        return prototype, nil
-    } else {
-        return nil, errors.New(fmt.Sprintf("%s 不存在", cloneName))
-    }
-}
-</pre>
-
-<p>获取一个样品（原型）管理器</p>
-<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="comment">// 获取一个样品（原型）管理器</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">NewPrototypeManager</span> <span class="params">()</span> *<span class="title">PrototypeManager</span></span> &#123;</span><br><span class="line">	<span class="keyword">return</span> &amp;PrototypeManager&#123;</span><br><span class="line">		prototypes:<span class="built_in">make</span>(<span class="keyword">map</span>[<span class="keyword">string</span>]Cloneable),</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> manager *PrototypeManager</span><br></pre></td></tr></table></figure>
-<p>定义一个样品原型</p>
-<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="comment">// 定义一个样品（原型） 实现 Clone 方法 相当于把自己做成了一个样品</span></span><br><span class="line"><span class="keyword">type</span> PT <span class="keyword">struct</span> &#123;&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span><span class="params">(that *PT)</span> <span class="title">Clone</span><span class="params">()</span> <span class="title">Cloneable</span></span> &#123;</span><br><span class="line">	temp := *that</span><br><span class="line">	<span class="keyword">return</span> &amp;temp</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<p>测试</p>
-<pre>
-func Test() {
-    prototypeOne,_ := manager.Get("prototypeOne")
-    prototypeTwo := prototypeOne.Clone()
-    prototypeThree := prototypeOne.Clone()
-    fmt.Printf(" prototypeOne地址:%v \n " +
-        "prototypeTwo地址: %v \n " +
-        "prototypeThree地址: %v \n", &prototypeOne, &prototypeTwo, &prototypeThree)
-}
-
-func main() {
-    manager = NewPrototypeManager()
-    pt1 := &PT{}
-    manager.Set("prototypeOne", pt1)
-    Test()
-}
-
-// 输出
- prototypeOne地址:   0xc000010200 
- prototypeTwo地址:   0xc000010210 
- prototypeThree地址: 0xc000010220 
-
-</pre>
-
-<hr>
-<h2 id="过滤器模式-Pipe-filter"><a href="#过滤器模式-Pipe-filter" class="headerlink" title="过滤器模式 (Pipe-filter)"></a>过滤器模式 (Pipe-filter)</h2><ul>
-<li><font color="#808080">**定义以及使用场景**</font>
-
-</li>
-</ul>
-<p>对一数据需要经过顺序的多个过滤器函数处理。</p>
-<p><strong>使用场景</strong></p>
-<ol>
-<li>多个对象可以处理同一请求，其架构适用于 解析，过滤，处理，返回这样的架构，如数据分析。</li>
-<li>在请求处理者不明确的情况下向多个对象中的一个提交一个请求需要动态指定一组对象处理请求<br><img style="height:320px" src="https://img1.kiosk007.top/static/images/design_pattern/pipe_filter.webp"></li>
-</ol>
-<ul>
-<li><font color="#200000">**举个例子**</font>
-
-</li>
-</ul>
-<p>下面的例子是一个将 字符串“1，2，3” 按逗号切分后，再字符转数字相加的过程。</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="string">&quot;1,2,3&quot;</span> --&gt; [SplitFilter] --&gt; [<span class="string">&quot;1&quot;</span>,<span class="string">&quot;2&quot;</span>,<span class="string">&quot;3&quot;</span>] --&gt; [ToIntFilter] --&gt; [1,2,3] -&gt; [SumFilter] --&gt; 6</span><br></pre></td></tr></table></figure>
-<p>首先实现一个 filter 的接口。该接口定义了数据的来源接口，输出接口，该filter接口必须拥有的处理方法, 所有的过滤器必须参考这个接口实现。<br><figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="comment">// Request is the input of the filter</span></span><br><span class="line"><span class="keyword">type</span> Request <span class="keyword">interface</span>&#123;&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Response is the output of the filter</span></span><br><span class="line"><span class="keyword">type</span> Response <span class="keyword">interface</span>&#123;&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Filter interface is the definition of the data processing components</span></span><br><span class="line"><span class="comment">// Pipe-Filter structure</span></span><br><span class="line"><span class="keyword">type</span> Filter <span class="keyword">interface</span> &#123;</span><br><span class="line">    Process(data Request) (Response, error)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><br>实现SplitFilter，SplitFilter必须实现处理器Process。<br><figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="keyword">var</span> SplitFilterWrongFormatError = errors.New(<span class="string">&quot;input data should be string&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> SplitFilter <span class="keyword">struct</span> &#123;</span><br><span class="line">    delimiter <span class="keyword">string</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">NewSplitFilter</span><span class="params">(delimiter <span class="keyword">string</span>)</span> *<span class="title">SplitFilter</span></span> &#123;</span><br><span class="line">    <span class="keyword">return</span> &amp;SplitFilter&#123;delimiter&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(sf *SplitFilter)</span> <span class="title">Process</span><span class="params">(data Request)</span> <span class="params">(Response, error)</span></span> &#123;</span><br><span class="line">    str, ok := data.(<span class="keyword">string</span>) <span class="comment">//检查数据格式/类型，是否可以处理</span></span><br><span class="line">    <span class="keyword">if</span> !ok &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">nil</span>, SplitFilterWrongFormatError</span><br><span class="line">    &#125;</span><br><span class="line">    parts := strings.Split(str, sf.delimiter)</span><br><span class="line">    <span class="keyword">return</span> parts, <span class="literal">nil</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><br>实现ToIntFilter</p>
-<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="keyword">var</span> ToIntFilterWrongFormatError = errors.New(<span class="string">&quot;input data should be []string&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> ToIntFilter <span class="keyword">struct</span> &#123;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">NewToIntFilter</span><span class="params">()</span> *<span class="title">ToIntFilter</span></span> &#123;</span><br><span class="line">    <span class="keyword">return</span> &amp;ToIntFilter&#123;&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(tif *ToIntFilter)</span> <span class="title">Process</span><span class="params">(data Request)</span> <span class="params">(Response, error)</span></span> &#123;</span><br><span class="line">    parts, ok := data.([]<span class="keyword">string</span>)</span><br><span class="line">    <span class="keyword">if</span> !ok &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">nil</span>, ToIntFilterWrongFormatError</span><br><span class="line">    &#125;</span><br><span class="line">    ret := []<span class="keyword">int</span>&#123;&#125;</span><br><span class="line">    <span class="keyword">for</span> _, part := <span class="keyword">range</span> parts &#123;</span><br><span class="line">        s, err := strconv.Atoi(part)</span><br><span class="line">        <span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">nil</span>, err</span><br><span class="line">        &#125;</span><br><span class="line">        ret = <span class="built_in">append</span>(ret, s)</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> ret, <span class="literal">nil</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>实现 SumFilter</p>
-<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="keyword">var</span> SumFilterWrongFormatError = errors.New(<span class="string">&quot;input data should be []int&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> SumFilter <span class="keyword">struct</span> &#123;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">NewSumFilter</span><span class="params">()</span> *<span class="title">SumFilter</span></span> &#123;</span><br><span class="line">    <span class="keyword">return</span> &amp;SumFilter&#123;&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(sf *SumFilter)</span> <span class="title">Process</span><span class="params">(data Request)</span> <span class="params">(Response, error)</span></span> &#123;</span><br><span class="line">    elems, ok := data.([]<span class="keyword">int</span>)</span><br><span class="line">    <span class="keyword">if</span> !ok &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">nil</span>, SumFilterWrongFormatError</span><br><span class="line">    &#125;</span><br><span class="line">    ret := <span class="number">0</span></span><br><span class="line">    <span class="keyword">for</span> _, elem := <span class="keyword">range</span> elems &#123;</span><br><span class="line">        ret += elem</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> ret, <span class="literal">nil</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>定义一个pipe-line， 目的是为了将所有的filter串起来。循环遍历整个filter并执行。</p>
-<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="comment">// NewStraightPipeline create a new StraightPipelineWithWallTime</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">NewStraightPipeline</span><span class="params">(name <span class="keyword">string</span>, filters ...Filter)</span> *<span class="title">StraightPipeline</span></span> &#123;</span><br><span class="line">    <span class="keyword">return</span> &amp;StraightPipeline&#123;</span><br><span class="line">        Name:    name,</span><br><span class="line">        Filters: &amp;filters,</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// StraightPipeline is composed of the filters, and the filters are piled as a straigt line.</span></span><br><span class="line"><span class="keyword">type</span> StraightPipeline <span class="keyword">struct</span> &#123;</span><br><span class="line">    Name    <span class="keyword">string</span></span><br><span class="line">    Filters *[]Filter</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Process is to process the coming data by the pipeline</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(f *StraightPipeline)</span> <span class="title">Process</span><span class="params">(data Request)</span> <span class="params">(Response, error)</span></span> &#123;</span><br><span class="line">    <span class="keyword">var</span> ret <span class="keyword">interface</span>&#123;&#125;</span><br><span class="line">    <span class="keyword">var</span> err error</span><br><span class="line">    <span class="keyword">for</span> _, filter := <span class="keyword">range</span> *f.Filters &#123;</span><br><span class="line">        ret, err = filter.Process(data)</span><br><span class="line">        <span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">            <span class="keyword">return</span> ret, err</span><br><span class="line">        &#125;</span><br><span class="line">        data = ret</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> ret, err</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<p>执行</p>
-<pre>
-func main() {
-    spliter := pipe_filter.NewSplitFilter(",")
-    converter := pipe_filter.NewToIntFilter()
-    sum := pipe_filter.NewSumFilter()
-    sp := pipe_filter.NewStraightPipeline("p1", spliter, converter, sum)
-    ret, err := sp.Process("1,2,3")
-    if err != nil {
-        log.Fatal(err)
-    }
-    if ret != 6 {
-        log.Fatalf("The expected is 6, but the actual is %d", ret)
-    }
-    fmt.Println(ret)
-}
-
-执行结果：
-6
-
-</pre>
-
-<hr>
-<h2 id="微内核模式-Micro-Kernel"><a href="#微内核模式-Micro-Kernel" class="headerlink" title="微内核模式 (Micro Kernel)"></a>微内核模式 (Micro Kernel)</h2><ul>
-<li><font color="#808080"> 定义以及使用场景 </font>
-
-</li>
-</ul>
-<p>可以将 微核心架构理解成一个 核心要添加新功能就是加插件。其特点为 易扩展，错误隔离，保持架构的一致性。</p>
-<p><strong>使用场景</strong></p>
-<ol>
-<li>如Nginx，启动前可以加载多个某块功能在应用上，不需要的时候可以剔除，但不影响整个应用的生命周期，适合一个应用的整体架构设计</li>
-</ol>
-<ul>
-<li><font color="#200000"> 举个例子 </font>
-
-</li>
-</ul>
-<p><strong>Agent</strong>: agent 相当于一个注册中心，所有要Agent去做的事情都注册到Agent里面来，注册进Agent的操作叫做 Collector 。每个Collector有一个名字。用map存储。</p>
-<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="keyword">type</span> Agent <span class="keyword">struct</span> &#123;</span><br><span class="line">    collectors <span class="keyword">map</span>[<span class="keyword">string</span>]Collector  <span class="comment">//  注册进 Agent的collector</span></span><br><span class="line">    evtBuf     <span class="keyword">chan</span> Event            <span class="comment">//  collector 回传给 Agent 的事件</span></span><br><span class="line">    cancel     context.CancelFunc <span class="comment">//  任务取消的方法</span></span><br><span class="line">    ctx        context.Context    <span class="comment">//  任务取消的上下文</span></span><br><span class="line">    state      <span class="keyword">int</span>                <span class="comment">//  Agent 的运行状态</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p><strong>Collector</strong>: Collector 是一个执行器，是需要注册进上面的Agent的。每个Collector需要实现 Init，Start，Stop，Destroy 方法，到时候由 Agent 统一进行Init，Start等操作，这里在Init中提到了 EventReceiver，所有的Collector在初始化的时候传入一个事件接收源</p>
-<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="keyword">type</span> Collector <span class="keyword">interface</span> &#123;</span><br><span class="line">    Init(evtReceiver EventReceiver) error    <span class="comment">// Collector 将收集到的数据回传到 Agent （任何实现EventReceiver的对象）</span></span><br><span class="line">    Start(agtCtx context.Context) error      <span class="comment">// 启动所有的Collector（参数为agent中的取消上下文）</span></span><br><span class="line">    Stop() error                              <span class="comment">//   停止</span></span><br><span class="line">    Destroy() error                           <span class="comment">//   摧毁</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p><strong>Event</strong>: Agent 实现了 OnEvent 方法，所以Agent 可以作为上面Init 方法的参数，作为事件的接收者。</p>
-<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="keyword">type</span> Event <span class="keyword">struct</span> &#123;</span><br><span class="line">    Source  <span class="keyword">string</span>   <span class="comment">// 事件源</span></span><br><span class="line">    Content <span class="keyword">string</span>   <span class="comment">// 事件内容</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> EventReceiver <span class="keyword">interface</span> &#123;</span><br><span class="line">    OnEvent(evt Event)  <span class="comment">// 实现OnEvent 既可以作为 EventReciver来接收事件 如下面的 Agent</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(agt *Agent)</span> <span class="title">OnEvent</span><span class="params">(evt Event)</span></span> &#123;</span><br><span class="line">    agt.evtBuf &lt;- evt  <span class="comment">// Agent 可以来接收事件</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p><strong>开始起一个微内核</strong>: 整个 微内核的架构就是这样了，刚才提到了，Agent会统一对注册进去的Collector进行初始化（Init），启动（Start），停止（Stop）的操作。 所以这里还差一个注册函数。</p>
-<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(agt *Agent)</span> <span class="title">RegisterCollector</span><span class="params">(name <span class="keyword">string</span>, collector Collector)</span> <span class="title">error</span></span> &#123;</span><br><span class="line">    <span class="keyword">if</span> agt.state != Waiting &#123;</span><br><span class="line">        <span class="keyword">return</span> WrongStateError</span><br><span class="line">    &#125;</span><br><span class="line">    agt.collectors[name] = collector   <span class="comment">// agent map注册</span></span><br><span class="line">    <span class="keyword">return</span> collector.Init(agt)  <span class="comment">// 注册完立即进行Init 操作。且事件接收者为Agent</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<p><strong>启动、停止、摧毁</strong><br>启动会将所有的Controller都拉起来，同理停止和摧毁。</p>
-<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(agt *Agent)</span> <span class="title">Start</span><span class="params">()</span> <span class="title">error</span></span> &#123;</span><br><span class="line">    <span class="keyword">if</span> agt.state != Waiting &#123;     <span class="comment">// 状态不对，直接报错</span></span><br><span class="line">        <span class="keyword">return</span> WrongStateError</span><br><span class="line">    &#125;</span><br><span class="line">    agt.state = Running    <span class="comment">// 启动了，更改状态</span></span><br><span class="line">    agt.ctx, agt.cancel = context.WithCancel(context.Background())  <span class="comment">// 来一个取消的上下文和取消函数</span></span><br><span class="line">    <span class="keyword">go</span> agt.EventProcessGroutine()    <span class="comment">// 收集事件 (具体业务了)</span></span><br><span class="line">    <span class="keyword">return</span> agt.startCollectors()    <span class="comment">//  启动所有的Collector</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 模拟的收集具体的业务事件。这里的事件是由各个 collector 上报的</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(agt *Agent)</span> <span class="title">EventProcessGroutine</span><span class="params">()</span></span> &#123;</span><br><span class="line">    <span class="keyword">var</span> evtSeg [<span class="number">10</span>]Event</span><br><span class="line">    <span class="keyword">for</span> &#123;</span><br><span class="line">        <span class="keyword">for</span> i := <span class="number">0</span>; i &lt; <span class="number">10</span>; i++ &#123;</span><br><span class="line">            <span class="keyword">select</span> &#123;</span><br><span class="line">            <span class="keyword">case</span> evtSeg[i] = &lt;-agt.evtBuf:   <span class="comment">// 将 collector 收集的事件放到 evtBuf 中</span></span><br><span class="line">            <span class="keyword">case</span> &lt;-agt.ctx.Done():           <span class="comment">// 执行上下文完成，结束 </span></span><br><span class="line">                <span class="keyword">return</span></span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        fmt.Println(evtSeg)   <span class="comment">// 当 collector 收集的事件满 10 个，打印一次。</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Agent 来拉起所有的 Collectors</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(agt *Agent)</span> <span class="title">startCollectors</span><span class="params">()</span> <span class="title">error</span></span> &#123;</span><br><span class="line">    <span class="keyword">var</span> err error</span><br><span class="line">    <span class="keyword">var</span> errs CollectorsError</span><br><span class="line">    <span class="keyword">var</span> mutex sync.Mutex</span><br><span class="line">    <span class="keyword">for</span> name, collector := <span class="keyword">range</span> agt.collectors &#123;</span><br><span class="line">        <span class="keyword">go</span> <span class="function"><span class="keyword">func</span><span class="params">(name <span class="keyword">string</span>, collector Collector, ctx context.Context)</span></span> &#123;</span><br><span class="line">            <span class="keyword">defer</span> <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">                mutex.Unlock()</span><br><span class="line">            &#125;()</span><br><span class="line">            err = collector.Start(ctx)</span><br><span class="line">            mutex.Lock()</span><br><span class="line">            <span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">                errs.CollectorErrors = <span class="built_in">append</span>(errs.CollectorErrors,</span><br><span class="line">                    errors.New(name+<span class="string">&quot;:&quot;</span>+err.Error()))</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;(name, collector, agt.ctx)</span><br><span class="line">    &#125;</span><br><span class="line">        <span class="keyword">if</span> <span class="built_in">len</span>(errs.CollectorErrors) == <span class="number">0</span> &#123;     <span class="comment">// 这里需要判断有没有错误，确定没有错误，返回nil。否则其实返回的也不是nil</span></span><br><span class="line">        <span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> errs</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p><strong>模拟</strong></p>
-<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="keyword">type</span> DemoCollector <span class="keyword">struct</span> &#123;      <span class="comment">// 示例 Collector</span></span><br><span class="line">    evtReceiver microkernel.EventReceiver   <span class="comment">// 事件发给这里</span></span><br><span class="line">    stopChan    <span class="keyword">chan</span> <span class="keyword">struct</span>&#123;&#125;    <span class="comment">// 用来停止该Collector</span></span><br><span class="line">    name        <span class="keyword">string</span>    <span class="comment">// Collector 名字</span></span><br><span class="line">    content     <span class="keyword">string</span>    <span class="comment">// Collector 的要做的内容（假设，这个根据业务场景，都不一定是string）</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">NewCollect</span><span class="params">(name <span class="keyword">string</span>, content <span class="keyword">string</span>)</span> *<span class="title">DemoCollector</span></span> &#123;   <span class="comment">// 创建一个 Collect</span></span><br><span class="line">    <span class="keyword">return</span> &amp;DemoCollector&#123;</span><br><span class="line">        stopChan: <span class="built_in">make</span>(<span class="keyword">chan</span> <span class="keyword">struct</span>&#123;&#125;),</span><br><span class="line">        name:     name,</span><br><span class="line">        content:  content,</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(c *DemoCollector)</span> <span class="title">Init</span><span class="params">(evtReceiver microkernel.EventReceiver)</span> <span class="title">error</span></span> &#123;   <span class="comment">// 初始化一个这个 Collect</span></span><br><span class="line">    fmt.Println(<span class="string">&quot;initialize collector&quot;</span>, c.name)</span><br><span class="line">    c.evtReceiver = evtReceiver    <span class="comment">// Agent 作为数据的上报源</span></span><br><span class="line">    <span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(c *DemoCollector)</span> <span class="title">Start</span><span class="params">(agtCtx context.Context)</span> <span class="title">error</span></span> &#123;   <span class="comment">// 拉起一个 Collect</span></span><br><span class="line">    fmt.Println(<span class="string">&quot;start collector&quot;</span>, c.name)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> &#123;    <span class="comment">// 死循环</span></span><br><span class="line">        <span class="keyword">select</span> &#123;</span><br><span class="line">        <span class="keyword">case</span> &lt;-agtCtx.Done():      <span class="comment">// 收到 Done 了</span></span><br><span class="line">            c.stopChan &lt;- <span class="keyword">struct</span>&#123;&#125;&#123;&#125;  <span class="comment">// 停掉该 Collect （Stop 方法那里会等 stopChan 这个信号）</span></span><br><span class="line">            <span class="keyword">break</span></span><br><span class="line">        <span class="keyword">default</span>:</span><br><span class="line">            time.Sleep(time.Millisecond * <span class="number">50</span>)</span><br><span class="line">            c.evtReceiver.OnEvent(microkernel.Event&#123;c.name, c.content&#125;) <span class="comment">// 向 Agent 上报事件</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(c *DemoCollector)</span> <span class="title">Stop</span><span class="params">()</span> <span class="title">error</span></span> &#123;</span><br><span class="line">    fmt.Println(<span class="string">&quot;stop collector&quot;</span>, c.name)</span><br><span class="line">    <span class="keyword">select</span> &#123;</span><br><span class="line">    <span class="keyword">case</span> &lt;-c.stopChan:   <span class="comment">// 收到停止信号了，停掉</span></span><br><span class="line">        <span class="keyword">return</span> <span class="literal">nil</span>  <span class="comment">// 一般停完再做点啥，在这做些善后吧</span></span><br><span class="line">    <span class="keyword">case</span> &lt;-time.After(time.Second * <span class="number">1</span>):</span><br><span class="line">        <span class="keyword">return</span> errors.New(<span class="string">&quot;failed to stop for timeout&quot;</span>)</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(c *DemoCollector)</span> <span class="title">Destroy</span><span class="params">()</span> <span class="title">error</span></span> &#123;</span><br><span class="line">    fmt.Println(c.name, <span class="string">&quot;released resources.&quot;</span>)</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">    <span class="keyword">var</span> err error = <span class="literal">nil</span></span><br><span class="line">    agt := microkernel.NewAgent(<span class="number">100</span>)</span><br><span class="line">    c1 := NewCollect(<span class="string">&quot;c1&quot;</span>, <span class="string">&quot;1a&quot;</span>)</span><br><span class="line">    c2 := NewCollect(<span class="string">&quot;c2&quot;</span>, <span class="string">&quot;2b&quot;</span>)</span><br><span class="line">    <span class="keyword">if</span> err = agt.RegisterCollector(<span class="string">&quot;c1&quot;</span>, c1);err != <span class="literal">nil</span> &#123;</span><br><span class="line">        <span class="keyword">goto</span> ERR</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> err = agt.RegisterCollector(<span class="string">&quot;c2&quot;</span>, c2);err != <span class="literal">nil</span> &#123;</span><br><span class="line">        <span class="keyword">goto</span> ERR</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> err = agt.Start();err != <span class="literal">nil</span> &#123;</span><br><span class="line">        <span class="keyword">goto</span> ERR</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    time.Sleep(time.Second * <span class="number">2</span>)</span><br><span class="line">    <span class="keyword">if</span> err = agt.Stop();err != <span class="literal">nil</span> &#123;</span><br><span class="line">        <span class="keyword">goto</span> ERR</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span></span><br><span class="line"></span><br><span class="line">ERR:</span><br><span class="line">    fmt.Println(<span class="string">&quot;An Error Occur :&quot;</span>,err)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<hr>
-<h2 id="命令模式-Command"><a href="#命令模式-Command" class="headerlink" title="命令模式 (Command)"></a>命令模式 (Command)</h2><ul>
-<li><font color="#808080">**定义以及使用场景**</font>
-
-</li>
-</ul>
-<p>它可将请求或简单操作转换为一个对象。此类转换让你能够延迟进行或远程执行请求， 还可将其放入队列中。</p>
-<p><strong>使用场景</strong></p>
-<ol>
-<li>需要抽象出待执行的行动，然后以参数的形式提供出来——类似于过程设计中的回调机制，而命令模式正是回调机制的一个面向对象的代替品。</li>
-<li>在不同的时刻指定、排列和执行请求，一个命令对象可以有与初始请求无关的生存期</li>
-<li>需要支持事务操作</li>
-</ol>
-<ul>
-<li><font color="#200000">**举个例子**</font>
-
-</li>
-</ul>
-<p><strong>电视遥控器</strong>:</p>
-<p>遥控器从实现 ON 命令对象并以电视机作为接收者入手。 当在此命令上调用 execute执行方法时， 方法会调用 TV.on打开电视函数。 最后的工作是定义请求者： 这里实际上有两个请求者： 遥控器和电视机。 两者都将嵌入 ON 命令对象。</p>
-<ul>
-<li>实现 command 和 device </li>
-</ul>
-<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="comment">// command define</span></span><br><span class="line"><span class="keyword">type</span> command <span class="keyword">interface</span> &#123;</span><br><span class="line">	execute()</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">type</span> button <span class="keyword">struct</span> &#123;</span><br><span class="line">	command command</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(b *button)</span> <span class="title">press</span><span class="params">()</span></span> &#123;</span><br><span class="line">	b.command.execute()</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// device define ， 设备可执行的命令</span></span><br><span class="line"><span class="keyword">type</span> device <span class="keyword">interface</span> &#123;</span><br><span class="line">	on()</span><br><span class="line">	off()</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 具体实现要执行命令</span></span><br><span class="line"><span class="keyword">type</span> onCommand <span class="keyword">struct</span> &#123;</span><br><span class="line">	device device</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(c *onCommand)</span> <span class="title">execute</span><span class="params">()</span></span> &#123;</span><br><span class="line">	c.device.on()</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> offCommand <span class="keyword">struct</span> &#123;</span><br><span class="line">	device device</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(c *offCommand)</span> <span class="title">execute</span><span class="params">()</span></span> &#123;</span><br><span class="line">	c.device.off()</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<p>创建命令的发出者和执行者</p>
-<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="comment">// 命令的执行者</span></span><br><span class="line"><span class="keyword">type</span> tv <span class="keyword">struct</span> &#123;</span><br><span class="line">	isRunning <span class="keyword">bool</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(t *tv)</span> <span class="title">on</span><span class="params">()</span></span> &#123;</span><br><span class="line">	t.isRunning = <span class="literal">true</span></span><br><span class="line">	fmt.Println(<span class="string">&quot;Turning tv on&quot;</span>)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(t *tv)</span> <span class="title">off</span><span class="params">()</span></span> &#123;</span><br><span class="line">	t.isRunning = <span class="literal">false</span></span><br><span class="line">	fmt.Println(<span class="string">&quot;Turning tv off&quot;</span>)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 执行者就是按下按钮</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">	tv := &amp;tv&#123;&#125;</span><br><span class="line"></span><br><span class="line">	onButton := &amp;button&#123;</span><br><span class="line">		command: &amp;onCommand&#123; device: tv &#125;,</span><br><span class="line">	&#125;</span><br><span class="line">	onButton.press()</span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<hr>
-<h2 id="桥接模式-Bridge"><a href="#桥接模式-Bridge" class="headerlink" title="桥接模式 (Bridge)"></a>桥接模式 (Bridge)</h2><ul>
-<li><strong>定义以及使用场景</strong> </li>
-</ul>
-<p>将抽象与实现分离，使它们可以独立变化。</p>
-<p><strong>使用场景</strong></p>
-<ol>
-<li>抽象化（Abstraction）角色：定义抽象类，并包含一个对实现化对象的引用。</li>
-<li>扩展抽象化（Refined Abstraction）角色：是抽象化角色的子类，实现父类中的业务方法，并通过组合关系调用实现化角色中的业务方法。</li>
-<li>实现化（Implementor）角色：定义实现化角色的接口，供扩展抽象化角色调用。</li>
-<li>具体实现化（Concrete Implementor）角色：给出实现化角色接口的具体实现。</li>
-</ol>
-<figure class="highlight golang"><table><tr><td class="code"><pre><span class="line"><span class="keyword">package</span> bridge</span><br><span class="line"></span><br><span class="line"><span class="comment">// IMsgSender IMsgSender</span></span><br><span class="line"><span class="keyword">type</span> IMsgSender <span class="keyword">interface</span> &#123;</span><br><span class="line">	Send(msg <span class="keyword">string</span>) error</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// EmailMsgSender 发送邮件</span></span><br><span class="line"><span class="comment">// 可能还有 电话、短信等各种实现</span></span><br><span class="line"><span class="keyword">type</span> EmailMsgSender <span class="keyword">struct</span> &#123;</span><br><span class="line">	emails []<span class="keyword">string</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// NewEmailMsgSender NewEmailMsgSender</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">NewEmailMsgSender</span><span class="params">(emails []<span class="keyword">string</span>)</span> *<span class="title">EmailMsgSender</span></span> &#123;</span><br><span class="line">	<span class="keyword">return</span> &amp;EmailMsgSender&#123;emails: emails&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Send Send</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(s *EmailMsgSender)</span> <span class="title">Send</span><span class="params">(msg <span class="keyword">string</span>)</span> <span class="title">error</span></span> &#123;</span><br><span class="line">	<span class="comment">// 这里去发送消息</span></span><br><span class="line">	<span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// INotification 通知接口</span></span><br><span class="line"><span class="keyword">type</span> INotification <span class="keyword">interface</span> &#123;</span><br><span class="line">	Notify(msg <span class="keyword">string</span>) error</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// ErrorNotification 错误通知</span></span><br><span class="line"><span class="comment">// 后面可能还有 warning 各种级别</span></span><br><span class="line"><span class="keyword">type</span> ErrorNotification <span class="keyword">struct</span> &#123;</span><br><span class="line">	sender IMsgSender</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// NewErrorNotification NewErrorNotification</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">NewErrorNotification</span><span class="params">(sender IMsgSender)</span> *<span class="title">ErrorNotification</span></span> &#123;</span><br><span class="line">	<span class="keyword">return</span> &amp;ErrorNotification&#123;sender: sender&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Notify 发送通知</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(n *ErrorNotification)</span> <span class="title">Notify</span><span class="params">(msg <span class="keyword">string</span>)</span> <span class="title">error</span></span> &#123;</span><br><span class="line">	<span class="keyword">return</span> n.sender.Send(msg)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>单元测试<br><figure class="highlight golang"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">TestErrorNotification_Notify</span><span class="params">(t *testing.T)</span></span> &#123;</span><br><span class="line">	sender := NewEmailMsgSender([]<span class="keyword">string</span>&#123;<span class="string">&quot;test@test.com&quot;</span>&#125;)</span><br><span class="line">	n := NewErrorNotification(sender)</span><br><span class="line">	err := n.Notify(<span class="string">&quot;test msg&quot;</span>)</span><br><span class="line"></span><br><span class="line">	assert.Nil(t, err)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-]]></content>
-      <categories>
-        <category>algorithm</category>
-      </categories>
-      <tags>
-        <tag>design pattern</tag>
-      </tags>
   </entry>
   <entry>
     <title>算法 - (二叉树)</title>
