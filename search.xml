@@ -382,11 +382,80 @@ func main() {
       </tags>
   </entry>
   <entry>
+    <title>如何减少TTFB以提升WordPress加载性能</title>
+    <url>/2021/06/05/%E5%A6%82%E4%BD%95%E5%87%8F%E5%B0%91TTFB%E4%BB%A5%E6%8F%90%E9%AB%98%E7%BD%91%E9%A1%B5%E9%A1%B5%E9%9D%A2%E5%8A%A0%E8%BD%BD%E6%97%B6%E9%97%B4/</url>
+    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script><p>当谈论到你的 <a href="What Is WordPress? Explained for Beginners">WordPress Site</a> 加载性能时，大多数我们都是在关注前端的性能优化来提升页面加载速度。然而我们有时候应该从服务端视角来看待这个问题。今天我们来讨论一下 <strong>TTFB (time to first byte)</strong> 是怎么影响你的网站加载速度，另外我们如何去降低他。TTFB是一个经常会被忽略的重要性能因素，但是我们在网站性能优化是必须考虑进来。</p>
+<p><img src="http://img1.kiosk007.top/static/images/network/performance/ttfb.png" style="height:300px"></p>
+<p>— 译 <a href="https://kinsta.com/blog/ttfb/">How to Reduce TTFB to Improve WordPress Page Load Times</a></p>
+<a id="more"></a>
+<ul>
+<li><a href>什么是TTFB?</a></li>
+<li><a href>TTFB 重要吗？</a></li>
+<li><a href>如何测量TTFB？</a></li>
+<li><a href>4种方法来减少Wordpress站点的TTFB</a></li>
+</ul>
+<h1 id="什么是TTFB？"><a href="#什么是TTFB？" class="headerlink" title="什么是TTFB？"></a>什么是TTFB？</h1><p>TTFB 表示”首字节时间”, 简单的说，表示从浏览器收到服务端的第一个字节所需要的时间。TTFB时间越长、那么页面加载显示的时间就越长。一个常见的误解是，这个时间主要是DNS查找时间计算的。然而，真正的 <a href="https://en.wikipedia.org/wiki/Time_To_First_Byte">TTFB</a> 其实包含整个网络期间的时延。并且以下三个步骤之和才是总的TTFB。</p>
+<p><img src="https://img1.kiosk007.top/static/images/network/performance/waiting-ttfb.jpg" style="height:300px"></p>
+<h2 id="1-请求服务"><a href="#1-请求服务" class="headerlink" title="1. 请求服务"></a>1. 请求服务</h2><p>当有用户访问你的网站时。发生的第一件事是客户端（浏览器）会先发送一个HTTP请求。在此步骤中，可能有多种因素导致延迟、<strong>缓慢的DNS</strong> 查找时间可能会增加请求的时间。如果服务器在地理上很远，这可能会导致数据传输距离的延迟。此外，如果您有复杂的防火墙规则，这可能会增加路由时间。并且不要忘记客户端的互联网速度。</p>
+<h2 id="2-服务端处理耗时"><a href="#2-服务端处理耗时" class="headerlink" title="2. 服务端处理耗时"></a>2. 服务端处理耗时</h2><p>发送请求后，服务器现在必须处理它并生成响应。这可能会引入许多不同的延迟，例如<strong>缓慢的数据库调用</strong>、过多的第三方脚本、<strong>未缓存</strong>第一个响应、糟糕的代码或 WordPress 主题以及低效的服务器资源，例如<strong>磁盘 I/O</strong> 或<strong>内存</strong>。</p>
+<h2 id="3-响应"><a href="#3-响应" class="headerlink" title="3. 响应"></a>3. 响应</h2><p>服务器处理完请求后，必须将其发送回客户端（或者更确切地说是发送回第一个字节）。这受到服务器和客户端网络速度的影响。如果客户端的 Wi-Fi 热点速度较慢，这将反映在 TTFB 中。</p>
+<h1 id="TTFB-重要吗？"><a href="#TTFB-重要吗？" class="headerlink" title="TTFB 重要吗？"></a>TTFB 重要吗？</h1><p>重要的是要了解 TTFB（到第一个字节的时间）与网站速度不同。这实际上是对响应能力的衡量。网络上有很多关于 TTFB 是否重要的​​讨论。有人说它毫无意义（<a href="https://blog.cloudflare.com/ttfb-time-to-first-byte-considered-meaningles/">Cloudflare</a>、<a href>LittleBizzy</a>），而另一些人说它很重要（<a href="https://plus.google.com/+IlyaGrigorik/posts/GTWYbYWP6xP">Ilya Grigorik</a>，Google 的 Web 性能工程师）。双方都提出了一些关于为什么或为什么不重要的有效观点，以及关于它如何实际计算的一些问题。</p>
+<p>Moz 甚至对<a href="https://moz.com/blog/improving-search-rank-by-optimizing-your-time-to-first-byte">搜索排名与第一个字节的时间之间的相关性</a>进行了深入研究。 但是，很难知道搜索排名是否是和TTFB相关的 。或者 TTFB 较低的网站是否也只是总体上更快。</p>
+<p>然而，与其花时间讨论是否重要，我们宁愿专注于可以做的优化来改进这个指标。在我们具有更大 TTFB 的测试站点中，只需加载并感觉更慢。</p>
+<p>通常，<strong>低于 100 毫秒的TTFB 都很棒</strong>。<a href="https://kinsta.com/blog/google-pagespeed-insights/">Google PageSpeed Insights</a> 建议服务器响应时间小于 200 毫秒。如果您在 300-500 毫秒范围内，这是非常标准的。如果超过 600 毫秒，您的服务或者链路可能有问题，或者可能是时候升级到更好的 Web 服务了。或者按照我们下面有关如何减少 TTFB 的建议进行操作。SSL/TLS 协商也可能是一个点。</p>
+<h1 id="如何测量TTFB"><a href="#如何测量TTFB" class="headerlink" title="如何测量TTFB"></a>如何测量TTFB</h1><p>可以通过多种不同的方式来测试你站点的 TTFB。下面将探索一些。但请记住，每种工具都会给出略有不同的结果，因此重要的是只使用一种工具并坚持使用它作为基线。</p>
+<h2 id="使用-Google-Chrome-DevTools-测量-TTFB"><a href="#使用-Google-Chrome-DevTools-测量-TTFB" class="headerlink" title="使用 Google Chrome DevTools 测量 TTFB"></a>使用 Google Chrome DevTools 测量 TTFB</h2><p>可以通过启动DevTools在 Google Chrome 中测量 TTFB 。但请记住，如果您在计算机上测试 TTFB 会受到网络延迟和 Internet 连接的影响。因此，使用从数据中心进行测试的第 3 方工具（如下所示）可能更有效。</p>
+<ul>
+<li>从 Chrome 菜单中选择更多工具 &gt; 开发者工具。</li>
+<li>右键单击页面元素并选择检查</li>
+<li>使用键盘快捷键Ctrl+ Shift+ I(Windows) 或Cmd+ Opt+ I(Mac)</li>
+<li>您可以启动网络窗口并查看站点的性能。</li>
+</ul>
+<p><img src="https://img1.kiosk007.top/static/images/network/performance/google-chrome-devtools-ttfb.jpg" style="height:300px"></p>
+<h2 id="使用-Geekflare-的工具测量-TTFB"><a href="#使用-Geekflare-的工具测量-TTFB" class="headerlink" title="使用 Geekflare 的工具测量 TTFB"></a>使用 Geekflare 的工具测量 TTFB</h2><p>Geekflare 拥有一系列很棒的免费工具，您可以使用它们来测试和排除网站上的问题。<a href="https://gf.dev/ttfb-test">Geekflare</a> 的 TTFB 工具简单、快速，可让您查看从全球三个位置获取第一个字节的时间有多快（低）</p>
+<p><img src="https://img1.kiosk007.top/static/images/network/performance/geekflare.png" style="height:300px"></p>
+<h2 id="使用-WebPageTest-测量-TTFB"><a href="#使用-WebPageTest-测量-TTFB" class="headerlink" title="使用 WebPageTest 测量 TTFB"></a>使用 WebPageTest 测量 TTFB</h2><p>您还可以使用 <a href="https://www.webpagetest.org/">WebPageTest</a> 测量您的 TTFB 。根据他们的术语表，目标时间是 DNS、套接字和 SSL 协商所需的时间 + 100 毫秒。超出目标每100ms扣除一个字母等级。正如您在下面的测试中所见，该站点的 TTFB 为 0.256 秒或 256 毫秒。</p>
+<p><img src="https://img1.kiosk007.top/static/images/network/performance/webpagetest-ttfb.jpg" style="height:300px"></p>
+<h2 id="用-Pingdom-测量-TTFB"><a href="#用-Pingdom-测量-TTFB" class="headerlink" title="用 Pingdom 测量 TTFB"></a>用 Pingdom 测量 TTFB</h2><p>Chrome 和 WebPageTest 将其称为 TTFB。但是，如果您使用Pingdom，它实际上被称为“等待”时间。请务必查看我们关于如何使用 Pingdom的深入指南。</p>
+<p><img src="https://img1.kiosk007.top/static/images/network/performance/wait-time-pingdom.jpg" style="height:300px"></p>
+<h2 id="使用-GTmetrix-测量-TTFB"><a href="#使用-GTmetrix-测量-TTFB" class="headerlink" title="使用 GTmetrix 测量 TTFB"></a>使用 GTmetrix 测量 TTFB</h2><p>在 GTmetrix 中，就像 Pingdom 一样，TTFB 被称为等待时间。请务必查看我们关于如何使用 <a href="https://kinsta.com/blog/gtmetrix-speed-test/">GTmetrix的深入指南</a> 。</p>
+<p><img src="https://img1.kiosk007.top/static/images/network/performance/gtmetrix-waiting.png" style="height:300px"></p>
+<h2 id="使用-KeyCDN-的工具测量-TTFB"><a href="#使用-KeyCDN-的工具测量-TTFB" class="headerlink" title="使用 KeyCDN 的工具测量 TTFB"></a>使用 KeyCDN 的工具测量 TTFB</h2><p>KeyCDN 有一个很棒的 <a href="https://tools.keycdn.com/performance">网络性能测试工具</a> ，您可以在其中同时从 14 个不同的位置测量您的 TTFB。</p>
+<p><img src="https://img1.kiosk007.top/static/images/network/performance/keycdn-ttfb-test.jpg" style="height:300px"></p>
+<p>还有一些其他各种工具可以测量 TTFB，例如<a href="https://performance.sucuri.net/">Sucuri Performance Tool</a>和<a href="http://www.bytecheck.com/">ByteCheck</a>。</p>
+<p><img src="https://img1.kiosk007.top/static/images/network/performance/google-analytics-ttfb.jpg" style="height:300px"></p>
+<h1 id="减少-WordPress-网站上-TTFB-的-4-种方法"><a href="#减少-WordPress-网站上-TTFB-的-4-种方法" class="headerlink" title="减少 WordPress 网站上 TTFB 的 4 种方法"></a>减少 WordPress 网站上 TTFB 的 4 种方法</h1><blockquote>
+<p>现在让我们深入探讨如何减少 WordPress 网站上的 TTFB。</p>
+</blockquote>
+<h2 id="1-使用快速的-WordPress-主机"><a href="#1-使用快速的-WordPress-主机" class="headerlink" title="1. 使用快速的 WordPress 主机"></a>1. 使用快速的 WordPress 主机</h2><p>减少 TTFB 的第一种方法是确保您使用的是快速的 WordPress 主机。我们比较了第三方云服务器的 TTFB（位于亚利桑那州凤凰城）和 Kinsta 的 TTFB（位于爱荷华州康瑟尔布拉夫斯）。我们使用了完全相同的设置，运行默认的 27 主题。Kinsta 现在拥有所有 25 个可用的Google Cloud Platform 节点，因此战略性地将您的 WordPress 站点放置在离访问者更近的位置非常重要。</p>
+<p>切换到更快的主机可以将您网站的 TTFB 减少多达 200%。</p>
+<p>Kinsta 还在 所有托管计划中使用了 Google Cloud Platform 的高级网络。许多其他托管服务提供商使用 Google Cloud 的标准层网络，这会导致速度变慢。</p>
+<p>在所有地区，平均 TTFB 为 520 毫秒。在美国和加拿大，平均 TTFB 为 240 毫秒。</p>
+<p>因此，仅通过使用更快的主机，可以显著降低 TTFB </p>
+<h2 id="2-CDN-or-DSA"><a href="#2-CDN-or-DSA" class="headerlink" title="2. CDN or DSA"></a>2. CDN or DSA</h2><p>另一种减少 TTFB 的简单方法是利用 <strong><a href="https://kinsta.com/blog/wordpress-cdn/">内容交付网络</a></strong> (CDN)。如果您的网站为该国不同地区或全球的访问者提供服务，这会大大降低您的 TTFB。正如我们在上面看到的，位置非常重要。我们进行了一个小测试，以显示 KeyCDN 作为我们的 CDN 提供商的不同之处。每个测试运行 5 次并取平均值。</p>
+<ul>
+<li>没有 CDN 的 TTFB</li>
+</ul>
+<p>我们首先在禁用 CDN 的情况下运行测试，我们的总加载时间为 1.45 秒，资产的平均 TTFB 约为 136 毫秒。</p>
+<ul>
+<li>带 CDN 的 TTFB<br>我们的总加载时间下降到 788 毫秒，我们的平均 TTFB 现在是 37 毫秒！CDN 可以带来多大的不同</li>
+</ul>
+<p>注意：如果您使用 Cloudflare，您的TTFB可能略高。这很可能是由于运行完全代理服务的额外开销和复杂性。Cloudflare 具有某些 CDN 提供商没有的其他防火墙和其他功能。</p>
+<h2 id="3-WordPress-缓存"><a href="#3-WordPress-缓存" class="headerlink" title="3. WordPress 缓存"></a>3. WordPress 缓存</h2><p>减少 TTFB 的第三种方法，也可能是最简单的方法之一，就是在 WordPress 网站上使用缓存。许多人只认为缓存可以帮助减少加载时间，但实际上，它也有助于减少 TTFB，因为它有助于减少服务器处理时间。</p>
+<h2 id="4-使用高级-DNS-提供商"><a href="#4-使用高级-DNS-提供商" class="headerlink" title="4. 使用高级 DNS 提供商"></a>4. 使用高级 DNS 提供商</h2><p>DNS 也在 TTFB 中发挥作用。很难准确计算它受到的影响有多大，但您仍然可以看到总体 DNS 查找时间，并看到那里有越来越快的提供商。</p>
+<p><a href="http://www.solvedns.com/dnsspeedtest/">SolveDNS 速度测试工具</a> 可以帮我们测试DNS解析速度。 大的云厂商，如 AWS 会比一些免费的DNS提供商的质量要好很多。</p>
+<p>更多内容可以查看 [Why Premium DNS is No Longer Optional][<a href="https://kinsta.com/blog/premium-dns/">https://kinsta.com/blog/premium-dns/</a>)</p>
+]]></content>
+      <categories>
+        <category>network</category>
+      </categories>
+  </entry>
+  <entry>
     <title>curl 命令小结</title>
     <url>/2021/05/29/curl-%E5%91%BD%E4%BB%A4%E5%B0%8F%E7%BB%93/</url>
     <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script><p>curl 命令是我日常工作中最常用的命令之一，所以很有必要总结一下curl命令的一些用法。如统计耗时、以指定的ip访问某个域名。添加携带某些Header等。curl命令绝对是日常debug之神。</p>
-<a id="more"></a>
 <p><img src="https://img1.kiosk007.top/static/images/network/curl/curl-command.png" style="height:200px"></p>
+<a id="more"></a>
 <ul>
 <li>curl 官网：<a href="https://curl.se">https://curl.se</a></li>
 <li>curl 支持：<br>DICT, FILE, FTP, FTPS, GOPHER, GOPHERS, HTTP, HTTPS, IMAP, IMAPS, LDAP, LDAPS, MQTT, POP3, POP3S, RTMP, RTMPS, RTSP, SCP, SFTP, SMB, SMBS, SMTP, SMTPS, TELNET and TFTP. curl supports SSL certificates, HTTP POST, HTTP PUT, FTP uploading, HTTP form based upload, proxies, HTTP/2, HTTP/3, cookies, user+password authentication (Basic, Plain, Digest, CRAM-MD5, SCRAM-SHA, NTLM, Negotiate and Kerberos), file transfer resume, proxy tunneling and more.</li>
