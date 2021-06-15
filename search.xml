@@ -2292,7 +2292,9 @@ reserved &quot;salary&quot;;</code> 如果再使用5 或者 salary 则会报错�
     <title>Android 信任自签名证书</title>
     <url>/2020/07/22/Android-%E4%BF%A1%E4%BB%BB%E8%87%AA%E7%AD%BE%E5%90%8D%E8%AF%81%E4%B9%A6/</url>
     <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script><p>在之前的文章 <a href="https://kiosk007.top/2020/05/30/VMTrafficShark-%E8%87%AA%E5%88%B6%E5%BC%B1%E7%BD%91%E6%A8%A1%E6%8B%9F%E5%99%A8/">VMTrafficShark 自制弱网模拟器</a> 中介绍了如何搭建一个弱网模拟器，并且进行弱网模拟，中间人，劫持重放测试等等。对了这里一般的测试设备是Android手机，那么这篇文章介绍一下Android 手机应该如何支持自签名证书。</p>
-<h2 id><a href="#" class="headerlink" title></a><a id="more"></a></h2><h1 id="Android-root"><a href="#Android-root" class="headerlink" title="Android root"></a>Android root</h1><p>Android 本身可以理解为一个Linux操作系统的终端，只是没有root权限，普通用户 <code>adb</code> 连上之后只有普通用户的权限。而root不是那么容易的，这里推荐 <code>Magisk Root</code> 这款软件，目前我的 Mi3， RedMi Note 8 Pro 都是已经root了的（曾经是米粉…）</p>
+<a id="more"></a>
+<hr>
+<h1 id="Android-root"><a href="#Android-root" class="headerlink" title="Android root"></a>Android root</h1><p>Android 本身可以理解为一个Linux操作系统的终端，只是没有root权限，普通用户 <code>adb</code> 连上之后只有普通用户的权限。而root不是那么容易的，这里推荐 <code>Magisk Root</code> 这款软件，目前我的 Mi3， RedMi Note 8 Pro 都是已经root了的（曾经是米粉…）</p>
 <p>甩几个链接参考</p>
 <ul>
 <li><a href="https://www.magiskroots.com/">Magic Mask To Enhance Your Default Android | The First Systemless Root Tool</a></li>
@@ -2849,7 +2851,9 @@ reserved &quot;salary&quot;;</code> 如果再使用5 或者 salary 则会报错�
     <title>VMTrafficShark 自制弱网模拟器</title>
     <url>/2020/05/30/VMTrafficShark-%E8%87%AA%E5%88%B6%E5%BC%B1%E7%BD%91%E6%A8%A1%E6%8B%9F%E5%99%A8/</url>
     <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script><p>VMTrafficShark是参考 <a href="http://geekluo.com/contents/2017/05/02/38-trafficshark-tool-for-network.html">TrafficShark</a> 改造后的弱网模拟和抓包工具。其本质是参考Facebook开源的弱网模拟器 <a href="https://github.com/facebookarchive/augmented-traffic-control">ATC</a> 。方便应用开发测试人员模拟弱网环境下的用户体验。VMTrafficShark是基于Vmware/VirtualBox 虚拟机，方便移动部署，一键开机，配置灵活，功能强大。</p>
-<h2 id><a href="#" class="headerlink" title></a><a id="more"></a></h2><h1 id="功能"><a href="#功能" class="headerlink" title="功能"></a>功能</h1><p><img src="https://img1.kiosk007.top/static/images/network/VMTrafficShark/vmtrafficshark.png"></p>
+<a id="more"></a>
+<hr>
+<h1 id="功能"><a href="#功能" class="headerlink" title="功能"></a>功能</h1><p><img src="https://img1.kiosk007.top/static/images/network/VMTrafficShark/vmtrafficshark.png"></p>
 <p>VMTrafficShark 可以模拟各种复杂网络场景.</p>
 <ul>
 <li>[x] 低带宽、高丢包、高时延.</li>
