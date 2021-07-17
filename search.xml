@@ -382,6 +382,348 @@ func main() {
       </tags>
   </entry>
   <entry>
+    <title>Wireshark解析器Lua脚本</title>
+    <url>/2021/07/10/Wireshark%E8%A7%A3%E6%9E%90%E5%99%A8Lua%E8%84%9A%E6%9C%AC/</url>
+    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script><p>Wireshark集成了Lua解释器，以支持Lua脚本（自己编译的话根据编译配置决定是否支持Lua）。</p>
+<p>启动wireshark，依次点击“Help”，”About Wireshark“菜单，在打开的对话框中的”Wireshark”标签页上观察版本信息，如果如下图一样显示With Lua，说明此版本支持Lua插件。</p>
+<p>然后打开wireshark主目录下的init.lua文件，确保disable_lua的值为false，即开启了lua：</p>
+<a id="more"></a>
+<p><img src="https://img1.kiosk007.top/static/images/wireshark/R-C.jpeg" style="height:400px"></p>
+<p>因实际工作中需要对一种非官方的自研协议进行解析，每次可能需要对传输的内容进行对比，为了方便需要利用wireshark工具进行分析。恰好，Wireshark 可以利用其暴露的 <a href="https://wiki.wireshark.org/Lua">Lua API</a> 对抓包数据进行分析。</p>
+<h1 id="基础知识"><a href="#基础知识" class="headerlink" title="基础知识"></a>基础知识</h1><h2 id="Lua"><a href="#Lua" class="headerlink" title="Lua"></a>Lua</h2><p>Lua是一种轻量级的脚本语言，解释执行，不需要编译器之类的。基本语法可参考 <a href="https://www.w3cschool.cn/lua/lua-tutorial.html">Lua W3CSchool</a></p>
+<p>Wireshark内置了对Lua脚本的支持，可以直接编写Lua脚本，无需配置额外的环境。使用起来方便。<br> <a href="https://www.wireshark.org/docs/wsdg_html_chunked/wsluarm.html">Wireshark Developer’s Guide</a>里的第10章和第11章都是关于Lua支持的文档。</p>
+<p>使用Lua编写Wireshark协议解析插件，有几个比较重要的概念:</p>
+<ul>
+<li><code>Dissector</code>: 中文直译是解剖器，就是用来解析包的类，为了解析一个新协议，我们需要编写的也是一个Dissector。</li>
+<li><code>DissectorTable</code>: 解析器表是Wireshark中解析器的组织形式，是某一种协议的子解析器的一个列表，其作用是把所有的解析器组织成一种树状结构，便于Wireshark在解析包的时候自动选择对应的解析器。例如TCP协议的子解析器 http, smtp, sip等都被加在了”tcp.port”这个解析器表中，可以根据抓到的包的不同的tcp端口号，自动选择对应的解析器。</li>
+</ul>
+<p>Wireshark是用C编写的，Wireshark的剖析器通常也是用C编写的。然而，Wireshark有一个Lua实现，这使得不熟悉C的人很容易编写剖析器。对于那些不熟悉Lua的人来说，它是一种非常轻量级的编程语言，旨在作为脚本语言在应用程序中实现，以扩展其功能。</p>
+<h2 id="Wireshark-支持"><a href="#Wireshark-支持" class="headerlink" title="Wireshark 支持"></a>Wireshark 支持</h2><p>Wireshark 天然对 Lua 有良好的支持性，且Lua在Wireshark中可以做的事情也有很多，详见<a href="https://wiki.wireshark.org/Lua/Examples">Wireshark Lua Example</a></p>
+<p>网上的教程是点击 Help –&gt; About Wireshark –&gt; Folders，查找 Wireshark 的lua脚本存放目录。</p>
+<p>但是实际上我找到的敌方有些不同，不过亲测有效。该目录下有一个 <code>init.lua</code><br><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># Linux </span></span><br><span class="line">/usr/share/wireshark</span><br><span class="line"><span class="comment"># Mac</span></span><br><span class="line">/Applications/Wireshark.app/Contents/Resources/share/wireshark</span><br></pre></td></tr></table></figure><br>将<code>init.lua</code> 文件末加上， <code>dofile(DATA_DIR..&quot;your_lua_script&quot;)</code></p>
+<p><img src="https://img1.kiosk007.top/static/images/wireshark/init_lua.png"></p>
+<p>当 Wireshark 启动时，该脚本将处于激活状态。当脚本修改后，必须重启 Wireshark， 或者按 <code>Ctrl+Shift+L</code> （Mac 下<code>Shift+Command+L</code>） 重载 Lua 脚本。</p>
+<h1 id="Lua-API"><a href="#Lua-API" class="headerlink" title="Lua API"></a>Lua API</h1><p>在 Lua API 之前先看一个Lua 解析脚本的示例。参考 <a href="https://zhuanlan.zhihu.com/p/114669991">自己动手编写Wireshark Lua插件解析自定义协议</a></p>
+<figure class="highlight lua"><table><tr><td class="code"><pre><span class="line"><span class="keyword">do</span></span><br><span class="line">    <span class="comment">--协议名称为DT，在Packet Details窗格显示为Nselab.Zachary DT</span></span><br><span class="line">    <span class="keyword">local</span> p_DT = Proto(<span class="string">&quot;DT&quot;</span>,<span class="string">&quot;Nselab.Zachary DT&quot;</span>)</span><br><span class="line">    <span class="comment">--协议的各个字段</span></span><br><span class="line">    <span class="keyword">local</span> f_identifier = ProtoField.uint8(<span class="string">&quot;DT.identifier&quot;</span>,<span class="string">&quot;Identifier&quot;</span>, base.HEX)</span><br><span class="line">    <span class="comment">--这里的base是显示的时候的进制，详细可参考https://www.wireshark.org/docs/wsdg_html_chunked/lua_module_Proto.html#lua_class_ProtoField</span></span><br><span class="line">    <span class="keyword">local</span> f_speed = ProtoField.uint8(<span class="string">&quot;DT.speed&quot;</span>, <span class="string">&quot;Speed&quot;</span>, base.HEX)</span><br><span class="line"></span><br><span class="line">    <span class="comment">--这里把DT协议的全部字段都加到p_DT这个变量的fields字段里</span></span><br><span class="line">    p_DT.fields = &#123;f_identifier, f_speed&#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">--这里是获取data这个解析器</span></span><br><span class="line">    <span class="keyword">local</span> data_dis = Dissector.get(<span class="string">&quot;data&quot;</span>)</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">local</span> <span class="function"><span class="keyword">function</span> <span class="title">DT_dissector</span><span class="params">(buf,pkt,root)</span></span></span><br><span class="line">        <span class="keyword">local</span> buf_len = buf:<span class="built_in">len</span>();</span><br><span class="line">        <span class="comment">--先检查报文长度，太短的不是我的协议</span></span><br><span class="line">        <span class="keyword">if</span> buf_len &lt; <span class="number">16</span> <span class="keyword">then</span> <span class="keyword">return</span> <span class="literal">false</span> <span class="keyword">end</span></span><br><span class="line"></span><br><span class="line">        <span class="comment">--验证一下identifier这个字段是不是0x12,如果不是的话，认为不是我要解析的packet</span></span><br><span class="line">        <span class="keyword">local</span> v_identifier = buf(<span class="number">0</span>, <span class="number">1</span>)</span><br><span class="line">        <span class="keyword">if</span> (v_identifier:uint() ~= <span class="number">0x12</span>)</span><br><span class="line">        <span class="keyword">then</span> <span class="keyword">return</span> <span class="literal">false</span> <span class="keyword">end</span></span><br><span class="line"></span><br><span class="line">        <span class="comment">--取出其他字段的值</span></span><br><span class="line">        <span class="keyword">local</span> v_speed = buf(<span class="number">1</span>, <span class="number">1</span>)</span><br><span class="line">        </span><br><span class="line">        <span class="comment">--现在知道是我的协议了，放心大胆添加Packet Details</span></span><br><span class="line">        <span class="keyword">local</span> t = root:add(p_DT,buf)</span><br><span class="line">        <span class="comment">--在Packet List窗格的Protocol列可以展示出协议的名称</span></span><br><span class="line">        pkt.cols.protocol = <span class="string">&quot;DT&quot;</span></span><br><span class="line">        <span class="comment">--这里是把对应的字段的值填写正确，只有t:add过的才会显示在Packet Details信息里. 所以在之前定义fields的时候要把所有可能出现的都写上，但是实际解析的时候，如果某些字段没出现，就不要在这里add</span></span><br><span class="line">        t:add(f_identifier,v_identifier)</span><br><span class="line">        t:add(f_speed,v_speed)</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">return</span> <span class="literal">true</span></span><br><span class="line">    <span class="keyword">end</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment">--这段代码是目的Packet符合条件时，被Wireshark自动调用的，是p_DT的成员方法</span></span><br><span class="line">    <span class="function"><span class="keyword">function</span> <span class="title">p_DT.dissector</span><span class="params">(buf,pkt,root)</span></span> </span><br><span class="line">        <span class="keyword">if</span> DT_dissector(buf,pkt,root) <span class="keyword">then</span></span><br><span class="line">            <span class="comment">--valid DT diagram</span></span><br><span class="line">        <span class="keyword">else</span></span><br><span class="line">            <span class="comment">--data这个dissector几乎是必不可少的；当发现不是我的协议时，就应该调用data</span></span><br><span class="line">            data_dis:call(buf,pkt,root)</span><br><span class="line">        <span class="keyword">end</span></span><br><span class="line">    <span class="keyword">end</span></span><br><span class="line">    </span><br><span class="line">    <span class="keyword">local</span> udp_encap_table = DissectorTable.get(<span class="string">&quot;udp.port&quot;</span>)</span><br><span class="line">    <span class="comment">--因为我们的DT协议的接受端口肯定是50002，所以这里只需要添加到&quot;udp.port&quot;这个DissectorTable里，并且指定值为50002即可。</span></span><br><span class="line">    udp_encap_table:add(<span class="number">50002</span>, p_DT)</span><br><span class="line"><span class="keyword">end</span></span><br></pre></td></tr></table></figure>
+<p>如上图就是一个标准的协议解析流程。下面我们做一个详细的流程梳理。</p>
+<h2 id="1-Proto"><a href="#1-Proto" class="headerlink" title="1. Proto"></a>1. Proto</h2><p>官方文档：<a href="https://www.wireshark.org/docs/wsdg_html_chunked/lua_module_Proto.html#lua_class_Proto">11.6.5. Proto
+</a>:</p>
+<p>表示一个新的Protocol，在Wireshark中Protocol对象有很多用处，解析器是其中主要的一个。主要接口有：</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>接口</th>
+<th style="text-align:right">说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>proto:__call(name, desc)</td>
+<td style="text-align:right">创建Proto对象。name和desc分别是对象的名称和描述，前者可用于过滤器等</td>
+</tr>
+<tr>
+<td>Proto.new(name, desc)</td>
+<td style="text-align:right">创建一个Proto对象</td>
+</tr>
+<tr>
+<td>proto:register_heuristic(listname, func)</td>
+<td style="text-align:right">创建一个启发式解析器（<a href="https://mika-s.github.io/wireshark/lua/dissector/2018/12/30/creating-port-independent-wireshark-dissectors-in-lua.html">启发式解析器</a>）</td>
+</tr>
+<tr>
+<td>proto.dissector</td>
+<td style="text-align:right">解析函数，3个参数tvb,pinfo,tree，分别是报文内容，报文信息和解析树结构</td>
+</tr>
+<tr>
+<td>proto.prefs</td>
+<td style="text-align:right">解析器的首选项</td>
+</tr>
+<tr>
+<td>proto.init</td>
+<td style="text-align:right">初始化</td>
+</tr>
+<tr>
+<td>proto.name</td>
+<td style="text-align:right">该解析器的名字</td>
+</tr>
+<tr>
+<td>proto.description</td>
+<td style="text-align:right">该解析器的描述</td>
+</tr>
+<tr>
+<td>proto.fields</td>
+<td style="text-align:right">该解析器的内容（返回 ProtoFeild 表）</td>
+</tr>
+<tr>
+<td>proto.experts</td>
+<td style="text-align:right">该解析器的专家信息</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>举例：<br><figure class="highlight lua"><table><tr><td class="code"><pre><span class="line"><span class="keyword">local</span> NAME = <span class="string">&quot;bvc_srt&quot;</span></span><br><span class="line"><span class="keyword">local</span> bvc_srt = Proto(NAME, <span class="string">&quot;BVC_SRT Protocol&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 创建 bvc_srt 协议首选项</span></span><br><span class="line">srt_dev.prefs[<span class="string">&quot;srt_udp_port&quot;</span>] = Pref.uint(<span class="string">&quot;SRT UDP Port&quot;</span>, <span class="number">1935</span>, <span class="string">&quot;SRT UDP Port&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 注册解析器, 将 bvc_srt 自定义协议挂载到 udp 1935 端口上 </span></span><br><span class="line">DissectorTable.get(<span class="string">&quot;udp.port&quot;</span>):add(<span class="number">1935</span>, bvc_srt)</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 也可以直接调用下面函数，每个数据包都会用该 bvc_srt 去解析</span></span><br><span class="line"><span class="comment">-- register_postdissector(bvc_srt)</span></span><br><span class="line"></span><br><span class="line"></span><br></pre></td></tr></table></figure></p>
+<h2 id="2-ProtoField"><a href="#2-ProtoField" class="headerlink" title="2.ProtoField"></a>2.ProtoField</h2><p>表示协议字段，一般用于解析字段后往解析树上添加节点。根据字段类型不同，其接口可以分为两大类。</p>
+<p>这些接口都会返回一个新的字段对象。方括号内是可选字段，花括号内是可替换的类型字段。</p>
+<p>字段可以是 uin8\uin16\uin64\string\char 等等</p>
+<p>如下所示：<br><code>ProtoField.uint8(abbr, [name], [base], [valuestring], [mask], [desc])</code></p>
+<ul>
+<li>abbr: 协议字段缩写，比如 <code>bvc_srt.time_stamp</code>、<code>http.port</code></li>
+<li>name: 字段的实际名字，比如 <code>Time Stamp</code>、<code>HTTP Port</code></li>
+<li>base: 展示的形式，比如时间戳、端口号 是一个int64的十进制数字就可以填 <code>base.DEC</code>,再或者魔术值是一个 16进制数，可以填 <code>base.HEX</code> , 或者是HTTP的Header是字符串，可以填 <code>base.STRING</code></li>
+<li>valuestring: 与值对应的文本表，比如TCP的Flag有 9 位，每一位的对应关系就在这里体现。</li>
+<li>mask: 掩码，与valuestring配合，主要解决的是TCP Flag 的那种情况。</li>
+<li>desc: 描述</li>
+</ul>
+<p>举例：<br><figure class="highlight lua"><table><tr><td class="code"><pre><span class="line">fields.peer_ipaddr = ProtoField.ipv4(<span class="string">&quot;bvc_srt.peer_ipaddr&quot;</span>, <span class="string">&quot;Peer IP address&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 添加到树的时候要注意</span></span><br><span class="line"><span class="comment">-- 如果是网络序，要使用add_le，而不是add</span></span><br></pre></td></tr></table></figure><br><img src="https://img1.kiosk007.top/static/images/wireshark/proto_field.png"><br><figure class="highlight lua"><table><tr><td class="code"><pre><span class="line"></span><br><span class="line"><span class="keyword">local</span> flag_select = &#123;[<span class="number">0</span>]=<span class="string">&quot;[Not Set]&quot;</span>,[<span class="number">1</span>]=<span class="string">&quot;[Set]&quot;</span>&#125;</span><br><span class="line">fields.tcp_flag_reserved = ProtoField.uint16(<span class="string">&quot;tcp.flag.reserved&quot;</span>, <span class="string">&quot;Reserved&quot;</span>, base.HEX, flag_select, <span class="number">0x1000</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment">-- TCP Flag 需要 3 字节，这样处理解析器即可, 0b00010000000 做掩码。</span></span><br><span class="line">data_flag_info_tree:add(fields.tcp_flag_reserved, tvb(offset, <span class="number">3</span>))</span><br><span class="line"></span><br></pre></td></tr></table></figure><br><img src="https://img1.kiosk007.top/static/images/wireshark/proto_field_tcp.png"></p>
+<h2 id="3-TVB"><a href="#3-TVB" class="headerlink" title="3.TVB"></a>3.TVB</h2><p>TVB 是 <code>proto.dissector(tvb, pinfo, treeitem)</code> 的第一个参数，我们将在 <code>proto.dissector</code> 函数里做我们的协议解析。</p>
+<p><a href="https://www.wireshark.org/docs/wsdg_html_chunked/lua_module_Tvb.html#lua_class_Tvb">Tvb（Testy Virtual Buffer）</a>表示报文缓存，也就是实际的报文数据，可以通过下面介绍的TvbRange从报文数据中解出信息。主要接口有：</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>接口</th>
+<th style="text-align:right">说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>tvb:__tostring()</td>
+<td style="text-align:right">将报文数据转化为字符串，可用于调试</td>
+</tr>
+<tr>
+<td>tvb:reported_len()</td>
+<td style="text-align:right">get tvb的(not captured)长度</td>
+</tr>
+<tr>
+<td>tvb:len()</td>
+<td style="text-align:right">get tvb的(captured)长度</td>
+</tr>
+<tr>
+<td>tvb:reported_length_remaining()</td>
+<td style="text-align:right">获取当前tvb的剩余长度，如果偏移值大于报文长度，则返回-1</td>
+</tr>
+<tr>
+<td>tvb:offset()</td>
+<td style="text-align:right">返回原始偏移</td>
+</tr>
+<tr>
+<td>tvb:raw()</td>
+<td style="text-align:right">获取tvb中二进制字节的Lua字符串</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>用法举例：<br><figure class="highlight lua"><table><tr><td class="code"><pre><span class="line"><span class="comment">-- tvb(offset, 4)表示从offset开始之后的4个字节</span></span><br><span class="line">subtree:add_le(fields.peer_ipaddr, tvb(offset, <span class="number">4</span>))</span><br></pre></td></tr></table></figure></p>
+<h2 id="4-TvbRange"><a href="#4-TvbRange" class="headerlink" title="4.TvbRange"></a>4.TvbRange</h2><p>表示Tvb的可用范围，常用来从Tvb中解出信息。主要接口有</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>接口</th>
+<th style="text-align:right">说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>tvb:range([offset], [length])</td>
+<td style="text-align:right">从tvb创建TvbRange，可选参数分别是偏移和长度，默认值分别是0和总长度</td>
+</tr>
+<tr>
+<td>tvbrange:{type}()</td>
+<td style="text-align:right">将tvbrange所表示范围内的数据转换成type类型的值，type包括但不限于：uint,uint64,int,int64,float,ipv4,ether,nstime,string,ustring,bytes,bitfield等，其中某些类型的方法可以带一些参数</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>很少在实际使用中用到，大多数会取整个 tvb 进行运算位移。</p>
+<h2 id="5-ByteArray"><a href="#5-ByteArray" class="headerlink" title="5. ByteArray"></a>5. ByteArray</h2><p>字节数组，可与Tvb互相转换。另外字符串也可以换成 <a href="https://www.wireshark.org/docs/wsdg_html_chunked/lua_module_Tvb.html#lua_class_ByteArray">ByteArray</a> ，进而换成 Tvb。</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>接口</th>
+<th style="text-align:right">说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ByteArray.new([hexbytes], [separator])</td>
+<td style="text-align:right">创建一个新 ByteArray 对象</td>
+</tr>
+<tr>
+<td>bytearray:__concat(first, second)</td>
+<td style="text-align:right">连接两个 ByteArray</td>
+</tr>
+<tr>
+<td>bytearray:append(appended)</td>
+<td style="text-align:right">将 ByteArray 追加到此 ByteArray</td>
+</tr>
+<tr>
+<td>bytearray:len()</td>
+<td style="text-align:right">获取 ByteArray 的长度</td>
+</tr>
+<tr>
+<td>bytearray:subset(offset, length)</td>
+<td style="text-align:right">获取 ByteArray 的一段，作为新的 ByteArray</td>
+</tr>
+<tr>
+<td>bytearray:base64_decode()</td>
+<td style="text-align:right">获取 Base64 解码的 ByteArray</td>
+</tr>
+<tr>
+<td>bytearray:__tostring()</td>
+<td style="text-align:right">获取包含 ByteArray 中的字节的 Lua 字符串，以便可以在显示过滤器中使用它 (例如 “01FE456789AB”)</td>
+</tr>
+<tr>
+<td>bytearray:tvb(name)</td>
+<td style="text-align:right">ByteArray 转Tvb</td>
+</tr>
+<tr>
+<td>bytearray:raw([offset], [length])</td>
+<td style="text-align:right">获取 ByteArray 中的二进制字节的 Lua 字符串</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>用法举例：</p>
+<figure class="highlight lua"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">proto_foo.dissector</span><span class="params">(buf, pinfo, tree)</span></span></span><br><span class="line">            <span class="comment">-- Create a new tab named &quot;My Tvb&quot; and add some data to it</span></span><br><span class="line">            <span class="keyword">local</span> b = ByteArray.new(<span class="string">&quot;11223344&quot;</span>)</span><br><span class="line">            <span class="keyword">local</span> tvb = ByteArray.tvb(b, <span class="string">&quot;My Tvb&quot;</span>)</span><br><span class="line"></span><br><span class="line">            <span class="comment">-- Create a tree item that, when clicked, automatically shows the tab we just created</span></span><br><span class="line">            tree:add( tvb(<span class="number">1</span>,<span class="number">2</span>), <span class="string">&quot;Foo&quot;</span> )</span><br><span class="line"> <span class="keyword">end</span></span><br></pre></td></tr></table></figure>
+<h2 id="6-Pinfo"><a href="#6-Pinfo" class="headerlink" title="6. Pinfo"></a>6. Pinfo</h2><p>报文信息(packet information)。主要接口有：</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>接口</th>
+<th style="text-align:right">说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>pinfo.len pinfo.caplen</td>
+<td style="text-align:right">get报文长度</td>
+</tr>
+<tr>
+<td>pinfo.abs_ts</td>
+<td style="text-align:right">get报文捕获时间</td>
+</tr>
+<tr>
+<td>pinfo.number</td>
+<td style="text-align:right">get报文编号</td>
+</tr>
+<tr>
+<td>pinfo.src pinfo.dst</td>
+<td style="text-align:right">get/set报文的源地址、目的地址</td>
+</tr>
+<tr>
+<td>pinfo.columns pinfo.cols</td>
+<td style="text-align:right">get报文列表列（界面）</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>用法举例：<br><figure class="highlight lua"><table><tr><td class="code"><pre><span class="line"><span class="comment">-- 修改协议名称（效果见下图）</span></span><br><span class="line">pinfo.cols.protocol = bvc_srt.name</span><br><span class="line"><span class="comment">-- 为报文的信息尾部添加字符串（效果见下图）</span></span><br><span class="line">pinfo.cols.info:append(<span class="string">&quot; [ACK]&quot;</span>)</span><br><span class="line"><span class="comment">-- 还有一种便是直接覆盖</span></span><br><span class="line">pinfo.cols.info = <span class="string">&quot;[ACK]&quot;</span></span><br></pre></td></tr></table></figure><br><img src="https://img1.kiosk007.top/static/images/wireshark/lua_api_pinfo.png"></p>
+<h2 id="7-TreeItem"><a href="#7-TreeItem" class="headerlink" title="7. TreeItem"></a>7. TreeItem</h2><p>表示报文解析树中的一个树节点。主要接口有：</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>接口</th>
+<th style="text-align:right">说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>treeitem:add([protofield], [tvbrange], [value], [label])</td>
+<td style="text-align:right">向当前树节点添加一个子节点</td>
+</tr>
+<tr>
+<td>treeitem:set_text(text)</td>
+<td style="text-align:right">设置当前树节点的文本</td>
+</tr>
+<tr>
+<td>treeitem:prepend_text(text)</td>
+<td style="text-align:right">在当前树节点文本的前面加上text</td>
+</tr>
+<tr>
+<td>treeitem:append_text(text)</td>
+<td style="text-align:right">在当前树节点文本的后面加上text</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>还有注意一下网络字节序的问题，如果是网络字节序需要用add_le添加节点~<br>添加节点举例<br><figure class="highlight lua"><table><tr><td class="code"><pre><span class="line">subtree:add(fields.dst_sock, tvb(offset, <span class="number">4</span>))</span><br></pre></td></tr></table></figure><br>实现协议里面添加子树例子</p>
+<figure class="highlight lua"><table><tr><td class="code"><pre><span class="line"><span class="comment">-- 子树其实也是一个节点，因此也需要在fields里面添加字段</span></span><br><span class="line">fields.pack_type_tree = ProtoField.uint32(NAME .. <span class="string">&quot;.pack_type_tree&quot;</span>, <span class="string">&quot;Packet Type&quot;</span>, base.HEX)</span><br><span class="line"><span class="comment">-- 创建子树</span></span><br><span class="line">pack_type_tree = subtree:add(fields.pack_type_tree, tvb(offset, <span class="number">4</span>))</span><br><span class="line">pack_type_tree:add(fields.msg_type, tvb(offset, <span class="number">2</span>))</span><br></pre></td></tr></table></figure>
+<p><img src="https://img1.kiosk007.top/static/images/wireshark/lua_api_treeitem.png"></p>
+<h2 id="8-Fields"><a href="#8-Fields" class="headerlink" title="8. Fields"></a>8. Fields</h2><p>获得Wireshark已有协议字段。</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>接口</th>
+<th style="text-align:right">说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Field.new(fieldname)</td>
+<td style="text-align:right">获得一个字段</td>
+</tr>
+<tr>
+<td>all_field_infos()</td>
+<td style="text-align:right">获取当前packet的 field 信息</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>wireshark 本身已有大量的字段，比如我们想要获取 http2 的data 帧的内容，即可用 <code>http2.data.data</code> 获取。具体的fields 可以通过以下方式获得。</p>
+<figure class="highlight lua"><table><tr><td class="code"><pre><span class="line"><span class="keyword">local</span> t = Field.list()</span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> _, name <span class="keyword">in</span> <span class="built_in">ipairs</span>(t) <span class="keyword">do</span></span><br><span class="line">    <span class="built_in">print</span>(name)</span><br><span class="line"><span class="keyword">end</span></span><br></pre></td></tr></table></figure>
+<p><img src="https://img1.kiosk007.top/static/images/wireshark/lua_api_fields.png" style="height:400px"></p>
+<p>可以为tap定义一个回调函数packet，每当有http协议的报文时wireshark将调用这个函数，参数tvb是报文的二进制缓冲区。在该函数中调用Field变量可以取得分析好的字段，如果不存在返回nil。</p>
+<p>我们要截获的http协议包就包括这几层协议Frame,IP,TCP,HTTP,data-text-lines（这个是http内容）,这些上层协议的字段你都可以通过Field字段取得。<br>下面这一个截获框架，你可以使用tshark -X lua_script:tap.lua来执行这个例子</p>
+<figure class="highlight lua"><table><tr><td class="code"><pre><span class="line"><span class="keyword">local</span> tap = Listener.new(<span class="string">&quot;http&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">local</span> http = Field.new(<span class="string">&quot;http&quot;</span>)</span><br><span class="line"><span class="keyword">local</span> host = Field.new(<span class="string">&quot;http.host&quot;</span>)</span><br><span class="line"><span class="keyword">local</span> location = Field.new(<span class="string">&quot;http.location&quot;</span>)</span><br><span class="line"><span class="keyword">local</span> dst_ip = Field.new(<span class="string">&quot;ip.dst&quot;</span>)</span><br><span class="line"><span class="keyword">local</span> src_ip = Field.new(<span class="string">&quot;ip.src&quot;</span>)</span><br><span class="line"><span class="keyword">local</span> dst_port = Field.new(<span class="string">&quot;tcp.dstport&quot;</span>)</span><br><span class="line"><span class="keyword">local</span> src_port = Field.new(<span class="string">&quot;tcp.srcport&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">local</span> text = Field.new(<span class="string">&quot;data-text-lines&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">tap.packet</span><span class="params">(pinfo,tvb,tapinfo)</span></span></span><br><span class="line">    <span class="comment">--获取对应的字段</span></span><br><span class="line">    <span class="keyword">local</span> dst = dst_ip()</span><br><span class="line">    <span class="keyword">local</span> src = src_ip()</span><br><span class="line">    <span class="keyword">local</span> h = host()</span><br><span class="line">    <span class="keyword">local</span> dstp = dst_port()</span><br><span class="line">    <span class="keyword">local</span> srcp = src_port()</span><br><span class="line">    <span class="comment">--这里可以对截获的数据做存储打印等处理</span></span><br><span class="line">    <span class="built_in">print</span>(<span class="built_in">tostring</span>(dst))</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;host : &quot;</span>..<span class="built_in">tostring</span>(h))</span><br><span class="line"><span class="keyword">end</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">tap.draw</span><span class="params">()</span></span></span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;draw called&quot;</span>)</span><br><span class="line"><span class="keyword">end</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">tap.reset</span><span class="params">()</span></span></span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;reset called&quot;</span>)</span><br><span class="line"><span class="keyword">end</span></span><br></pre></td></tr></table></figure>
+<p>也可以调用 <code>all_field_infos</code> 获取当前 packet 中的信息，比如说以下这个 <code>MQTT Over Websocket</code> 的例子。</p>
+<p><a href="https://cloud.tencent.com/developer/article/1093536">https://cloud.tencent.com/developer/article/1093536</a></p>
+<h1 id="创建-Lua-解析器"><a href="#创建-Lua-解析器" class="headerlink" title="创建 Lua 解析器"></a>创建 Lua 解析器</h1><p>以下会的内容是搜集网上的一些优秀的介绍关于如何使用。</p>
+<h2 id="MongoDB-dissector"><a href="#MongoDB-dissector" class="headerlink" title="MongoDB dissector"></a>MongoDB dissector</h2><p>以下的5篇文章是我从全网找到的最详尽的 lua 自定义协议解析脚本的教程。<br>从Lua基础到协议解析的全过程进行了阐述，从TCP Data 中解析 MongoDB 协议。</p>
+<p>原文地址：</p>
+<ul>
+<li><a href="https://mika-s.github.io/wireshark/lua/dissector/2017/11/04/creating-a-wireshark-dissector-in-lua-1.html">Creating a Wireshark dissector in Lua - part 1 (the basics)</a></li>
+<li><a href="https://mika-s.github.io/wireshark/lua/dissector/2017/11/06/creating-a-wireshark-dissector-in-lua-2.html">Creating a Wireshark dissector in Lua - part 2 (debugging and a more advanced dissector)</a></li>
+<li><a href="https://mika-s.github.io/wireshark/lua/dissector/2017/11/08/creating-a-wireshark-dissector-in-lua-3.html">Creating a Wireshark dissector in Lua - part 3 (parsing the payload)</a></li>
+<li><a href="https://mika-s.github.io/wireshark/lua/dissector/2018/12/16/creating-a-wireshark-dissector-in-lua-4.html">Creating a Wireshark dissector in Lua - part 4 (separate subtrees)
+</a></li>
+<li><a href="https://mika-s.github.io/wireshark/lua/dissector/2018/12/18/creating-a-wireshark-dissector-in-lua-5.html">Creating a Wireshark dissector in Lua - part 5 (modularization)</a></li>
+</ul>
+<p>Other</p>
+<ul>
+<li><a href="https://mika-s.github.io/wireshark/lua/dissector/2018/12/30/creating-port-independent-wireshark-dissectors-in-lua.html">Creating port-independent (heuristic) Wireshark dissectors in Lua</a></li>
+</ul>
+<h2 id="SRT协议的Wireshark解析器编写"><a href="#SRT协议的Wireshark解析器编写" class="headerlink" title="SRT协议的Wireshark解析器编写"></a>SRT协议的Wireshark解析器编写</h2><p>该文章也详细介绍了如何使用wireshark解析一个自定义协议，本文的内容也有一些参考了本文章。 github 上的 <code>srt-dev.lua</code> 也是 比较全的例子。</p>
+<p>原文地址：</p>
+<ul>
+<li><a href="https://blog.csdn.net/Boring_Wednesday/article/details/99695507">SRT协议的Wireshark解析器编写</a></li>
+</ul>
+<p>wireshark 解析脚本示例：</p>
+<ul>
+<li><a href="https://github.com/Haivision/srt/blob/master/scripts/srt-dev.lua">https://github.com/Haivision/srt/blob/master/scripts/srt-dev.lua</a></li>
+</ul>
+<h2 id="解析Websocket上的MQTT协议"><a href="#解析Websocket上的MQTT协议" class="headerlink" title="解析Websocket上的MQTT协议"></a>解析Websocket上的MQTT协议</h2><p>这篇文章被我单独列出的一个重要原因是，这个文章列举了如何实现，在已有协议之上的 payload 接着解析协议。比如本例中的在 websocket 的payload 之上解析 MQTT 协议。</p>
+<p>原文地址:</p>
+<ul>
+<li><a href="https://cloud.tencent.com/developer/article/1093536">Lua编写wireshark插件初探——解析Websocket上的MQTT协议</a></li>
+</ul>
+<p>github 地址：</p>
+<ul>
+<li><a href="https://github.com/a3135134/Wireshark-Plugin-MQTToverWebSocket/blob/master/mqttoverwebsocket.lua">https://github.com/a3135134/Wireshark-Plugin-MQTToverWebSocket/blob/master/mqttoverwebsocket.lua</a></li>
+</ul>
+]]></content>
+      <categories>
+        <category>network</category>
+      </categories>
+      <tags>
+        <tag>wireshark</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>如何减少TTFB以提升WordPress加载性能</title>
     <url>/2021/06/05/%E5%A6%82%E4%BD%95%E5%87%8F%E5%B0%91TTFB%E4%BB%A5%E6%8F%90%E9%AB%98%E7%BD%91%E9%A1%B5%E9%A1%B5%E9%9D%A2%E5%8A%A0%E8%BD%BD%E6%97%B6%E9%97%B4/</url>
     <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script><p>当谈论到你的 <a href="What Is WordPress? Explained for Beginners">WordPress Site</a> 加载性能时，大多数我们都是在关注前端的性能优化来提升页面加载速度。然而我们有时候应该从服务端视角来看待这个问题。今天我们来讨论一下 <strong>TTFB (time to first byte)</strong> 是怎么影响你的网站加载速度，另外我们如何去降低他。TTFB是一个经常会被忽略的重要性能因素，但是我们在网站性能优化是必须考虑进来。</p>
