@@ -449,6 +449,12 @@ func main() {
 </ul>
 <p><img src="https://img1.kiosk007.top/static/images/network/QUIC/quic_http3_check.png"></p>
 ]]></content>
+      <categories>
+        <category>QUIC</category>
+      </categories>
+      <tags>
+        <tag>network</tag>
+      </tags>
   </entry>
   <entry>
     <title>QUIC 发生了什么</title>
