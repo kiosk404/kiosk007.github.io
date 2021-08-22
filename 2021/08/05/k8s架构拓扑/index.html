@@ -1,0 +1,319 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"><meta name="description" content="k8s 架构拓扑"><meta name="keywords" content=""><meta name="author" content="kiosk"><meta name="copyright" content="kiosk"><title>k8s 架构拓扑 | kiosk007's Blog</title><link rel="shortcut icon" href="/img/favicon-16x16-dragon.png"><link rel="stylesheet" href="/css/index.css?version=1.9.0"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome@latest/css/font-awesome.min.css?version=1.9.0"><link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.3.1/css/all.css?version=1.9.0"><meta name="format-detection" content="telephone=no"><meta http-equiv="x-dns-prefetch-control" content="on"><link rel="dns-prefetch" href="https://cdn.jsdelivr.net"><link rel="dns-prefetch" href="https://hm.baidu.com"><script>var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?6f3d277b6c83066a05a8b7db067b2308";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();</script><meta http-equiv="Cache-Control" content="no-transform"><meta http-equiv="Cache-Control" content="no-siteapp"><script>var GLOBAL_CONFIG = { 
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"search.xml","languages":{"hits_empty":"We didn't find any results for the search: ${query}"}},
+  copy: {
+    success: 'Copy successfully',
+    error: 'Copy error',
+    noSupport: 'The browser does not support'
+  },
+  hexoVersion: '5.3.0'
+} </script><meta name="generator" content="Hexo 5.3.0"><link rel="alternate" href="/atom.xml" title="kiosk007's Blog" type="application/atom+xml">
+</head><body><i class="fa fa-arrow-right" id="toggle-sidebar" aria-hidden="true"></i><div id="sidebar" data-display="true"><div class="toggle-sidebar-info text-center"><span data-toggle="Toggle article">Toggle site</span><hr></div><div class="sidebar-toc"><div class="sidebar-toc__title">Catalog</div><div class="sidebar-toc__progress"><span class="progress-notice">You've read</span><span class="progress-num">0</span><span class="progress-percentage">%</span><div class="sidebar-toc__progress-bar"></div></div><div class="sidebar-toc__content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%87%86%E5%A4%87%E7%8E%AF%E5%A2%83"><span class="toc-number">1.</span> <span class="toc-text">准备环境</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#K8S-%E6%9E%B6%E6%9E%84"><span class="toc-number">2.</span> <span class="toc-text">K8S 架构</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%AE%B9%E5%99%A8%E6%8C%81%E4%B9%85%E5%8C%96%E5%AD%98%E5%82%A8"><span class="toc-number">3.</span> <span class="toc-text">容器持久化存储</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#PV-amp-PVC"><span class="toc-number">3.1.</span> <span class="toc-text">PV &amp; PVC</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8A%A8%E6%80%81-NFS-Provision"><span class="toc-number">3.2.</span> <span class="toc-text">动态 NFS Provision</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%AE%B9%E5%99%A8%E7%BD%91%E7%BB%9C"><span class="toc-number">4.</span> <span class="toc-text">容器网络</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%BB%E6%9C%BA%E5%86%85POD%E9%80%9A%E4%BF%A1-%EF%BC%88cni0-%E4%B8%8E-veth-pair%EF%BC%89"><span class="toc-number">4.1.</span> <span class="toc-text">主机内POD通信 （cni0 与 veth pair）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#k8s-%E8%B7%A8%E4%B8%BB%E6%9C%BAip%E9%80%9A%E4%BF%A1"><span class="toc-number">4.2.</span> <span class="toc-text">k8s 跨主机ip通信</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#CNI-%E6%8F%92%E4%BB%B6%E7%9A%84%E9%83%A8%E7%BD%B2%E5%92%8C%E5%AE%9E%E7%8E%B0"><span class="toc-number">4.3.</span> <span class="toc-text">CNI 插件的部署和实现</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E5%B1%82%E7%BD%91%E7%BB%9C%E6%96%B9%E6%A1%88"><span class="toc-number">4.4.</span> <span class="toc-text">三层网络方案</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%BD%91%E7%BB%9C%E9%9A%94%E7%A6%BB"><span class="toc-number">4.5.</span> <span class="toc-text">网络隔离</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%9C%8D%E5%8A%A1%E6%9A%B4%E9%9C%B2"><span class="toc-number">5.</span> <span class="toc-text">服务暴露</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#Service"><span class="toc-number">5.1.</span> <span class="toc-text">Service</span></a></li></ol></li></ol></div></div><div class="author-info hide"><div class="author-info__avatar text-center"><img src="https://img1.kiosk007.top/static/images/avatar.jpg"></div><div class="author-info__name text-center">kiosk</div><div class="author-info__description text-center">NoOps</div><div class="follow-button"><a target="_blank" rel="noopener" href="https://github.com/weijiaxiang007">Ordinary But Great</a></div><hr><div class="author-info-articles"><a class="author-info-articles__archives article-meta" href="/archives"><span class="pull-left">Articles</span><span class="pull-right">39</span></a><a class="author-info-articles__tags article-meta" href="/tags"><span class="pull-left">Tags</span><span class="pull-right">21</span></a><a class="author-info-articles__categories article-meta" href="/categories"><span class="pull-left">Categories</span><span class="pull-right">11</span></a></div></div></div><div id="content-outer"><div id="top-container" style="background-image: url(https://img1.kiosk007.top/static/images/backgroud_sbpk.jpg)"><div id="page-header"><span class="pull-left"> <a id="site-name" href="/">kiosk007's Blog</a></span><i class="fa fa-bars toggle-menu pull-right" aria-hidden="true"></i><span class="pull-right menus">   <a class="site-page" href="/">首页</a><a class="site-page" href="/about/">关于</a><a class="site-page" href="/archives/">文章</a><a class="site-page" href="/tags/">标签</a><a class="site-page" href="/categories/">分类</a><a class="site-page" href="/express/">Express</a></span><span class="pull-right"><a class="site-page social-icon search"><i class="fa fa-search"></i><span> Search</span></a></span></div><div id="post-info"><div id="post-title">k8s 架构拓扑</div><div id="post-meta"><time class="post-meta__date"><i class="fa fa-calendar" aria-hidden="true"></i> 2021-08-05</time><div class="post-meta-wordcount"><span>Word count: </span><span class="word-count">6.6k</span><span class="post-meta__separator">|</span><span>Reading time: 25 min</span></div></div></div></div><div class="layout" id="content-inner"><article id="post"><div class="article-container" id="post-content"><p>这篇文章将从K8S的架构、存储、网络及服务暴露等几个方面介绍,记录K8S的学习过程。</p>
+<a id="more"></a>
+<p>讨论议题：</p>
+<ul>
+<li>k8s 架构</li>
+<li>k8s 存储架构</li>
+<li>k8s 容器网络</li>
+<li>k8s 服务暴露</li>
+</ul>
+<h1 id="准备环境"><a href="#准备环境" class="headerlink" title="准备环境"></a>准备环境</h1><p>K8S 集群搭建方式参考, <a target="_blank" rel="noopener" href="https://kiosk.io/2020/07/24/ubuntu20-04-%E9%83%A8%E7%BD%B2-Kubernetes-k8s/#%E5%AE%89%E8%A3%85-kubernetes">ubuntu20.04 部署 Kubernetes (k8s)</a> </p>
+<blockquote>
+<p>搭建教程当时基于的环境 1.18 ，参考时注意更改到最新的对应版本。</p>
+</blockquote>
+<ul>
+<li>集群主机（vmware 虚拟机）<ul>
+<li>vm-ks0 (master): 172.16.101.135</li>
+<li>vm-ks1 (node1):  172.16.101.136</li>
+</ul>
+</li>
+<li>系统版本: ubuntu 20.04 TLS</li>
+<li>kubernetes版本： v1.22.0</li>
+</ul>
+<p><strong>k8s 初始化 <code>ClusterConfiguration</code> yaml</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubeadm init --config=http://s1.kiosk007.top/static/kubeadm-config.yaml --upload-certs -v 6</span><br></pre></td></tr></table></figure>
+<p><strong>网络插件：flannel</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl apply -f http://s1.kiosk007.top/static/kube-flannel.yaml</span><br></pre></td></tr></table></figure>
+<p><strong>去掉master节点的调度taint</strong></p>
+<p>去掉NoSchedule使master节点可以调度pod。<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl taint nodes vm-ks0 node-role.kubernetes.io/master:NoSchedule-</span><br></pre></td></tr></table></figure><br><strong>宿主机安装NFS</strong></p>
+<p>NFS 提供远程存储服务，并提供PV，NFS的安装工作参考 <a target="_blank" rel="noopener" href="https://cloud.tencent.com/developer/article/1626660">这里</a></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 安装</span></span><br><span class="line">sudo apt install nfs-kernel-server</span><br><span class="line"></span><br><span class="line"><span class="comment"># 准备磁盘目录</span></span><br><span class="line">mkdir -p /data/nfs/</span><br><span class="line"></span><br><span class="line"><span class="comment"># NFS服务配置文件</span></span><br><span class="line">sudo vim /etc/exports</span><br><span class="line">/home/weijiaxiang/data/nfs *(rw,no_root_squash,sync)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 重启NFS，并保持NFS启动开机</span></span><br><span class="line">systemctl restart nfs-kernel-server</span><br><span class="line">systemctl <span class="built_in">enable</span> nfs-kernel-server</span><br><span class="line"></span><br><span class="line"><span class="comment"># 所有Node节点安装NFS客户端</span></span><br><span class="line">apt install nfs-common rpcbind</span><br><span class="line"></span><br><span class="line"><span class="comment"># Node 节点上查看能否 mount</span></span><br><span class="line">showmount -e 172.16.101.1</span><br></pre></td></tr></table></figure>
+<h1 id="K8S-架构"><a href="#K8S-架构" class="headerlink" title="K8S 架构"></a>K8S 架构</h1><p>议题：</p>
+<ol>
+<li>K8S 架构是什么样的</li>
+</ol>
+<p><img src="https://img1.kiosk007.top/static/images/k8s/structure/k8s_cluster_1.png"></p>
+<ul>
+<li>CNI: 容器网络接口</li>
+<li>CRI：容器运行时接口</li>
+<li>OCI：开放容器标准</li>
+</ul>
+<p><img src="https://img1.kiosk007.top/static/images/k8s/structure/k8s_struct.png"></p>
+<h1 id="容器持久化存储"><a href="#容器持久化存储" class="headerlink" title="容器持久化存储"></a>容器持久化存储</h1><p>议题：</p>
+<ol>
+<li>容器的存储是如何实现的</li>
+<li>k8s集群如何使用存储</li>
+</ol>
+<p><a target="_blank" rel="noopener" href="https://kubernetes.io/docs/concepts/storage/persistent-volumes/#types-of-persistent-volumes">Kubernetes 内置了20种持久化存储卷的实现</a></p>
+<h2 id="PV-amp-PVC"><a href="#PV-amp-PVC" class="headerlink" title="PV &amp; PVC"></a>PV &amp; PVC</h2><p><strong>PV (PersistentVolume) 描述的是持久化存储数据卷。</strong>这个 API 对象主要定义的是一个持久化存储在宿主机上的目录，比如一个 NFS 的挂载目录。</p>
+<p><strong>PVC（PersistentVolumeClaim） 描述的是 Pod 所希望使用的持久化存储的属性。</strong>比如，Volume 存储的大小、可读写权限等等。</p>
+<p>一般PV由运维人员创建并提供，PVC是由开发人员所创建，以 PVC 模板的方式成为 StatefulSet 的一部分，然后由 StatefulSet 控制器负责创建带编号的 PVC。<strong>PV 和 PVC 的 storageClassName 字段必须一样，才能使用</strong></p>
+<p>如一个 NFS 的 PV</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># nfs-pv001.yaml </span></span><br><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">PersistentVolume</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">nfs-pv001</span></span><br><span class="line">  <span class="attr">labels:</span></span><br><span class="line">    <span class="attr">pv:</span> <span class="string">nfs-pv001</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">capacity:</span></span><br><span class="line">    <span class="attr">storage:</span> <span class="string">1Gi</span></span><br><span class="line">  <span class="attr">accessModes:</span></span><br><span class="line">    <span class="bullet">-</span> <span class="string">ReadWriteOnce</span></span><br><span class="line">  <span class="attr">persistentVolumeReclaimPolicy:</span> <span class="string">Recycle</span></span><br><span class="line">  <span class="attr">storageClassName:</span> <span class="string">nfs</span></span><br><span class="line">  <span class="attr">nfs:</span></span><br><span class="line">    <span class="attr">path:</span> <span class="string">/data/nfs/pv001</span></span><br><span class="line">    <span class="attr">server:</span> <span class="number">172.16</span><span class="number">.101</span><span class="number">.1</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>声明一个 1 GiB 大小的 PVC</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># nfs-pvc001.yaml </span></span><br><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">PersistentVolumeClaim</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">nfs-pvc001</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">accessModes:</span></span><br><span class="line">    <span class="bullet">-</span> <span class="string">ReadWriteOnce</span></span><br><span class="line">  <span class="attr">resources:</span></span><br><span class="line">    <span class="attr">requests:</span></span><br><span class="line">      <span class="attr">storage:</span> <span class="string">1Gi</span></span><br><span class="line">  <span class="attr">storageClassName:</span> <span class="string">nfs</span></span><br><span class="line">  <span class="attr">selector:</span></span><br><span class="line">    <span class="attr">matchLabels:</span></span><br><span class="line">      <span class="attr">pv:</span> <span class="string">nfs-pv001</span></span><br></pre></td></tr></table></figure>
+<p>接下来就可以像 <code>hostPath</code> 等常规类型的 Volume 一样，在自己的 YAML 文件里声明使用。<br>更多例子参考 <a target="_blank" rel="noopener" href="http://docs.kubernetes.org.cn/429.html">这里</a></p>
+<p>大多数情况下，持久化 Volume 的实现，往往依赖于一个远程存储服务，比如：远程文件存储（比如，NFS、GlusterFS）、远程块存储（比如，公有云提供的远程磁盘）等等。</p>
+<p>实际生产环境中，一个大规模的 Kubernetes 集群里很可能有成千上万个 PVC，这就意味着运维人员必须得事先创建出成千上万个 PV。更麻烦的是，随着新的 PVC 不断被提交，运维人员就不得不继续添加新的、能满足条件的 PV。 为了自动化的创建PV，提出了一个 <strong>StorageClass</strong> 的概念。</p>
+<p><strong>而 StorageClass 对象的作用，其实就是创建 PV 的模板。</strong><br>具体地说，StorageClass 对象会定义如下两个部分内容：</p>
+<ul>
+<li>第一，PV 的属性。比如，存储类型、Volume 的大小等等。</li>
+<li>第二，创建这种 PV 需要用到的存储插件。比如，Ceph 等等。</li>
+</ul>
+<p>有了这样两个信息之后，Kubernetes 就能够根据用户提交的 PVC，找到一个对应的 StorageClass 了。然后，Kubernetes 就会调用该 StorageClass 声明的存储插件，创建出需要的 PV。</p>
+<p>如开源项目 <a target="_blank" rel="noopener" href="https://rook.io/">rook</a>。定义的还是一个名叫 block-service 的 StorageClass。（<a target="_blank" rel="noopener" href="https://cloud.tencent.com/developer/article/1470038">Rook &amp; Ceph 简介</a>）</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">ceph.rook.io/v1beta1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Pool</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">replicapool</span></span><br><span class="line">  <span class="attr">namespace:</span> <span class="string">rook-ceph</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">replicated:</span></span><br><span class="line">    <span class="attr">size:</span> <span class="number">3</span></span><br><span class="line"><span class="meta">---</span></span><br><span class="line"><span class="attr">apiVersion:</span> <span class="string">storage.k8s.io/v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">StorageClass</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">block-service</span></span><br><span class="line"><span class="attr">provisioner:</span> <span class="string">ceph.rook.io/block</span></span><br><span class="line"><span class="attr">parameters:</span></span><br><span class="line">  <span class="attr">pool:</span> <span class="string">replicapool</span></span><br><span class="line">  <span class="comment">#The value of &quot;clusterNamespace&quot; MUST be the same as the one in which your rook cluster exist</span></span><br><span class="line">  <span class="attr">clusterNamespace:</span> <span class="string">rook-ceph</span></span><br></pre></td></tr></table></figure>
+<p>作为应用开发者，不必再为难运维人员，上面提到的运维人员创建的PV是运维手工分配的，而 Storage Class 是动态创建的。</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">PersistentVolumeClaim</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">claim1</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">accessModes:</span></span><br><span class="line">    <span class="bullet">-</span> <span class="string">ReadWriteOnce</span></span><br><span class="line">  <span class="attr">storageClassName:</span> <span class="string">block-service</span></span><br><span class="line">  <span class="attr">resources:</span></span><br><span class="line">    <span class="attr">requests:</span></span><br><span class="line">      <span class="attr">storage:</span> <span class="string">30Gi</span></span><br></pre></td></tr></table></figure>
+<h2 id="动态-NFS-Provision"><a href="#动态-NFS-Provision" class="headerlink" title="动态 NFS Provision"></a>动态 NFS Provision</h2><ul>
+<li><strong>什么是 NFS-Subdir-External-Provisioner</strong></li>
+</ul>
+<p>存储组件 <code>NFS subdir external provisioner</code> 是一个存储资源自动调配器，它可用将现有的 NFS 服务器通过持久卷声明来支持 Kubernetes 持久卷的动态分配。自动新建的文件夹将被命名为 <code>$&#123;namespace&#125;-$&#123;pvcName&#125;-$&#123;pvName&#125;</code> ，由三个资源名称拼合而成。</p>
+<blockquote>
+<p>此组件是对 nfs-client-provisioner 的扩展，nfs-client-provisioner 已经不提供更新，且 nfs-client-provisioner 的 Github 仓库已经迁移到 <a target="_blank" rel="noopener" href="https://github.com/kubernetes-sigs/nfs-subdir-external-provisioner">NFS-Subdir-External-Provisioner</a> 的仓库。</p>
+</blockquote>
+<p>部署需要先将这个项目 <code>clone</code> 下来。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">git <span class="built_in">clone</span> https://github.com/kubernetes-sigs/nfs-subdir-external-provisioner</span><br></pre></td></tr></table></figure>
+<p>项目的deployment目录下有我们需要的搭建 yaml 文件。</p>
+<ul>
+<li><strong>创建 ServiceAccount</strong></li>
+</ul>
+<p>现在的 Kubernetes 集群大部分是基于 RBAC 的权限控制，所以我们需要创建一个拥有一定权限的 ServiceAccount 与后面要部署的 NFS Subdir Externa Provisioner 组件绑定。</p>
+<p>执行 kubectl 命令将 RBAC 文件部署到 Kubernetes 集群</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ kubectl apply -f rbac.yaml</span><br></pre></td></tr></table></figure>
+<ul>
+<li><strong>部署 NFS-Subdir-External-Provisioner</strong></li>
+</ul>
+<p>设置 <code>NFS-Subdir-External-Provisioner</code> 部署文件。需要对 <code>deployment.yaml</code> 做一些修改。<code>NFS_SERVER</code> 和 <code>NFS_PATH</code> 都需要改成自己的NFS服务器。另外默认镜像地址为 <code>k8s.gcr.io</code>, 我这里找了网上的一个地址 <code>registry.cn-beijing.aliyuncs.com/mydlq/nfs-subdir-external-provisioner:v4.0.0</code></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ kubectl apply -f deployment.yaml </span><br></pre></td></tr></table></figure>
+<ul>
+<li><strong>创建 NFS SotageClass</strong></li>
+</ul>
+<p>我们在创建 PVC 时经常需要指定 storageClassName 名称，这个参数配置的就是一个 StorageClass 资源名称，PVC 通过指定该参数来选择使用哪个 StorageClass，并与其关联的 Provisioner 组件来动态创建 PV 资源。所以，这里我们需要提前创建一个 Storagelcass 资源。</p>
+<blockquote>
+<p>Provisioner 参数用于声明 NFS 动态卷提供者的名称，该参数值要和上面部署 NFS-Subdir-External-Provisioner 部署文件中指定的 PROVISIONER_NAME 参数保持一致，即设置为 nfs-storage。</p>
+</blockquote>
+<ul>
+<li><strong>测试</strong></li>
+</ul>
+<p>创建一个用于测试的 pvc。并创建一个 pod 使用pvc写文件</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ kubectl apply -f test-claim.yaml</span><br><span class="line">$ kubectl apply -f test-pods.yaml</span><br></pre></td></tr></table></figure>
+<p>在宿主机的 nfs 共享目录上发现，已经创建出 <code>SUCCESS</code> 文件。</p>
+<h1 id="容器网络"><a href="#容器网络" class="headerlink" title="容器网络"></a>容器网络</h1><p>议题：</p>
+<ol>
+<li>同一台主机的容器既然被隔离，是怎样互相通信的</li>
+<li>为什么跨主机的容器可以互相通信</li>
+<li>容器间的网络通信和主机间的网络通信性能相差</li>
+<li>k8s的CNI网络实现</li>
+<li>K8S网络方案L2和L3的区别</li>
+<li>网络隔离方案</li>
+</ol>
+<p>实验环境，起 2个 pod</p>
+<p>flannel 网络通信方式</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>通信方式</th>
+<th style="text-align:center">概念</th>
+<th style="text-align:center">方式</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>主机内通信</td>
+<td style="text-align:center">1台机器内部的</td>
+<td style="text-align:center">veth pair</td>
+</tr>
+<tr>
+<td>L2 主机间通信</td>
+<td style="text-align:center">2台主机连在同一台交换机的场景</td>
+<td style="text-align:center">hostgw</td>
+</tr>
+<tr>
+<td>L3 主机间通信</td>
+<td style="text-align:center">2台主机没有连在同一台交换机的场景。</td>
+<td style="text-align:center">内核态：vxlan  用户态：udp (性能差)</td>
+</tr>
+</tbody>
+</table>
+</div>
+<h2 id="主机内POD通信-（cni0-与-veth-pair）"><a href="#主机内POD通信-（cni0-与-veth-pair）" class="headerlink" title="主机内POD通信 （cni0 与 veth pair）"></a>主机内POD通信 （cni0 与 veth pair）</h2><ul>
+<li>node: <code>vm-ks1</code>：<code>172.16.101.136/16</code><ul>
+<li>pod0: <code>web-0</code> : <code>10.100.1.39  eth0@if6  0a:ff:9f:1b:5c:02</code></li>
+<li>pod1: <code>web-1</code> : <code>10.100.1.40  eth0@if7  16:60:24:3d:0f:84</code></li>
+</ul>
+</li>
+</ul>
+<p>宿主机 vm-ks1 上的网卡, 除了 flannel和cni0 网卡外，还有一堆veth开头的网卡，每创建一个容器或pod都会在宿主机上生成一个 veth pair，这个veth pair可以理解为容器和宿主机之间拉了一条网线。可参考<a target="_blank" rel="noopener" href="https://www.cnblogs.com/bakari/p/10613710.html">这篇文章</a></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">root@vm-ks1:~# ip link show</span><br><span class="line">root@vm-ks1:~# ip link show | egrep &quot;veth&quot; | awk -F&quot;:&quot; &#39;&#123;print $1&quot;:&quot;$2&#125;&#39;</span><br><span class="line">6: veth50ce0fb7@if3</span><br><span class="line">7: veth51f9d367@if3</span><br><span class="line">8: veth8b0a5941@if3</span><br><span class="line">9: veth940d7fa4@if3</span><br><span class="line">10: veth12a5546b@if3</span><br><span class="line">11: veth1b7e020f@if3</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p><img src="https://img1.kiosk007.top/static/images/k8s/structure/k8s_network_cni0_1.png"></p>
+<p>同一主机内的pod之间的互相通信流量会经过 <code>cni0</code>，可以看到 pod0 的Mac地址<code>0a:ff:9f:1b:5c:02</code> 可以直接访问 pod1 的Mac地址 <code>16:60:24:3d:0f:84</code><br>。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">root@vm-ks1:~<span class="comment"># tcpdump -i cni0 port 80 -XXe -v</span></span><br><span class="line">tcpdump: listening on cni0, link-type EN10MB (Ethernet), capture size 262144 bytes</span><br><span class="line">23:42:29.370870 0a:ff:9f:1b:5c:02 (oui Unknown) &gt; 16:60:24:3d:0f:84 (oui Unknown), ethertype IPv4 (0x0800), length 74: (tos 0x0, ttl 64, id 16685, offset 0, flags [DF], proto TCP (6), length 60)</span><br><span class="line">    10.100.1.39.52402 &gt; 10.100.1.40.http: Flags [S], cksum 0x1745 (incorrect -&gt; 0x9d01), seq 2993213598, win 64860, options [mss 1410,sackOK,TS val 2243936499 ecr 0,nop,wscale 7], length 0</span><br><span class="line">	0x0000:  1660 243d 0f84 0aff 9f1b 5c02 0800 4500  .`$=......\...E.</span><br><span class="line">	0x0010:  003c 412d 4000 4006 e278 0a64 0127 0a64  .&lt;A-@.@..x.d.<span class="string">&#x27;.d</span></span><br><span class="line"><span class="string">	0x0020:  0128 ccb2 0050 b268 d09e 0000 0000 a002  .(...P.h........</span></span><br><span class="line"><span class="string">	0x0030:  fd5c 1745 0000 0204 0582 0402 080a 85bf  .\.E............</span></span><br><span class="line"><span class="string">	0x0040:  c0f3 0000 0000 0103 0307                 ..........</span></span><br><span class="line"><span class="string"></span></span><br></pre></td></tr></table></figure>
+<p>从宿主机的 <code>arp</code> 命令可知 <code>cni0</code> 上的路由表是既有 <code>pod0</code> 的mac地址+ip地址，也有<code>pod1</code>的。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">root@vm-ks1:~<span class="comment"># arp -v</span></span><br><span class="line">Address                  HWtype  HWaddress           Flags Mask            Iface</span><br><span class="line">10.100.0.0               ether   da:e9:f6:2d:73:b5   CM                    flannel.1</span><br><span class="line">10.100.1.41              ether   5e:82:a8:f9:ab:92   C                     cni0</span><br><span class="line">10.100.1.40              ether   16:60:24:3d:0f:84   C                     cni0</span><br><span class="line">10.100.1.42              ether   ae:85:38:14:2e:3f   C                     cni0</span><br><span class="line">10.100.1.44              ether   56:0c:75:ed:ca:cb   C                     cni0</span><br><span class="line">_gateway                 ether   00:50:56:e3:07:3f   C                     ens33</span><br><span class="line">172.16.101.1             ether   00:50:56:c0:00:08   C                     ens33</span><br><span class="line">vm-ks0                   ether   00:0c:29:ee:ae:5f   C                     ens33</span><br><span class="line">10.100.1.39              ether   0a:ff:9f:1b:5c:02   C                     cni0</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h2 id="k8s-跨主机ip通信"><a href="#k8s-跨主机ip通信" class="headerlink" title="k8s 跨主机ip通信"></a>k8s 跨主机ip通信</h2><p>跨主机间通信分2种，hostgw: eht0  vxlan: flannel0。我们在初始化k8s 集群时使用的是 flannel的网络cni插件。<a target="_blank" rel="noopener" href="https://github.com/coreos/flannel">flannel</a>通过给每台宿主机分配一个子网的方式为容器提供虚拟网络，它基于Linux TUN/TAP，使用UDP封装IP包来创建overlay网络，并借助etcd维护网络的分配情况。</p>
+<blockquote>
+<p>udp：使用用户态udp封装，默认使用8285端口。由于是在用户态封装和解包，性能上有较大的损失<br>vxlan：vxlan封装，需要配置VNI，Port（默认8472）和GBP<br>host-gw：直接路由的方式，将容器网络的路由信息直接更新到主机的路由表中，仅适用于二层直接可达的网络</p>
+</blockquote>
+<ul>
+<li><p>node: <code>vm-ks1</code>：<code>172.16.101.136/16</code></p>
+<ul>
+<li>pod0: <code>web-0</code> : <code>10.100.1.39  eth0@if6  0a:ff:9f:1b:5c:02</code></li>
+<li>flannel.1: <code>10.100.0.0  da:e9:f6:2d:73:b5</code></li>
+</ul>
+</li>
+<li><p>node: <code>vm-ks0</code>: <code>172.16.101.135/16</code></p>
+<ul>
+<li>pod2: <code>web-2</code> : <code>10.100.0.22  eth0@if8  66:14:4c:b9:74:13</code></li>
+<li>flannel.1: <code>10.100.1.0  fe:ca:1a:3e:42:41</code></li>
+</ul>
+</li>
+</ul>
+<p><img src="https://img1.kiosk007.top/static/images/k8s/structure/k8s_network_flannel.png"></p>
+<p>vm-ks0 的 <code>flannel</code> 设备收到“原始 IP 包”后，就要想办法把“原始 IP 包”加上一个目的 MAC 地址，封装成一个二层数据帧，然后发送给“目的 flannel” 设备。vm-ks0 和 vm-ks1 上的 flannel 设备组成了一个虚拟的2层网络，即：通过二层数据帧进行通信。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">root@vm-ks0:~<span class="comment"># ifconfig flannel.1</span></span><br><span class="line">flannel.1: flags=4163&lt;UP,BROADCAST,RUNNING,MULTICAST&gt;  mtu 1450</span><br><span class="line">        inet 10.100.0.0  netmask 255.255.255.255  broadcast 10.100.0.0</span><br><span class="line">        inet6 fe80::d8e9:f6ff:fe2d:73b5  prefixlen 64  scopeid 0x20&lt;link&gt;</span><br><span class="line">        ether da:e9:f6:2d:73:b5  txqueuelen 0  (Ethernet)</span><br><span class="line">        RX packets 4387  bytes 777102 (777.1 KB)</span><br><span class="line">        RX errors 0  dropped 0  overruns 0  frame 0</span><br><span class="line">        TX packets 8578  bytes 1684583 (1.6 MB)</span><br><span class="line">        TX errors 19  dropped 49 overruns 0  carrier 19  collisions 0</span><br><span class="line">        </span><br><span class="line">root@vm-ks0:~<span class="comment"># ip neigh show dev flannel.1</span></span><br><span class="line">10.100.1.0 lladdr fe:ca:1a:3e:42:41 PERMANENT</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>在vm-ks0上执行 <code>ip neigh show dev flannel.1</code><br>这条记录的意思非常明确，即：IP 地址 10.100.1.0，对应的 MAC 地址是 fe:ca:1a:3e:42:41。</p>
+<p>一个 flannel.1 设备只知道另一端的 flannel.1 设备的 MAC 地址，却不知道对应的宿主机地址是什么。</p>
+<p>也就是说，这个 UDP 包该发给哪台宿主机呢？</p>
+<p>在这种场景下，flannel.1 设备实际上要扮演一个“网桥”的角色，在二层网络进行 UDP 包的转发。而在 Linux 内核里面，“网桥”设备进行转发的依据，来自于一个叫作 FDB（Forwarding Database）的转发数据库。</p>
+<p>这个 flannel.1“网桥”对应的 FDB 信息，也是 flanneld 进程负责维护的。它的内容可以通过 bridge fdb 命令查看到，如下所示</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">root@vm-ks0:~<span class="comment"># bridge fdb show flannel.1 | grep fe:ca:1a:3e:42:41</span></span><br><span class="line">fe:ca:1a:3e:42:41 dev flannel.1 dst 172.16.101.136 self permanent</span><br></pre></td></tr></table></figure>
+<p>这下整个转发过程就清楚了，参考下图的封装过程。</p>
+<p><img src="https://img1.kiosk007.top/static/images/k8s/structure/k8s_network_vxlan_packet.webp"></p>
+<p><img src="https://img1.kiosk007.top/static/images/k8s/structure/k8s_network_vxlan.png"></p>
+<p>从上面的 wireshark 抓包可以看到，跨主机访问的报文是UDP的VXLAN协议，使用 8472 端口。<br>VXLAN 上的二层Mac地址分别是两台node节点的flannel网卡的Mac地址。<br>再向上就如同pod0 和 pod2 直接通信的效果了。</p>
+<p>3 层主机之间的通信UDP模式已经废弃。<br>我们在进行系统级编程的时候，有一个非常重要的优化原则，就是要减少用户态到内核态的切换次数，并且把核心的处理逻辑都放在内核态进行。这也是为什么，Flannel 后来支持的VXLAN 模式，逐渐成为了主流的容器网络方案的原因。</p>
+<h2 id="CNI-插件的部署和实现"><a href="#CNI-插件的部署和实现" class="headerlink" title="CNI 插件的部署和实现"></a>CNI 插件的部署和实现</h2><p>我们在部署 Kubernetes 的时候，有一个步骤是安装 kubernetes-cni 包，它的目的就是在宿主机上安装 <strong>CNI 插件所需的基础可执行文件</strong>。</p>
+<p>在安装完成后，你可以在宿主机的 /opt/cni/bin 目录下看到它们，如下所示：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">root@vm-ks0:~<span class="comment"># ls -al /opt/cni/bin/</span></span><br><span class="line">total 70504</span><br><span class="line">drwxrwxr-x 2 root root     4096 Aug 15 10:07 .</span><br><span class="line">drwxr-xr-x 3 root root     4096 Aug 15 10:07 ..</span><br><span class="line">-rwxr-xr-x 1 root root  4159518 May 14  2020 bandwidth</span><br><span class="line">-rwxr-xr-x 1 root root  4671647 May 14  2020 bridge</span><br><span class="line">-rwxr-xr-x 1 root root 12124326 May 14  2020 dhcp</span><br><span class="line">-rwxr-xr-x 1 root root  5945760 May 14  2020 firewall</span><br><span class="line">-rwxr-xr-x 1 root root  3069556 May 14  2020 flannel</span><br><span class="line">-rwxr-xr-x 1 root root  4174394 May 14  2020 host-device</span><br><span class="line">-rwxr-xr-x 1 root root  3614480 May 14  2020 host-local</span><br><span class="line">-rwxr-xr-x 1 root root  4314598 May 14  2020 ipvlan</span><br><span class="line">-rwxr-xr-x 1 root root  3209463 May 14  2020 loopback</span><br><span class="line">-rwxr-xr-x 1 root root  4389622 May 14  2020 macvlan</span><br><span class="line">-rwxr-xr-x 1 root root  3939867 May 14  2020 portmap</span><br><span class="line">-rwxr-xr-x 1 root root  4590277 May 14  2020 ptp</span><br><span class="line">-rwxr-xr-x 1 root root  3392826 May 14  2020 sbr</span><br><span class="line">-rwxr-xr-x 1 root root  2885430 May 14  2020 static</span><br><span class="line">-rwxr-xr-x 1 root root  3356587 May 14  2020 tuning</span><br><span class="line">-rwxr-xr-x 1 root root  4314446 May 14  2020 vlan</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>这些 CNI 的基础可执行文件，按照功能可以分为三类:</p>
+<ul>
+<li><strong>第一类，叫作 Main 插件，它是用来创建具体网络设备的二进制文件</strong>。比如，bridge（网桥设备）、ipvlan、loopback（lo 设备）、macvlan、ptp（Veth Pair 设备），以及 vlan。我在前面提到过的 Flannel、Weave 等项目，都属于“网桥”类型的 CNI 插件。所以在具体的实现中，它们往往会调用 bridge 这个二进制文件。</li>
+<li><strong>第二类，叫作 IPAM（IP Address Management）插件</strong>，它是负责分配 IP 地址的二进制文件。比如，dhcp，这个文件会向 DHCP 服务器发起请求；host-local，则会使用预先配置的 IP 地址段来进行分配。</li>
+<li><strong>第三类，是由 CNI 社区维护的内置 CNI 插件</strong>。比如：flannel，就是专门为 Flannel 项目提供的 CNI 插件；tuning，是一个通过 sysctl 调整网络设备参数的二进制文件；portmap，是一个通过 iptables 配置端口映射的二进制文件；bandwidth，是一个使用 Token Bucket Filter (TBF) 来进行限流的二进制文件。</li>
+</ul>
+<p><strong>首先，实现这个网络方案本身</strong>。这一部分需要编写的，其实就是 flanneld 进程里的主要逻辑。比如，创建和配置 flannel.1 设备、配置宿主机路由、配置 ARP 和 FDB 表里的信息等等。</p>
+<p><strong>然后，实现该网络方案对应的 CNI 插件</strong>。这一部分主要需要做的，就是配置 Infra 容器里面的网络栈，并把它连接在 CNI 网桥上。</p>
+<p>其启动和配置原理如下,首先，CNI bridge 插件会在宿主机上检查 CNI 网桥是否存在。如果没有的话，那就创建它。这相当于在宿主机上执行：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 在宿主机上</span></span><br><span class="line">$ ip link add cni0 <span class="built_in">type</span> bridge</span><br><span class="line">$ ip link <span class="built_in">set</span> cni0 up</span><br></pre></td></tr></table></figure>
+<p>接下来，CNI bridge 插件会通过 Infra 容器的 Network Namespace 文件，进入到这个 Network Namespace 里面，然后创建一对 Veth Pair 设备。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#在容器里</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 创建一对Veth Pair设备。其中一个叫作eth0，另一个叫作vethb4963f3</span></span><br><span class="line">$ ip link add eth0 <span class="built_in">type</span> veth peer name vethb4963f3</span><br><span class="line"></span><br><span class="line"><span class="comment"># 启动eth0设备</span></span><br><span class="line">$ ip link <span class="built_in">set</span> eth0 up </span><br><span class="line"></span><br><span class="line"><span class="comment"># 将Veth Pair设备的另一端（也就是vethb4963f3设备）放到宿主机（也就是Host Namespace）里</span></span><br><span class="line">$ ip link <span class="built_in">set</span> vethb4963f3 netns <span class="variable">$HOST_NS</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 通过Host Namespace，启动宿主机上的vethb4963f3设备</span></span><br><span class="line">$ ip netns <span class="built_in">exec</span> <span class="variable">$HOST_NS</span> ip link <span class="built_in">set</span> vethb4963f3 up </span><br></pre></td></tr></table></figure>
+<p>这样，vethb4963f3 就出现在了宿主机上，而且这个 Veth Pair 设备的另一端，就是容器里面的 eth0。(在宿主机上操作也可以，原理都一样)</p>
+<p>接下来，CNI bridge 插件就可以把 vethb4963f3 设备连接在 CNI 网桥上</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 在宿主机上</span></span><br><span class="line">$ ip link <span class="built_in">set</span> vethb4963f3 master cni0</span><br></pre></td></tr></table></figure>
+<p>所有容器都可以直接使用 IP 地址与其他容器通信，而无需使用 NAT。</p>
+<p>容器自己“看到”的自己的 IP 地址，和别人（宿主机或者容器）看到的地址是完全一样的。</p>
+<h2 id="三层网络方案"><a href="#三层网络方案" class="headerlink" title="三层网络方案"></a>三层网络方案</h2><p>除了网桥类型的 Flannel 插件，还有一种纯三层（Pure Layer 3）网络方案，典型例子包括 Flannel 的 host-gw 模式和 Calico 项目。</p>
+<p>当你设置 Flannel 使用 host-gw 模式之后，flanneld 会在宿主机上创建这样一条规则，以 vm-ks0 为例：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">$ ip route</span><br><span class="line">...</span><br><span class="line">10.100.1.0/24 via 172.16.101.136 dev eth0</span><br></pre></td></tr></table></figure>
+<p>这条路由规则的含义是：目的 IP 地址属于 10.100.1.0/24 网段的 IP 包，应该经过本机的 eth0 设备发出去（即：dev eth0）；并且，它下一跳地址（next-hop）是 172.16.101.136（即：via 172.16.101.136）。</p>
+<p><strong>host-gw 模式的工作原理，其实就是将每个 Flannel 子网（Flannel Subnet，比如：10.100.1.0/24）的“下一跳”，设置成了该子网对应的宿主机的 IP 地址。</strong></p>
+<p>也就是说，这台“主机”（Host）会充当这条容器通信路径里的“网关”（Gateway）。这也正是“host-gw”的含义。<strong>所以说，Flannel host-gw 模式必须要求集群宿主机之间是二层连通的。</strong></p>
+<p><strong>不同于 Flannel 通过 Etcd 和宿主机上的 flanneld 来维护路由信息的做法，Calico 项目使用了一个BGP(Border Gateway Protocol，即：边界网关协议) 来自动地在整个集群中分发路由信息。</strong></p>
+<p><img src="https://img1.kiosk007.top/static/images/k8s/structure/k8s_network_l3_bgp.webp"></p>
+<p>比如上述，有2个自治系统（Autonomous System，简称为 AS）：AS 1 和 AS 2。在正常情况下，自治系统之间不会有任何“来往”。</p>
+<p>比如，AS 1 里面的主机 10.10.0.2，要访问 AS 2 里面的主机 172.17.0.3 的话。它发出的 IP 包，就会先到达自治系统 AS 1 上的路由器 Router 1。</p>
+<p>而在此时，Router 1 的路由表里，有这样一条规则，即：目的地址是 172.17.0.2 包，应该经过 Router 1 的 C 接口，发往网关 Router 2（即：自治系统 AS 2 上的路由器）。至此Router 2 就会把数据包交付到真正的目的主机上。</p>
+<p>我们就把它形象地称为：<strong>边界网关</strong>。它跟普通路由器的不同之处在于，它的路由表里拥有其他自治系统里的主机路由信息。</p>
+<p>而 BGP 的这个能力，正好可以取代 Flannel 维护主机上路由表的功能。而且，BGP 这种原生就是为大规模网络环境而实现的协议，其可靠性和可扩展性，远非 Flannel 自己的方案可比。</p>
+<ul>
+<li><strong>三层网络和二层隧道的区别</strong><ul>
+<li>三层和隧道的异同：<br>相同之处是都实现了跨主机容器的三层互通，而且都是通过对目的 MAC 地址的操作来实现的；不同之处是三层通过配置下一条主机的路由规则来实现互通，隧道则是通过通过在 IP 包外再封装一层 MAC 包头来实现。</li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<ul>
+<li>三层的优点：少了封包和解包的过程，性能肯定是更高的。</li>
+<li>三层的缺点：需要自己想办法维护路由规则。</li>
+<li>隧道的优点：简单，原因是大部分工作都是由 Linux 内核的模块实现了，应用层面工作量较少。</li>
+<li>隧道的缺点：主要的问题就是性能低。</li>
+</ul>
+</blockquote>
+<p>根据实际的测试，host-gw 的性能损失大约在 10% 左右，而其他所有基于 VXLAN“隧道”机制的网络方案，性能损失都在 20%~30% 左右。</p>
+<h2 id="网络隔离"><a href="#网络隔离" class="headerlink" title="网络隔离"></a>网络隔离</h2><p>在 Kubernetes 里，网络隔离能力的定义，是依靠一种专门的 API 对象来描述的，即：NetworkPolicy。</p>
+<p><strong>Kubernetes 里的 Pod 默认都是“允许所有”（Accept All）的</strong>，即：Pod 可以接收来自任何发送方的请求；或者，向任何接收方发送请求。而如果你要对这个情况作出限制，就必须通过 NetworkPolicy 对象来指定。</p>
+<p>如下例子：</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="attr">apiVersion:</span> <span class="string">networking.k8s.io/v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">NetworkPolicy</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">test-network-policy</span></span><br><span class="line">  <span class="attr">namespace:</span> <span class="string">default</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">podSelector:</span></span><br><span class="line">    <span class="attr">matchLabels:</span></span><br><span class="line">      <span class="attr">role:</span> <span class="string">db</span></span><br><span class="line">  <span class="attr">policyTypes:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="string">Ingress</span></span><br><span class="line">  <span class="bullet">-</span> <span class="string">Egress</span></span><br><span class="line">  <span class="attr">ingress:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">from:</span></span><br><span class="line">    <span class="bullet">-</span> <span class="attr">ipBlock:</span></span><br><span class="line">        <span class="attr">cidr:</span> <span class="number">172.17</span><span class="number">.0</span><span class="number">.0</span><span class="string">/16</span></span><br><span class="line">        <span class="attr">except:</span></span><br><span class="line">        <span class="bullet">-</span> <span class="number">172.17</span><span class="number">.1</span><span class="number">.0</span><span class="string">/24</span></span><br><span class="line">    <span class="bullet">-</span> <span class="attr">namespaceSelector:</span></span><br><span class="line">        <span class="attr">matchLabels:</span></span><br><span class="line">          <span class="attr">project:</span> <span class="string">myproject</span></span><br><span class="line">    <span class="bullet">-</span> <span class="attr">podSelector:</span></span><br><span class="line">        <span class="attr">matchLabels:</span></span><br><span class="line">          <span class="attr">role:</span> <span class="string">frontend</span></span><br><span class="line">    <span class="attr">ports:</span></span><br><span class="line">    <span class="bullet">-</span> <span class="attr">protocol:</span> <span class="string">TCP</span></span><br><span class="line">      <span class="attr">port:</span> <span class="number">6379</span></span><br><span class="line">  <span class="attr">egress:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">to:</span></span><br><span class="line">    <span class="bullet">-</span> <span class="attr">ipBlock:</span></span><br><span class="line">        <span class="attr">cidr:</span> <span class="number">10.0</span><span class="number">.0</span><span class="number">.0</span><span class="string">/24</span></span><br><span class="line">    <span class="attr">ports:</span></span><br><span class="line">    <span class="bullet">-</span> <span class="attr">protocol:</span> <span class="string">TCP</span></span><br><span class="line">      <span class="attr">port:</span> <span class="number">5978</span></span><br></pre></td></tr></table></figure>
+<p>这个 NetworkPolicy 对象，指定的隔离规则如下所示：</p>
+<ol>
+<li>该隔离规则只对 default Namespace 下的，携带了 role=db 标签的 Pod 有效。限制的请求类型包括 ingress（流入）和 egress（流出）。</li>
+<li>Kubernetes 会拒绝任何访问被隔离 Pod 的请求，除非这个请求来自于以下“白名单”里的对象，并且访问的是被隔离 Pod 的 6379 端口。这些“白名单”对象包括：<br>a. default Namespace 里的，携带了 role=fronted 标签的 Pod；<br>b. 携带了 project=myproject 标签的 Namespace 里的任何 Pod；<br>c. 任何源地址属于 172.17.0.0/16 网段，且不属于 172.17.1.0/24 网段的请求。</li>
+<li>Kubernetes 会拒绝被隔离 Pod 对外发起任何请求，除非请求的目的地址属于 10.0.0.0/24 网段，并且访问的是该网段地址的 5978 端口。</li>
+</ol>
+<p>在 Kubernetes 生态里，目前已经实现了 NetworkPolicy 的网络插件包括 Calico、Weave 和 kube-router 等多个项目，但是并不包括 Flannel 项目。</p>
+<p>所以说，如果想要在使用 Flannel 的同时还使用 NetworkPolicy 的话，你就需要再额外安装一个网络插件，比如 Calico 项目，来负责执行 NetworkPolicy。<a target="_blank" rel="noopener" href="https://docs.projectcalico.org/v3.2/getting-started/kubernetes/installation/flannel">安装方式</a></p>
+<h1 id="服务暴露"><a href="#服务暴露" class="headerlink" title="服务暴露"></a>服务暴露</h1><p>我们知道 deployment 是由一堆 pod 组成的。在我们要访问pod 上的服务时有2个问题需要解决。</p>
+<ol>
+<li>pod 的ip是不固定的，随着调度一直在变</li>
+<li>pod之间需要一种负载均衡的访问</li>
+</ol>
+<h2 id="Service"><a href="#Service" class="headerlink" title="Service"></a>Service</h2><p>一个最典型的 <code>service</code> 定义如下所示：</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Service</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">nginx</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">selector:</span></span><br><span class="line">    <span class="attr">app:</span> <span class="string">nginx</span></span><br><span class="line">  <span class="attr">ports:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">default</span></span><br><span class="line">    <span class="attr">protocol:</span> <span class="string">TCP</span></span><br><span class="line">    <span class="attr">port:</span> <span class="number">80</span></span><br><span class="line">    <span class="attr">targetPort:</span> <span class="number">80</span></span><br></pre></td></tr></table></figure>
+<p>可以看到这个名为 <code>nginx</code> 的service，后面挂载了3个pod。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">kubectl describe svc nginx</span><br><span class="line">Name:              nginx</span><br><span class="line">Namespace:         default</span><br><span class="line">Labels:            &lt;none&gt;</span><br><span class="line">Annotations:       &lt;none&gt;</span><br><span class="line">Selector:          app=nginx</span><br><span class="line">Type:              ClusterIP</span><br><span class="line">IP Family Policy:  SingleStack</span><br><span class="line">IP Families:       IPv4</span><br><span class="line">IP:                10.96.60.101</span><br><span class="line">IPs:               10.96.60.101</span><br><span class="line">Port:              default  80/TCP</span><br><span class="line">TargetPort:        80/TCP</span><br><span class="line">Endpoints:         10.100.1.39:80,10.100.1.40:80,10.100.1.43:80</span><br><span class="line">Session Affinity:  None</span><br><span class="line">Events:            &lt;none&gt;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>访问时可以随机负载。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">root@vm-ks0:~/k8s/svc<span class="comment"># curl 10.96.60.101/hello</span></span><br><span class="line">hi, web-0</span><br><span class="line">root@vm-ks0:~/k8s/svc<span class="comment"># curl 10.96.60.101/hello</span></span><br><span class="line">hi, web-1</span><br><span class="line">root@vm-ks0:~/k8s/svc<span class="comment"># curl 10.96.60.101/hello</span></span><br><span class="line">hi, web-1</span><br><span class="line">root@vm-ks0:~/k8s/svc<span class="comment"># curl 10.96.60.101/hello</span></span><br><span class="line">hi, web-2</span><br><span class="line">root@vm-ks0:~/k8s/svc<span class="comment"># curl 10.96.60.101/hello</span></span><br><span class="line">hi, web-0</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>实际上，Service 是由 kube-proxy 组件，加上 iptables 来共同实现的。</p>
+<p>对于我们前面创建的名叫 <code>nginx</code> 的 Service 来说，一旦它被提交给 Kubernetes，那么 kube-proxy 就可以通过 Service 的 Informer 感知到这样一个 Service 对象的添加。而作为对这个事件的响应，它就会在宿主机上创建这样一条 iptables 规则（你可以通过 iptables-save 看到它），如下所示：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">root@vm-ks0:~/k8s/svc<span class="comment"># iptables-save | grep &quot;10.96.60.101&quot;</span></span><br><span class="line">-A KUBE-SERVICES -d 10.96.60.101/32 -p tcp -m comment --comment <span class="string">&quot;default/nginx:default cluster IP&quot;</span> -m tcp --dport 80 -j KUBE-SVC-5JWVWZBQU2R3YJF2</span><br><span class="line">-A KUBE-SVC-5JWVWZBQU2R3YJF2 ! -s 10.100.0.0/16 -d 10.96.60.101/32 -p tcp -m comment --comment <span class="string">&quot;default/nginx:default cluster IP&quot;</span> -m tcp --dport 80 -j KUBE-MARK-MASQ</span><br></pre></td></tr></table></figure>
+<p>这条 iptables 规则的含义是：凡是目的地址是 10.96.60.101、目的端口是 80 的 IP 包，都应该跳转到另外一条名叫 KUBE-SVC-5JWVWZBQU2R3YJF2 的 iptables 链进行处理。</p>
+<p>那如何做到随机访问，实际上是利用了iptable规则里的random组件里的 <code>--probability</code> 实现的，有33%的概率访问到 <code>web-0</code>, 如果没命中的话，有50%的概率访问到 <code>web-1</code>, 如果还没有命中的话，则必访问到 <code>web-3</code> 。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">-A KUBE-SVC-5JWVWZBQU2R3YJF2 -m comment --comment <span class="string">&quot;default/nginx:default&quot;</span> -m statistic --mode random --probability 0.33333333349 -j KUBE-SEP-WZ2C5AZQZKHYZFZC</span><br><span class="line">-A KUBE-SVC-5JWVWZBQU2R3YJF2 -m comment --comment <span class="string">&quot;default/nginx:default&quot;</span> -m statistic --mode random --probability 0.50000000000 -j KUBE-SEP-VQLGMKAWCVHQEJD4</span><br><span class="line">-A KUBE-SVC-5JWVWZBQU2R3YJF2 -m comment --comment <span class="string">&quot;default/nginx:default&quot;</span> -j KUBE-SEP-W6K7OWILI2KV46KH</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>不难想到，当你的宿主机上有大量 Pod 的时候，成百上千条 iptables 规则不断地被刷新，会大量占用该宿主机的 CPU 资源，甚至会让宿主机“卡”在这个过程中。所以说，<strong>一直以来，基于 iptables 的 Service 实现，都是制约 Kubernetes 项目承载更多量级的 Pod 的主要障碍。</strong></p>
+<p>而 IPVS 模式的 Service，就是解决这个问题的一个行之有效的方法。IPVS 模式的工作原理，其实跟 iptables 模式类似。当我们创建了前面的 Service 之后，kube-proxy 首先会在宿主机上创建一个虚拟网卡（叫作：kube-ipvs0），并为它分配 Service VIP 作为 IP 地址，</p>
+<p class="div-border green">所以，在大规模集群里，建议 kube-proxy 设置–proxy-mode=ipvs 来开启这个功能。它为 Kubernetes 集群规模带来的提升，还是非常巨大的。
+</p>
+
+<ul>
+<li><strong>DNS 服务发现</strong></li>
+</ul>
+<p>在 Kubernetes 中，Service 和 Pod 都会被分配对应的 DNS A 记录（从域名解析 IP 的记录）。</p>
+<p>对于 ClusterIP 模式的 Service 来说（比如我们上面的例子），它的 A 记录的格式是：..svc.cluster.local。当你访问这条 A 记录的时候，它解析到的就是该 Service 的 VIP 地址。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">root@web-1:&#x2F;# dig nginx.default.svc.cluster.local +short</span><br><span class="line">10.96.60.101</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>需要注意的是，在 Kubernetes 里，/etc/hosts 文件是单独挂载的，这也是为什么 kubelet 能够对 hostname 进行修改并且 Pod 重建后依然有效的原因。这跟 Docker 的 Init 层是一个原理。</p>
+</blockquote>
+</div></article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta">Author: </span><span class="post-copyright-info"><a href="mailto:undefined">kiosk</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta">Link: </span><span class="post-copyright-info"><a href="http://kiosk007.top/2021/08/05/k8s架构拓扑/">http://kiosk007.top/2021/08/05/k8s架构拓扑/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta">Copyright Notice: </span><span class="post-copyright-info">All articles in this blog are licensed under <a target="_blank" rel="noopener" href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a> unless stating additionally.</span></div></div><div class="post-meta__tag-list"></div><div class="addthis_inline_share_toolbox pull-right"></div><script src="//s7.addthis.com/js/300/addthis_widget.js#pubid=kiosk" async></script><nav id="pagination"><div class="next-post pull-right"><a href="/2021/08/04/k8s-%E9%83%A8%E7%BD%B2-Nginx-%E9%9B%86%E7%BE%A4/"><span>k8s 部署 HTTP3  Nginx </span><i class="fa fa-chevron-right"></i></a></div></nav><div id="vcomment"></div><script src="https://cdn1.lncld.net/static/js/3.0.4/av-min.js"></script><script src="https://cdn.jsdelivr.net/npm/valine/dist/Valine.min.js"></script><script>var notify = 'false' == 'true';
+var verify = 'false' == 'true';
+var record_ip = 'false' == 'true';
+var GUEST_INFO = ['nick','mail','link'];
+var guest_info = 'nick,mail,link'.split(',').filter(function(item){
+  return GUEST_INFO.indexOf(item) > -1
+});
+guest_info = guest_info.length == 0 ? GUEST_INFO :guest_info;
+window.valine = new Valine({
+  el:'#vcomment',
+  notify:notify,
+  verify:verify,
+  recordIP:record_ip,
+  appId:'XhYn8GEq1Sg7ufJQAVmR4dWN-gzGzoHsz',
+  appKey:'r42k4lqU022wD7IvtwGaQfjN',
+  placeholder:'Just go go',
+  avatar:'mm',
+  guest_info:guest_info,
+  pageSize:'10',
+  lang: 'zh-cn'
+})</script></div></div><footer class="footer-bg" style="background-image: url(https://img1.kiosk007.top/static/images/backgroud_sbpk.jpg)"><div class="layout" id="footer"><div class="copyright">&copy;2020 - 2021 By kiosk</div><div class="framework-info"><span>Driven - </span><a target="_blank" rel="noopener" href="http://hexo.io"><span>Hexo</span></a><span class="footer-separator">|</span><span>Theme - </span><a target="_blank" rel="noopener" href="https://github.com/Molunerfinn/hexo-theme-melody"><span>Melody</span></a></div><div class="footer_custom_text"><a target="_blank" rel="noopener" href="http://beian.miit.gov.cn/">京ICP备20015006号-1</a></div><div class="busuanzi"><script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><span id="busuanzi_container_page_pv"><i class="fa fa-file"></i><span id="busuanzi_value_page_pv"></span><span></span></span></div></div></footer><i class="fa fa-arrow-up" id="go-up" aria-hidden="true"></i><script src="https://cdn.jsdelivr.net/npm/animejs@latest/anime.min.js"></script><script src="https://cdn.jsdelivr.net/npm/jquery@latest/dist/jquery.min.js"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@latest/dist/jquery.fancybox.min.js"></script><script src="https://cdn.jsdelivr.net/npm/velocity-animate@latest/velocity.min.js"></script><script src="https://cdn.jsdelivr.net/npm/velocity-ui-pack@latest/velocity.ui.min.js"></script><script src="https://img1.kiosk007.top/static/js/utils.js?version=1.9.0"></script><script src="https://img1.kiosk007.top/static/js/fancybox.js?version=1.9.0"></script><script src="https://img1.kiosk007.top/static/js/sidebar.js?version=1.9.0"></script><script src="https://img1.kiosk007.top/static/js/copy.js?version=1.9.0"></script><script src="https://img1.kiosk007.top/static/js/fireworks.js?version=1.9.0"></script><script src="https://img1.kiosk007.top/static/js/transition.js?version=1.9.0"></script><script src="https://img1.kiosk007.top/static/js/scroll.js?version=1.9.0"></script><script src="https://img1.kiosk007.top/static/js/head.js?version=1.9.0"></script><link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/katex@latest/dist/katex.min.css"><script src="https://cdn.jsdelivr.net/npm/katex-copytex@latest/dist/katex-copytex.min.js"></script><link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/katex-copytex@latest/dist/katex-copytex.min.css"><script src="https://img1.kiosk007.top/static/js/katex.js"></script><script src="https://img1.kiosk007.top/static/js/search/local-search.js"></script><script id="ribbon" src="https://img1.kiosk007.top/static/js/third-party/canvas-ribbon.js" size="150" alpha="0.3" zIndex="-1" data-click="true"></script><script>if(/Android|webOS|iPhone|iPod|iPad|BlackBerry/i.test(navigator.userAgent)) {
+  $('#nav').addClass('is-mobile')
+  $('footer').addClass('is-mobile')
+  $('#top-container').addClass('is-mobile')
+}</script><div class="search-dialog" id="local-search"><div class="search-dialog__title" id="local-search-title">Local search</div><div id="local-input-panel"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="Search for Posts"></div></div></div><hr><div id="local-search-results"><div id="local-hits"></div><div id="local-stats"><div class="local-search-stats__hr" id="hr"><span>Powered by</span> <a target="_blank" rel="noopener" href="https://github.com/wzpan/hexo-generator-search" style="color:#49B1F5;">hexo-generator-search</a></div></div></div><span class="search-close-button"><i class="fa fa-times"></i></span></div><div class="search-mask"></div></body></html>
