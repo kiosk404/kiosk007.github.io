@@ -753,6 +753,13 @@ func main() {
 <figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">networking.k8s.io/v1beta1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Ingress</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">cafe-ingress-with-snippets</span></span><br><span class="line">  <span class="attr">annotations:</span></span><br><span class="line">    <span class="attr">nginx.org/server-snippets:</span> <span class="string">|</span></span><br><span class="line">      <span class="string">location</span> <span class="string">/</span> &#123;</span><br><span class="line">          <span class="string">return</span> <span class="number">302</span> <span class="string">/coffee;</span></span><br><span class="line">      &#125;      </span><br><span class="line">    <span class="attr">nginx.org/location-snippets:</span> <span class="string">|</span></span><br><span class="line">            <span class="string">add_header</span> <span class="string">my-test-header</span> <span class="string">test-value;</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">rules:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">host:</span> <span class="string">cafe.example.com</span></span><br><span class="line">  <span class="string">....</span></span><br></pre></td></tr></table></figure>
 <p>另外Nginx官方支持自定义模板。具体参考 <a href="https://docs.nginx.com/nginx-ingress-controller/configuration/ingress-resources/custom-annotations/">Custom Annotations</a></p>
 ]]></content>
+      <categories>
+        <category>k8s</category>
+      </categories>
+      <tags>
+        <tag>k8s</tag>
+        <tag>nginx</tag>
+      </tags>
   </entry>
   <entry>
     <title>k8s 架构拓扑</title>
