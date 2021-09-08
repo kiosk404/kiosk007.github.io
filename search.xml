@@ -1,6 +1,253 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>QUIC 发生了什么</title>
+    <url>/2021/07/24/QUIC-%E5%8F%91%E7%94%9F%E4%BA%86%E4%BB%80%E4%B9%88/</url>
+    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script><p>从 HTTP/1.1（1999 年发布）到 HTTP/2 发布（2015 年发布）之间的发展差距很大，随着 2019 年 HTTP/3 的发布，HTTP/3 即将成为互联网上超文本传输协议的下一代协议，HTTP/3 是Google QUIC协议的演变。它与传统的 HTTP 有很大的不同。QUIC 是一种新的可靠传输协议，可以被视为一种下一代TCP。</p>
+<a id="more"></a>
+<p>QUIC 连接通过 UDP 端口和 IP 地址建立的，一旦建立，该连接就通过其“连接 ID”相关联（每个连接都拥有一组连接标识符或连接 ID，每个连接标识符都可用于识别连接）。</p>
+<p>QUIC 提供 0-RTT 和 1-RTT 连接设置，所以建立新连接时，会比传统的 TCP + TLS 的组合要快许多。</p>
+<h1 id="HTTP-的演变"><a href="#HTTP-的演变" class="headerlink" title="HTTP 的演变"></a>HTTP 的演变</h1><p>超文本传输协议 (HTTP) 是运行在 TCP/IP 之上的应用层协议，<br>HTTP 有 4 个稳定版本——HTTP/0.9、HTTP/1.0、HTTP/1.1 和 HTTP/2。在 2021年七月，市面上已经有 三分之二的浏览器支持了 HTTP/3 。</p>
+<p>同年5月底，IETF：QUIC Version 1 (<a href="https://www.rfc-editor.org/rfc/rfc9000.html#name-version-negotiation">RFC 9000</a>) 作为标准化版本现已发布，QUIC部署将从使用临时草案版本转向新创建的Version 1。</p>
+<p><img src="https://img1.kiosk007.top/static/images/network/QUIC/http_protocol_versions.png"></p>
+<h1 id="QUIC-从哪来"><a href="#QUIC-从哪来" class="headerlink" title="QUIC 从哪来"></a>QUIC 从哪来</h1><p>IETF 并不是从头开始研究 QUIC。2012 年，<a href="https://blog.chromium.org/2013/06/experimenting-with-quic.html">谷歌设计了自己的 QUIC 版本</a>， 随后 Chrome 浏览器及其Google的大部分服务相继支持QUIC，包括 Youtube 和 Google 搜索。</p>
+<p>IETF QUIC 与 早期的 gQUIC 相比也已经有了比较大的变化，这里不妨列举几个。</p>
+<ul>
+<li>加密协商：谷歌 QUIC 是定制加密握手，而 IETF 是采用了 TLS1.3</li>
+<li>分离：IETF QUIC 的层级是分明的，其上可以承载的应用层协议不止 HTTP 协议</li>
+<li>头部压缩：gQUIC 沿用了HTTP2的 HPack，而IETF QUIC 使用的是QPACK。</li>
+</ul>
+<h1 id="QUIC-的版本"><a href="#QUIC-的版本" class="headerlink" title="QUIC 的版本"></a>QUIC 的版本</h1><p>目前有<a href="https://github.com/quicwg/base-drafts/wiki/Implementations">15种实验型QUIC</a>。【RFC9000 确定后，所有的QUIC版本会趋于统一】。但是这些实验性QUIC互操性比较差，因为各家的QUIC的实现标准不统一，对具体的一些功能实现存在diff。</p>
+<p class="div-border yellow"> 数据截取于 2021.07</p>
+
+<h2> <a href="https://github.com/aiortc/aioquic" aria-hidden="true" class="header-anchor">aioquic</a></h2>
+
+<p>使用Python和asyncio的QUIC实现</p>
+<blockquote>
+<ul>
+<li>Language: Python </li>
+<li>Version: draft-29 through version 1(RCF 9000)</li>
+<li>Handshake: TLS 1.3</li>
+<li>Protocol IDs: <code>0xff00001d</code>, <code>0xff00001e</code>, <code>0xff00001f</code>, <code>0xff000020</code>, <code>0x1</code></li>
+</ul>
+</blockquote>
+<h2> <a href="https://github.com/litespeedtech/lsquic" aria-hidden="true" class="header-anchor">Chromium</a></h2>
+
+<p>Chromium的QUIC实现（chrome85.0.4171.0及更高版本支持draft-29）</p>
+<blockquote>
+<ul>
+<li><strong>Languages</strong>: C, C++</li>
+<li><strong>Versions</strong>: Q043, Q046, Q050, T050, T051, draft-27, draft-29.</li>
+<li><strong>Handshakes</strong>: QUIC Crypto, TLS</li>
+<li><strong>Protocol IDs</strong>: <code>Q043</code>, <code>Q046</code>, <code>Q050</code>, <code>T050</code>, <code>T051</code>, <code>0xff00001b</code>, <code>0xff00001d</code></li>
+<li><strong>ALPNs</strong>: h3-Q043, h3-Q046, h3-Q050, h3-T050, h3-T051, h3-27, h3-29</li>
+<li>Google将实现命名为“quiche”，但它与Cloudflare的Rust实现完全无关。</li>
+</ul>
+</blockquote>
+<h2> <a href="https://github.com/litespeedtech/lsquic" aria-hidden="true" class="header-anchor">lsquic</a></h2>
+
+<p>LiteSpeed QUIC和HTTP/3库。适用于Linux、FreeBSD、MacOS、Android和Windows。</p>
+<blockquote>
+<ul>
+<li><strong>Language</strong>: C</li>
+<li><strong>Version</strong>: v1, Draft-34, Draft-29, Draft-27, Q043, Q046, and Q050.</li>
+<li><strong>Roles</strong>: Client, Server, Library</li>
+<li><strong>Handshake</strong>: QUIC Crypto, RFC 8446</li>
+<li><strong>Protocol</strong> IDs: <code>0x00000001</code>, <code>0xFF000022</code>, <code>0xFF00001D</code>, <code>0xFF00001B</code></li>
+</ul>
+</blockquote>
+<p>当前互联网上的<a href="https://quic.netray.io/stats.html">QUIC流量</a>，draft-29 和 Version 1 版本 的量级在逐渐上升。国内的一些大厂也在使用QUIC来作为当前主要的流量接入，比如微信的视频号就使用 gQUIC 43 、快手也宣布了线上的<a href="https://www.infoq.cn/article/41HJkeZM7hEgIYlJRFK0">千万级QUIC计划</a>。</p>
+<p><img src="https://img1.kiosk007.top/static/images/network/QUIC/quic_version.png"></p>
+<p>相信今年的 RFC9000 推出 QUICv1 版本后，QUIC的互操性能得到更广泛的运用。当前各大版本实现的<a href="https://interop.seemann.io/">QUIC互操性</a>能得到进一步的提升。</p>
+<p><img src="https://img1.kiosk007.top/static/images/network/QUIC/quic_interop.png"></p>
+<h1 id="QUIC-实验"><a href="#QUIC-实验" class="headerlink" title="QUIC 实验"></a>QUIC 实验</h1><p>当前的QUIC 版本很多，支持的比较完整的是 Chromium 和 lsquic 。</p>
+<p>下面将以 <a href="https://github.com/litespeedtech/lsquic">lsquic</a> 为例，实际剖析一下QUIC。</p>
+<p>目前支持的QUIC版本有v1、Internet draft-27 和 draft-29, 包括老一些的Google QUIC 版本 <code>Q043</code> 、<code>Q046</code> 和 <code>Q050</code> 。</p>
+<p>相关文档: <a href="https://lsquic.readthedocs.io/en/latest/">https://lsquic.readthedocs.io/en/latest/</a></p>
+<p>要构建LSQUIC，需要CMake、zlib和BoringSSL。</p>
+<h2 id="编译安装"><a href="#编译安装" class="headerlink" title="编译安装"></a>编译安装</h2><ul>
+<li>Building BoringSSL</li>
+</ul>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># 国内可用 git clone https://github.com/google/boringssl.git</span></span><br><span class="line">git <span class="built_in">clone</span> https://boringssl.googlesource.com/boringssl</span><br><span class="line"><span class="built_in">cd</span> boringssl</span><br><span class="line"></span><br><span class="line"><span class="comment"># 切换到特殊版本</span></span><br><span class="line">git checkout a2278d4d2cabe73f6663e3299ea7808edfa306b9</span><br><span class="line"></span><br><span class="line"><span class="comment"># 编译 </span></span><br><span class="line">cmake . &amp;&amp;  make</span><br><span class="line"></span><br><span class="line"><span class="comment"># 记录当前位置</span></span><br><span class="line">BORINGSSL=<span class="variable">$PWD</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<ul>
+<li>Building LSQUIC Library</li>
+</ul>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># 注意：测试程序由 libevent 驱动，测试程序需要先装 libevent-dev</span></span><br><span class="line">sudo apt-get install libevent-dev</span><br><span class="line"></span><br><span class="line">git <span class="built_in">clone</span> https://github.com/litespeedtech/lsquic.git</span><br><span class="line"><span class="built_in">cd</span> lsquic</span><br><span class="line">git submodule init</span><br><span class="line">git submodule update</span><br><span class="line"></span><br><span class="line"><span class="comment"># Statically:</span></span><br><span class="line"><span class="comment"># $BORINGSSL is the top-level BoringSSL directory from the previous step</span></span><br><span class="line">cmake -DBORINGSSL_DIR=<span class="variable">$BORINGSSL</span> .</span><br><span class="line">make</span><br><span class="line"></span><br><span class="line"><span class="comment"># As a dynamic library:</span></span><br><span class="line">cmake -DLSQUIC_SHARED_LIB=1 -DBORINGSSL_DIR=<span class="variable">$BORINGSSL</span> .</span><br><span class="line">make</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<ul>
+<li>demo</li>
+</ul>
+<p>quic 的 demo 在 $lsquic_pwd/bin 目录下, 我们实验用就用 <code>http_client</code> 吧。</p>
+<h2 id="实验"><a href="#实验" class="headerlink" title="实验"></a>实验</h2><p>先看看 <code>http_client</code> 支持的几个命令行参数.</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">./http_client -<span class="built_in">help</span> </span><br><span class="line">Usage: http_client [opts]</span><br><span class="line"></span><br><span class="line">Options:</span><br><span class="line">   -p PATH     Path to request.  May be specified more than once.  If no</span><br><span class="line">                 path is specified, the connection is closed as soon as</span><br><span class="line">                 handshake succeeds.</span><br><span class="line">   -n CONNS    Number of concurrent connections.  Defaults to 1.</span><br><span class="line">   -r NREQS    Total number of requests to send.  Defaults to 1.</span><br><span class="line">   -R MAXREQS  Maximum number of requests per single connection.  Some</span><br><span class="line">                 connections will have fewer requests than this.</span><br><span class="line">   -w CONCUR   Number of concurrent requests per single connection.</span><br><span class="line">                 Defaults to 1.</span><br><span class="line">   -M METHOD   Method.  Defaults to GET.</span><br><span class="line">   -P PAYLOAD  Name of the file that contains payload to be used <span class="keyword">in</span> the</span><br><span class="line">                 request.  This adds two more headers to the request:</span><br><span class="line">                 content-type: application/octet-stream and</span><br><span class="line">                 content-length</span><br><span class="line">   -K          Discard server response</span><br><span class="line">   -I          Abort on incomplete reponse from server</span><br><span class="line">   -4          Prefer IPv4 when resolving hostname</span><br><span class="line">   -6          Prefer IPv6 when resolving hostname</span><br><span class="line">   -C DIR      Certificate store.  If specified, server certificate will</span><br><span class="line">                 be verified.</span><br><span class="line">   -a          Display server certificate chain after successful handshake.</span><br><span class="line">   -b N_BYTES  Send RESET_STREAM frame after the client has <span class="built_in">read</span> n bytes.</span><br><span class="line">   -t          Print stats to stdout.</span><br><span class="line">   -T FILE     Print stats to FILE.  If FILE is -, <span class="built_in">print</span> stats to stdout.</span><br><span class="line">   -q FILE     QIF mode: issue requests from the QIF file and validate</span><br><span class="line">                 server responses.</span><br><span class="line">   -e TOKEN    Hexadecimal string representing resume token.</span><br><span class="line">   -3 MAX      Close stream after reading at most MAX bytes.  The actual</span><br><span class="line">                 number of bytes <span class="built_in">read</span> is randominzed.</span><br><span class="line">   -9 SPEC     Priority specification.  May be specified several <span class="built_in">times</span>.</span><br><span class="line">                 SPEC takes the form stream_id:nread:UI, <span class="built_in">where</span> U is</span><br><span class="line">                 urgency and I is incremental.  Matched \d+:\d+:[0-7][01]</span><br><span class="line">   -7 DIR      Save fetched resources into this directory.</span><br><span class="line">   -Q ALPN     Use hq ALPN.  Specify, <span class="keyword">for</span> example, <span class="string">&quot;h3-29&quot;</span>.</span><br><span class="line">   -0 FILE     Provide session resumption file (reading or writing)</span><br><span class="line">   -s SVCPORT  Service port.  Takes on the form of host:port, host,</span><br><span class="line">                 or port.  If host is not an IPv4 or IPv6 address, it is</span><br><span class="line">                 resolved.  If host is not <span class="built_in">set</span>, the value of SNI is</span><br><span class="line">                 used (see the -H flag).  If port is not <span class="built_in">set</span>, the default</span><br><span class="line">                 is 443.</span><br><span class="line">                 Examples:</span><br><span class="line">                     127.0.0.1:12345</span><br><span class="line">                     ::1:443</span><br><span class="line">                     example.com</span><br><span class="line">                     example.com:8443</span><br><span class="line">                     8443</span><br><span class="line">                 If no -s option is given, 0.0.0.0:12345 address</span><br><span class="line">                 is used.</span><br><span class="line">   -D          Do not <span class="built_in">set</span> <span class="string">&#x27;do not fragment&#x27;</span> flag on outgoing UDP packets</span><br><span class="line">   -z BYTES    Maximum size of outgoing UDP packets (client only).</span><br><span class="line">                 Overrides -o base_plpmtu.</span><br><span class="line">   -L LEVEL    Log level <span class="keyword">for</span> all modules.  Possible values are `debug<span class="string">&#x27;,</span></span><br><span class="line"><span class="string">                 `info&#x27;</span>, `notice<span class="string">&#x27;, `warn&#x27;</span>, `error<span class="string">&#x27;, `alert&#x27;</span>, `emerg<span class="string">&#x27;,</span></span><br><span class="line"><span class="string">                 and `crit&#x27;</span>.</span><br><span class="line">   -l LEVELS   Log levels <span class="keyword">for</span> modules, e.g.</span><br><span class="line">                 -l event=info,engine=debug</span><br><span class="line">               Can be specified more than once.</span><br><span class="line">   -m MAX      Maximum number of outgoing packet buffers that can be</span><br><span class="line">                 assigned at any one time.  By default, there is no max.</span><br><span class="line">   -y style    Timestamp style used <span class="keyword">in</span> <span class="built_in">log</span> messages.  The following styles</span><br><span class="line">                 are supported:</span><br><span class="line">                   0   No timestamp</span><br><span class="line">                   1   Millisecond time (this is the default).</span><br><span class="line">                         Example: 11:04:05.196</span><br><span class="line">                   2   Full date and millisecond time.</span><br><span class="line">                         Example: 2017-03-21 13:43:46.671</span><br><span class="line">                   3   Chrome-like timestamp: date/time.microseconds.</span><br><span class="line">                         Example: 1223/104613.946956</span><br><span class="line">                   4   Microsecond time.</span><br><span class="line">                         Example: 11:04:05.196308</span><br><span class="line">                   5   Full date and microsecond time.</span><br><span class="line">                         Example: 2017-03-21 13:43:46.671345</span><br><span class="line">   -S opt=val  Socket options.  Supported options:</span><br><span class="line">                   sndbuf=12345    <span class="comment"># Sets SO_SNDBUF</span></span><br><span class="line">                   rcvbuf=12345    <span class="comment"># Sets SO_RCVBUF</span></span><br><span class="line">   -W          Use stock PMI (malloc &amp; free)</span><br><span class="line">   -g          Use sendmmsg() to send packets.</span><br><span class="line">   -j          Use recvmmsg() to receive packets.</span><br><span class="line">   -H host     Value of `host<span class="string">&#x27; HTTP header.  This is also used as SNI</span></span><br><span class="line"><span class="string">                 in Client Hello.  This option is used to override the</span></span><br><span class="line"><span class="string">                 `host&#x27;</span> part of the address specified using -s flag.</span><br><span class="line">   -G dir      SSL keys will be logged to files <span class="keyword">in</span> this directory.</span><br><span class="line">   -k          Connect UDP socket.  Only meant to be used with clients</span><br><span class="line">                 to pick up ICMP errors.</span><br><span class="line">   -i USECS    Clock granularity <span class="keyword">in</span> microseconds.  Defaults to 1000.</span><br><span class="line">   -h          Print this <span class="built_in">help</span> screen and <span class="built_in">exit</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h1 id="QUIC-发生了什么"><a href="#QUIC-发生了什么" class="headerlink" title="QUIC 发生了什么"></a>QUIC 发生了什么</h1><p>lsquic 提供了测试网站 <code>www.litespeedtech.com</code>，我们用下面的命令行工具访问这个网站, 并使用Wireshark 抓包和 <a href="https://zhuanlan.zhihu.com/p/151858528">qlog 去解析QUIC</a>，探索一些QUIC究竟发生了什么。</p>
+<p class="div-border green">Wireshark （3.4.2）已经支持了解析 IETF QUIC，加载秘钥的方法参考 <a href="https://unit42.paloaltonetworks.com/wireshark-tutorial-decrypting-https-traffic/">Wireshark Tutorial: Decrypting HTTPS Traffic
+</a></p>
+
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># 不指定版本。默认是使用 Version 1 版本 </span></span><br><span class="line">$ http_client -H www.litespeedtech.com:443 -p /  -G . -o version=h3-29</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>当前目录下会生成一个 sslkeylog <code>F9CE5E3D598B8D80.keys</code>，wireshark 导入，注意<a href="https://github.com/quicwg/base-drafts/wiki/Tools#wireshark">Wireshark 要装最新版本（当前是 3.4.2）</a>。</p>
+<blockquote>
+<p>注意： Wireshark 本身无法解密 GQUIC 数据包，即使已配置NSS Keylogging。</p>
+</blockquote>
+<p class="div-border green">更多QUIC debug or 可视化工具参考: https://github.com/quicwg/base-drafts/wiki/Tools </p>
+
+<p>抓包内容如下：<br><img src="https://img1.kiosk007.top/static/images/network/QUIC/quic_capture_handshake.png"></p>
+<p><strong>这里再介绍一下HTTP3的分层结构。</strong></p>
+<p>一个 HTTP3 包会按照以下方式分层。实时上 QUIC 已经完全可以理解为一个传输层协议了，QUIC的实现也是和HTTP协议分离的，正如 RFC 9000 所描述的。“<a href="https://www.rfc-editor.org/rfc/rfc9000.html#section-1-2">QUIC 是一种面向连接的协议，它在客户端和服务器之间创建有状态的交互。</a>”</p>
+<p class="div-border blue"> <a href="https://github.com/lucas-clemente/quic-go/blob/master/example/echo/echo.go">  quic-go 的 echo 示例 </a> 也在其示例代码中提供了QUIC层的demo `session.OpenStreamSync(context.Background())` </p>
+
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">UDP Header</span><br><span class="line">Packet Header     -----</span><br><span class="line">QUIC Frame Header    --  TLS1.3</span><br><span class="line">HTTP3 Frame Header   --   </span><br><span class="line">HTTP Message      -----</span><br></pre></td></tr></table></figure>
+<h2 id="Packet-Header"><a href="#Packet-Header" class="headerlink" title="Packet Header"></a>Packet Header</h2><p>Packet Header实现了可靠的连接。当UDP报文丢失后，通过Packet Header中的Packet Number实现报文重传。连接也是通过其中的Connection ID字段定义的</p>
+<p>这里会有两种 Header 类型，<strong>Long Header</strong> 和 <strong>Short Header</strong>。Long Header 用于初始化交换 直到 可以1RTT可以被激动和版本协商完成。Short Header 用于承载数据。</p>
+<ul>
+<li><strong>Long Header</strong></li>
+</ul>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"> 0                   1                   2                   3</span><br><span class="line"> 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1</span><br><span class="line">+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</span><br><span class="line">|S|Typ|  Next   |              Magic <span class="string">&quot;uic&quot;</span>/<span class="string">&quot;UIC&quot;</span>                |</span><br><span class="line">+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</span><br><span class="line">|                                                               |</span><br><span class="line">+                         Connection ID                         +</span><br><span class="line">|                                                               |</span><br><span class="line">+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</span><br><span class="line">|                            Version                            |</span><br><span class="line">+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</span><br><span class="line">|                         Packet Number                         |</span><br><span class="line">+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</span><br><span class="line">|                       [Header Extensions]                   ...</span><br><span class="line">+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</span><br><span class="line">|                           Payload                           ...</span><br><span class="line">+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</span><br></pre></td></tr></table></figure>
+<p>建立连接时，连接是由服务器通过Source Connection ID字段分配的，这样，后续传输时，双方只需要固定住Destination Connection ID，就可以在客户端IP地址、端口变化后，绕过UDP四元组（与TCP四元组相同），实现连接迁移功能。如下图，后续的DCID和SCID都会统一为 <code>752566b9c5e2b77a</code></p>
+<p><img src="https://img1.kiosk007.top/static/images/network/QUIC/quic_connection_id.png"></p>
+<ul>
+<li><strong>Short Header</strong></li>
+</ul>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">0                   1                   2                   3</span><br><span class="line"> 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1</span><br><span class="line">+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</span><br><span class="line">|S|K|                Packet Number (30)                         |</span><br><span class="line">+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</span><br><span class="line">|                                                               |</span><br><span class="line">+                         Connection ID                         +</span><br><span class="line">|                                                               |</span><br><span class="line">+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</span><br></pre></td></tr></table></figure>
+<p>Packet Number是每个报文独一无二的序号，基于它可以实现丢失报文的精准重发。</p>
+<p>参考: <a href="https://gist.github.com/martinthomson/744d04cbcec9be554f2f8e7bae2715b8">martinthomson/quic_header.md</a></p>
+<h2 id="QUIC-Frame-Header"><a href="#QUIC-Frame-Header" class="headerlink" title="QUIC Frame Header"></a>QUIC Frame Header</h2><p>在Packet Header之上的QUIC Frame Header, QUIC中的流为应用程序提供了轻量级的有序字节流抽象。流可以是单向的或双向的，而且Stream之间可以实现真正的并发。</p>
+<p>所有的帧被包含在单独的QUIC Packet 中，且没有帧可以跨越QUIC Packet 边界。一个Packet报文中可以存放多个QUIC Frame，当然所有Frame的长度之和不能大于PMTUD（Path Maximum Transmission Unit Discovery，这是大于1200字节的值）, 一个QUIC Frame 也不允许跨Packet。</p>
+<p><img src="https://img1.kiosk007.top/static/images/network/QUIC/quic_frame1.png"></p>
+<p>每一个QUIC Frame 都有明确的帧类型。</p>
+<p>参考： <a href="https://quic.readthedocs.io/zh/latest/Frame%20Types%20and%20Formats.html">帧类型和格式</a></p>
+<p class="div-border red"> 上述文档比较老，很多数据有变动，下面是结合 <a href="https://www.rfc-editor.org/rfc/rfc9000.html#name-frames-and-frame-types"> RFC9000 </a> 的版本 </p>
+
+
+
+
+<p>当前定义的<strong>普通帧类型</strong>如下：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">+-----------------------+-----------------------------+------------+</span><br><span class="line">| Type-field value      |     Control Frame-type      |    Spec    |</span><br><span class="line">+-----------------------+-----------------------------+------------+</span><br><span class="line">| 00000000B (0x00)      |  PADDING                    |     NP     |</span><br><span class="line">| 00000001B (0x01)      |  PING                       |            |</span><br><span class="line">| 00000010B (0x02-0x03) |  ACK                        |     NC     |</span><br><span class="line">| 00000100B (0x04)      |  RESET_STREAM               |            |</span><br><span class="line">| 00000101B (0x05)      |  STOP_SENDING               |            |</span><br><span class="line">| 00000110B (0x06)      |  CRYPTO                     |            |</span><br><span class="line">| 00000111B (0x07)      |  NEW_TOKEN                  |            |</span><br><span class="line">| 00001000B (0x08-0x0F) |  STREAM                     |     F      |</span><br><span class="line">| 00010000B (0x10)      |  MAX_DATA                   |            |</span><br><span class="line">| 00010001B (0x11)      |  MAX_STREAM_DATA            |            |</span><br><span class="line">| 00001100B (0x12-0x13) |  MAX_STREAMS                |            |</span><br><span class="line">| 00001110B (0x14)      |  DATA_BLOCKED               |            |</span><br><span class="line">| 00001111B (0x15)      |  STREAM_DATA_BLOCKED        |            |</span><br><span class="line">| 00010000B (0x16-0x17) |  STREAMS_BLOCKED            |            |</span><br><span class="line">| 00010010B (0x18)      |  NEW_CONNECTION_ID	      |     P      |</span><br><span class="line">| 00010011B (0x19)      |  RETIRE_CONNECTION_ID       |            |</span><br><span class="line">| 00010100B (0x1a)      |  PATH_CHALLENGE             |     P      |</span><br><span class="line">| 00010101B (0x1b)      |  PATH_RESPONSE              |     P      |</span><br><span class="line">| 00010110B (0x1c-0x1d) |  CONNECTION_CLOSE           |     N      |</span><br><span class="line">| 00011000B (0x1e)      |  HANDSHAKE_DONE             |            |</span><br><span class="line">+-----------------------+-----------------------------+------------+</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>第三列 SPEC 规定了该帧的一些特殊用法<br>N : 该类帧不会被ACK<br>C : 出于拥塞控制目的,该类型帧不会被计入飞行中的字节数<br>P : 该类型帧的数据包可用于在连接迁移期间探测新的网络路径<br>F : 该类型帧用于流控</p>
+</blockquote>
+<ul>
+<li><strong>PADDING 帧</strong>：PADDING帧使用0x00字节填充一个包。当遇到该帧时，包的剩余部分需要被填充字节。 该帧包含0x00字节并扩展至QUIC包的末端。</li>
+<li><strong>PING 帧</strong>：PING帧用来验证对端是否仍然存活。PING帧不包含载荷。 PING帧的接收方只需要应答（ACK）包含该帧的包。 PING帧应该被用于当一条流被打开时，保持连接存活。 默认是30s</li>
+<li><strong>ACK 帧</strong>: 发送ACK帧以通知对端已经接收了哪些分组，以及接收方仍然认为丢失了哪些分组（可能需要重新发送丢失分组的内容）。<ul>
+<li>如果帧类型为0x02：普通的ACK应答作用</li>
+<li>如果帧类型为0x03：则ACK帧还包含在此点之前在连接上接收到的具有相关ECN标记的QUIC数据包的累积计数。如果发送的数据包启用了ECN，则应使用ECN部分中的信息来管理拥塞状态</li>
+</ul>
+</li>
+<li><strong>RST_STREAM 帧</strong>：RST_STREAM帧允许异常终止一条流。当这个帧是流的创建者发出的，表示创建者希望取消这条流。 当接收端发送这个帧，表示有错误或者当前接收端不希望接收这个流，因此这个流应该被关闭。</li>
+<li><strong>STOP_SENDING 帧</strong>：请求对等方停止流上的传输.</li>
+<li><strong>CRYPTO 帧</strong>：用于传输加密握手消息，加密帧在功能上与STREAM帧相同,但是不受流控。加密帧上传输 TLS 握手细信息。</li>
+<li><strong>NEW_TOKEN 帧</strong>：为客户端提供一个令牌，以便用于之后的链接0-RTT。</li>
+<li><strong>STREAM 帧</strong> : STREAM帧同时被用于隐式地创建流和在流上发送数据。STREAM帧中的类型字段的格式为0B00001xxx（或0x08到0x0f的一组值）,帧类型的三个低阶位确定帧中存在的字段。流可以是单向的，也可以是双向的，对于连接上的所有流都是唯一的。流低2位可标识是客户端还是服务端发起的单向流或双向流。<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">Bits	Stream Type</span><br><span class="line">0x00	Client-Initiated, Bidirectional</span><br><span class="line">0x01	Server-Initiated, Bidirectional</span><br><span class="line">0x02	Client-Initiated, Unidirectional</span><br><span class="line">0x03	Server-Initiated, Unidirectional</span><br></pre></td></tr></table></figure></li>
+<li><strong>MAX_DATA 帧</strong>：用于流控,用于通知对端整个连接上可发送的最大数据量。</li>
+<li><strong>MAX_STREAM_DATA 帧</strong>：用于流控，用于通知对端流上可发送的最大数据量。</li>
+<li><strong>MAX_STREAMS 帧</strong>：通知对等端允许打开的给定类型的流的最大数。<ul>
+<li>0x12 的MAX_STREAM适用于双向流</li>
+<li>0x13 的MAX_STREAM适用于单向流</li>
+</ul>
+</li>
+<li><strong>DATA_BLOCKED 帧</strong>：BLOCKED帧用于向远端指明本端点已经准备好发送数据了（且有数据要发送）， 但是当前被流量控制阻塞了。这是一个纯粹的信息帧，它对于调试极其有用。 BLOCKED帧的接收者应该简单的丢弃它（可能在打印了一条有帮助的log消息之后）</li>
+<li><strong>STREAM_DATA_BLOCKED 帧</strong>：当发送方希望发送数据但由于流级流控制而无法发送数据时，发送方应发送 STREAM_DATA_BLOCKED。</li>
+<li><strong>STREAMS_BLOCKED 帧</strong>：当发送方希望打开流，但由于其对等方设置的最大流限制而无法打开流时，发送方应发送STREAMS_BLOCKED,<ul>
+<li>0x16 的STREAMS_BLOCKED适用于双向流</li>
+<li>0x17 的STREAMS_BLOCKED适用于单向流</li>
+</ul>
+</li>
+<li><strong>NEW_CONNECTION_ID 帧</strong>：发送一个新的 NEW_CONNECTION_ID 帧, 为其对端提供可用于在迁移连接时中断可链接性的替代连接ID</li>
+<li><strong>RETIRE_CONNECTION_ID 帧</strong>: 一端发送 RETIRE_CONNECTION_ID 表示不再使用对端发送的CONNECTION ID ，包含握手时确定的 连接id，后续可以发送新的 CONNECTION ID 再。</li>
+<li><strong>PATH_CHALLENGE 帧</strong>：来检查对等方的可达性，并在连接迁移期间进行路径验证</li>
+<li><strong>PATH_RESPONSE 帧</strong>: PATH_CHALLENGE 的响应帧</li>
+<li><strong>CONNECTION_CLOSE 帧</strong>：CONNECTION_CLOSE帧用来通知连接将被关闭。如果流仍然有数据在发送，那么在连接关闭时， 这些流将被隐式关闭。</li>
+<li><strong>HANDSHAKE_DONE 帧</strong>：向客户端发送握手确认信号。</li>
+</ul>
+<h2 id="HTTP3-Frame-Header"><a href="#HTTP3-Frame-Header" class="headerlink" title="HTTP3 Frame Header"></a>HTTP3 Frame Header</h2><p>QUIC 的 STREAM 帧是实际承载流量的帧。自然也是 <a href="https://quicwg.org/base-drafts/draft-ietf-quic-http.html#name-reserved-frame-types">HTTP3 协议</a>的承载。</p>
+<p><img src="https://img1.kiosk007.top/static/images/network/QUIC/quic_stream_frame.png"> </p>
+<p>Stream Frame头部的3个字段，完成了多路复用、有序字节流以及报文段层面的二进制分隔功能</p>
+<ul>
+<li><strong>Stream ID</strong> 标识了一个有序字节流。当HTTP Body非常大，需要跨越多个Packet时，只要在每个Stream Frame中含有同样的Stream ID，就可以传输任意长度的消息。多个并发传输的HTTP消息，通过不同的Stream ID加以区别</li>
+<li>消息序列化后的“有序”特性，是通过Offset字段完成的，它类似于TCP协议中的Sequence序号，用于实现Stream内多个Frame间的累计确认功能；</li>
+<li>Length指明了Frame数据的长度。</li>
+</ul>
+<p>HTTP3 的Frame 继承了 HTTP2 的Frame 设计。</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">Frame         Control Stream	Request Stream	Push Stream	</span><br><span class="line">DATA          No                Yes               Yes	</span><br><span class="line">HEADERS       No                Yes               Yes	</span><br><span class="line">CANCEL_PUSH   Yes               No                No	</span><br><span class="line">SETTINGS      Yes              (1)                No	</span><br><span class="line">PUSH_PROMISE  No                Yes               No	</span><br><span class="line">GOAWAY        Yes               No                No	</span><br><span class="line">MAX_PUSH_ID   Yes               No                No	</span><br><span class="line">Reserved      Yes               Yes               Yes	</span><br></pre></td></tr></table></figure>
+<p>QUIC Stream Frame定义了有序字节流，且多个Stream间的传输没有时序性要求，这样，HTTP消息基于QUIC Stream就实现了真正的多路复用，队头阻塞问题自然就被解决掉了。</p>
+<p><strong>HTTP Header头部的编码方式，它需要面对另一种队头阻塞问题</strong></p>
+<p>与HTTP2中的HPACK编码方式相似，HTTP3中的QPACK也采用了静态表、动态表及Huffman编码：</p>
+<p>在HTTP2中，共有61个静态表项,而在QPACK中，则上升为98个静态表项, 比如 qpack 的golang 实现中的 <code>staticTableEntries</code> 所示。可以从<a href="https://github.com/marten-seemann/qpack/blob/master/static_table.go">这里</a>找到 HTTP3 的完整静态表</p>
+<p><img src="https://img1.kiosk007.top/static/images/network/QUIC/qpack.png"></p>
+<p>相较于HTTP3的静态表，和HTTP2协议其实并没有特别大的变化。但动态表编解码方式差距很大。</p>
+<p>所谓动态表，就是将未包含在静态表中的Header项，在其首次出现时加入动态表，这样后续传输时仅用1个数字表示，大大提升了编码效率。因此，动态表是天然具备时序性的，如果首次出现的请求出现了丢包，后续请求解码HPACK头部时，一定会被阻塞！</p>
+<p>事实上，QPACK将动态表的编码、解码独立在单向Stream中传输，仅当单向Stream中的动态表编码成功后，接收端才能解码双向Stream上HTTP消息里的动态表索引。</p>
+<p>因此，当Stream ID是0、4、8、12时，这就是客户端发起的双向Stream（HTTP3不支持服务器发起双向Stream），它用于传输HTTP请求与响应。单向Stream有很多用途，所以它在数据前又多出一个Stream Type字段：</p>
+<p><img src="https://img1.kiosk007.top/static/images/network/QUIC/quic_stream_type.png"></p>
+<p>Stream Type有以下取值：</p>
+<ul>
+<li>0x00：控制Stream，传递各类Stream控制消息；</li>
+<li>0x01：服务器推送消息；</li>
+<li>0x02：用于编码QPACK动态表，比如面对不属于静态表的HTTP请求头部，客户端可以通过这个Stream发送动态表编码；</li>
+<li>0x03：用于通知编码端QPACK动态表的更新结果。</li>
+</ul>
+<p>由于HTTP3的STREAM之间是乱序传输的，因此，若先发送的编码Stream后到达，双向Stream中的QPACK头部就无法解码，此时传输HTTP消息的双向Stream就会进入Block阻塞状态（两端可以通过控制帧定义阻塞Stream的处理方式）。</p>
+<p>QPack 在编解码原理上和 HPack 没有本质区别。从 <a href="https://github.com/marten-seemann/qpack">QPACK</a> 的代码中可以看出，其内部完全是套了一层 HAPCK 的实现</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="comment">// WriteField encodes f into a single Write to e&#x27;s underlying Writer.</span></span><br><span class="line"><span class="comment">// This function may also produce bytes for the Header Block Prefix</span></span><br><span class="line"><span class="comment">// if necessary. If produced, it is done before encoding f.</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(e *Encoder)</span> <span class="title">WriteField</span><span class="params">(f HeaderField)</span> <span class="title">error</span></span> &#123;</span><br><span class="line">	<span class="comment">// write the Header Block Prefix</span></span><br><span class="line">	<span class="keyword">if</span> !e.wrotePrefix &#123;</span><br><span class="line">		e.buf = appendVarInt(e.buf, <span class="number">8</span>, <span class="number">0</span>)</span><br><span class="line">		e.buf = appendVarInt(e.buf, <span class="number">7</span>, <span class="number">0</span>)</span><br><span class="line">		e.wrotePrefix = <span class="literal">true</span></span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	idxAndVals, nameFound := encoderMap[f.Name]</span><br><span class="line">	<span class="keyword">if</span> nameFound &#123;</span><br><span class="line">		<span class="keyword">if</span> idxAndVals.values == <span class="literal">nil</span> &#123;</span><br><span class="line">			<span class="keyword">if</span> <span class="built_in">len</span>(f.Value) == <span class="number">0</span> &#123;</span><br><span class="line">				e.writeIndexedField(idxAndVals.idx)</span><br><span class="line">			&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">				e.writeLiteralFieldWithNameReference(&amp;f, idxAndVals.idx)</span><br><span class="line">			&#125;</span><br><span class="line">		&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">			valIdx, valueFound := idxAndVals.values[f.Value]</span><br><span class="line">			<span class="keyword">if</span> valueFound &#123;</span><br><span class="line">				e.writeIndexedField(valIdx)</span><br><span class="line">			&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">				e.writeLiteralFieldWithNameReference(&amp;f, idxAndVals.idx)</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">		e.writeLiteralFieldWithoutNameReference(f)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	e.w.Write(e.buf)</span><br><span class="line">	e.buf = e.buf[:<span class="number">0</span>]</span><br><span class="line">	<span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h1 id="QUIC-Feature"><a href="#QUIC-Feature" class="headerlink" title="QUIC Feature"></a>QUIC Feature</h1><h2 id="0-RTT"><a href="#0-RTT" class="headerlink" title="0 RTT"></a>0 RTT</h2><p>使用 0-RTT 取决于客户端和服务器使用从先前连接协商的协议参数。为了启用 0-RTT, 客户端将服务器传输参数与它在连接上收到的 session tickets 一起存储, 另外还存储应用程序或加密握手所需的信息。</p>
+<p>和握手相关的报头都是长报头(<code>Long Packet</code>) 。分别是 <strong><code>Initial (0x00)</code></strong>、<strong><code>0-RTT    (0x01)</code></strong>、<strong><code>Handshake (0x02)</code></strong>、<strong><code>Retry (0x03)</code></strong>。</p>
+<ul>
+<li><code>CRYPTO</code> 帧可以在不同的数据包编号空间（packet number spaces）中发送。CRYPTO 帧使用偏移量（offsets）来确保加密握手数据的有序传递的在每个包编号空间（packet number spaces）都是从零开始。</li>
+</ul>
+<p><strong>握手流程示例</strong></p>
+<ol>
+<li>QUIC 在握手前会先进行地址验证（Address Validation），确保请求包里面的源地址不是伪造的。</li>
+<li>一旦地址验证交换完成，就可以使用加密握手来获取加密密钥。加密握手通过初始（Initial）和握手（Handshake）包进行传输。</li>
+<li>下图展示了 1-RTT 握手的示例。每行显示一个 QUIC 包（packet），首先显示包类型（type）和包编号（number），然后是帧（frames）。例如，第一个包是 Initial 类型，包编号为 0，并且包含一个携带 ClientHello（缩写：CH） 的 CRYPTO 帧。</li>
+<li>多个 QUIC 数据包（即便是不同的类型）也可以合并成一个单独的 UDP 数据报（datagram）。因此，下图所示的 1-RTT 握手可以由 4 个UDP数据报（datagrams）组成。如果受协议固有的限制（如拥塞控制（congestion control）和反放大（anti-amplification））也可以使用更多的数据报。</li>
+</ol>
+<ul>
+<li>1 - RTT</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">Client                                                  Server</span><br><span class="line"></span><br><span class="line">Initial[0]: CRYPTO[CH] -&gt;</span><br><span class="line"></span><br><span class="line">                                 Initial[0]: CRYPTO[SH] ACK[0]</span><br><span class="line">                       Handshake[0]: CRYPTO[EE, CERT, CV, FIN]</span><br><span class="line">                                 &lt;- 1-RTT[0]: STREAM[1, &quot;...&quot;]</span><br><span class="line"></span><br><span class="line">Initial[1]: ACK[0]</span><br><span class="line">Handshake[0]: CRYPTO[FIN], ACK[0]</span><br><span class="line">1-RTT[0]: STREAM[0, &quot;...&quot;], ACK[0] -&gt;</span><br><span class="line"></span><br><span class="line">                                          Handshake[1]: ACK[0]</span><br><span class="line">         &lt;- 1-RTT[1]: HANDSHAKE_DONE, STREAM[3, &quot;...&quot;], ACK[0]</span><br></pre></td></tr></table></figure>
+<ul>
+<li>0 - RTT</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">Client                                                  Server</span><br><span class="line"></span><br><span class="line">Initial[0]: CRYPTO[CH]</span><br><span class="line">0-RTT[0]: STREAM[0, &quot;...&quot;] -&gt;</span><br><span class="line"></span><br><span class="line">                                 Initial[0]: CRYPTO[SH] ACK[0]</span><br><span class="line">                                  Handshake[0] CRYPTO[EE, FIN]</span><br><span class="line">                          &lt;- 1-RTT[0]: STREAM[1, &quot;...&quot;] ACK[0]</span><br><span class="line"></span><br><span class="line">Initial[1]: ACK[0]</span><br><span class="line">Handshake[0]: CRYPTO[FIN], ACK[0]</span><br><span class="line">1-RTT[1]: STREAM[0, &quot;...&quot;] ACK[0] -&gt;</span><br><span class="line"></span><br><span class="line">                                          Handshake[1]: ACK[0]</span><br><span class="line">         &lt;- 1-RTT[1]: HANDSHAKE_DONE, STREAM[3, &quot;...&quot;], ACK[1]</span><br></pre></td></tr></table></figure>
+<p>如下是取自于 qvis的 1-RTT 握手请求。</p>
+<p><img src="https://img1.kiosk007.top/static/images/network/QUIC/qvis_quictools_info.png"></p>
+<h2 id="地址验证（Address-Validation）"><a href="#地址验证（Address-Validation）" class="headerlink" title="地址验证（Address Validation）"></a>地址验证（Address Validation）</h2><p>地址验证主要是用于确保端点（endpoint）不能被用于流量放大攻击（traffic amplification attack）。攻击者如果伪造数据包的源地址为受害者的地址，发送大量的数据包给服务端，如果服务端没有进行地址验证，直接响应大量数据包给源地址（受害者），就会被攻击者利用、进行流量放大攻击。</p>
+<p>QUIC 针对放大攻击的主要防御措施是验证端点（endpoint）是否能够在其声明的传输地址接收数据包。地址验证在<strong>连接建立（connection establishment）期间</strong>和 <strong>连接迁移（connection migration）期间</strong>进行。</p>
+<ul>
+<li>连接建立时，为了验证客户端的地址是否是攻击者伪造的，服务端会生成一个令牌（token）并通过重试包（Retry packet）响应给客户端。客户端需要在后续的初始包（Initial packet）带上这个令牌，以便服务端进行地址验证。</li>
+<li>服务端可以在当前连接中通过 NEW_TOKEN 帧预先发布令牌，以便客户端在后续的新连接使用，这是 QUIC 实现 0-RTT 很重要的一个功能。</li>
+<li>当我们的网络路径变化时（比如从蜂窝网络切换到 WIFI），QUIC 提供了连接迁移（connection migration）的功能来避免连接中断。QUIC 通过路径验证（Path Validation）验证网络新地址的可达性（reachability），防止在连接迁移中的地址是攻击者伪造的。</li>
+</ul>
+<p><strong>使用重试数据包（Retry Packets）验证地址</strong></p>
+<p>在接收到客户端的初始数据包（Initial packet）后，服务端可以通过发送包含令牌（token）的重试数据包（Retry packet）来请求地址验证。客户端在接收到这个重试数据包（Retry packet）的令牌（token）之后，必须在该连接中后续所有初始数据包（Initial packet）中附上该令牌（token）。</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">Client                                                  Server</span><br><span class="line"></span><br><span class="line">Initial[0]: CRYPTO[CH] -&gt;</span><br><span class="line"></span><br><span class="line">                                                &lt;- Retry+Token</span><br><span class="line"></span><br><span class="line">Initial+Token[1]: CRYPTO[CH] -&gt;</span><br><span class="line"></span><br><span class="line">                                 Initial[0]: CRYPTO[SH] ACK[1]</span><br><span class="line">                       Handshake[0]: CRYPTO[EE, CERT, CV, FIN]</span><br><span class="line">                                 &lt;- 1-RTT[0]: STREAM[1, &quot;...&quot;]</span><br></pre></td></tr></table></figure>
+<p><strong>后续的连接使用 NEW_TOKEN 帧的令牌（token）</strong></p>
+<p>服务端可以在一次连接中向客户端提供地址验证令牌（token），该令牌可用于后续的连接。这对于 0-RTT 尤其重要，后续的新连接可以直接使用该令牌进行地址验证，而无需额外的 1-RTT。</p>
+<p>服务端使用 NEW_TOKEN 帧向客户端提供地址验证令牌，该令牌可用于验证后续的连接。在后续的连接中，客户端在初始数据包（Initial packets）中包含该令牌，以提供地址验证。</p>
+<p>重试数据包（Retry packet）中提供的令牌只能立即使用，不能用于后续连接的地址验证。而 NEW_TOKEN 帧生成的令牌可以在一个时间范围内使用，这个令牌应该有一个过期时间，可以是显式的过期时间，也可以是可用于动态计算过期时间的时间戳（timestamp）。服务端可以存储过期时间，也可以在令牌中以加密的形式包含它。</p>
+<p>参考： <a href="https://zhuanlan.zhihu.com/p/290694322">跟坚哥学QUIC系列：地址验证（Address Validation)</a></p>
+<h2 id="链接迁移"><a href="#链接迁移" class="headerlink" title="链接迁移"></a>链接迁移</h2><p>QUIC 使用连接ID（而不是 ip + port）来确保数据包的路由一致性。如果用户的 IP 发生变化时，比如从移动蜂窝 4G 网络切换到 WiFi，IP 地址会改变。而使用一个唯一的连接ID 可以确保用户的 IP 变化时业务请求依然能够被继续处理，不用重新建连，可以继续使用当前连接ID 路由数据包，因此 QUIC 可以通过这个特性支持连接迁移</p>
+<p>QUIC 的数据包（packets）长报头（long header）包含两个连接ID：目标连接ID（Destination Connection ID）由数据包的接收者选择并用于提供一致的路由，源连接ID（Source Connection ID）用于对端（peer）响应时使用的目标连接ID（Destination Connection ID）。</p>
+<p>在握手过程中，带有长报头的包用于建立两端（both endpoints）使用的连接ID。在处理第一个初始数据包（Initial packet）之后，每个端点使用其接收到的源连接ID（Source Connection ID）字段的值设置为后续数据包中的目标连接ID（Destination Connection ID）字段。</p>
+<p>当客户端发送了一个初始包（Initial packet），而该客户端之前没有从服务端接收过初始数据包（Initial packet）或重试包（Retry packet），则客户端将用一个不可预测的值（长度至少为8字节）填充到目标连接ID字段。在从服务端接收到数据包之前，客户端必须对该连接中的所有数据包使用相同的目标连接ID值。</p>
+<p>当第一次从服务端接收到初始（Initial）或重试（Retry）数据包时，客户端使用服务端提供的源连接ID作为后续数据包（包括任何 0-RTT 数据包）的目标连接ID。这意味着在建立连接的过程中，客户端可能需要两次更改它的目标连接ID字段：一次用于响应重试（Retry），一次用于响应来自服务端的初始数据包（Initial）。一旦客户端从服务端接收到有效的初始数据包，客户端必须丢弃它后续接收到的具有不同源连接ID的数据包。</p>
+<p>服务端必须根据第一个接收到的初始数据包（Initial packet）的源连接ID，设置为用于发送数据包的目标连接ID。后续只有当接收到 NEW_CONNECTION_ID 帧时，才允许对目标连接ID进行更改。如果后续初始数据包包含不同的源连接ID，则必须将其丢弃。这样可以避免由于无状态（stateless）处理具有不同源连接ID的多个初始数据包而导致的不可预测结果。</p>
+<p>参考文章： </p>
+<ul>
+<li><a href="https://www.ietf.org/blog/whats-happening-quic/">What’s Happening with QUIC</a></li>
+<li><a href="https://blogs.keysight.com/blogs/tech/nwvs.entry.html/2021/07/16/road_to_quic-DGa5.html">Road To QUIC</a></li>
+<li><a href="https://www.nginx.org.cn/article/detail/422">深入剖析HTTP3协议</a></li>
+<li><a href="https://zhuanlan.zhihu.com/p/290694322">跟坚哥学QUIC系列：地址验证（Address Validation)</a></li>
+</ul>
+]]></content>
+      <categories>
+        <category>network</category>
+      </categories>
+      <tags>
+        <tag>QUIC</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>设计模式（Design Pattern）</title>
     <url>/2020/10/24/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F%EF%BC%88Design-Pattern%EF%BC%89/</url>
     <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script><p>设计模式（Design pattern）代表了最佳的实践，通常被有经验的面向对象的软件开发人员所采用。设计模式是软件开发人员在软件开发过程中面临的一般问题的解决方案。这些解决方案是众多软件开发人员经过相当长的一段时间的试验和错误总结出来的。</p>
@@ -380,6 +627,132 @@ func main() {
       <tags>
         <tag>design pattern</tag>
       </tags>
+  </entry>
+  <entry>
+    <title>Nginx Ingress</title>
+    <url>/2021/09/05/Nginx-Ingress/</url>
+    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script><p>在K8S的中， Service 暴露给外界的三种方法。其中有一个叫作 LoadBalancer 类型的 Service，它会为你在 Cloud Provider（比如：Google Cloud 或者 OpenStack）里创建一个与该 Service 对应的负载均衡服务。</p>
+<p>但是，由于每个 Service 都要有一个负载均衡服务，所以这个做法实际上既浪费成本又高。作为用户，我其实更希望看到 Kubernetes 为我内置一个全局的负载均衡器。然后，通过我访问的 URL，把请求转发给不同的后端 Service。</p>
+<p><strong>这种全局的、为了代理不同后端 Service 而设置的负载均衡服务，就是 Kubernetes 里的 Ingress 服务。</strong></p>
+<a id="more"></a>
+<h1 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h1><p> <strong>Kubernetes</strong> 内置一个全局的负载均衡器。然后，通过访问 URL，把请求转发给不同的后端 Service。这就是这种全局的、为了代理不同后端 Service 而设置的负载均衡服务，就是 Kubernetes 里的 Ingress 服务。所以，Ingress 的功能其实很容易理解：<strong>所谓 Ingress，就是 Service 的“Service”。</strong></p>
+<p><img src="https://img1.kiosk007.top/static/images/k8s/ingress/ingress.png"> </p>
+<h1 id="安装-nginx-ingress"><a href="#安装-nginx-ingress" class="headerlink" title="安装 nginx-ingress"></a>安装 nginx-ingress</h1><p>参考: <a href="https://docs.nginx.com/nginx-ingress-controller/installation/installation-with-manifests/">NGINX Ingress Controller</a></p>
+<ol>
+<li>创建 <code>Nginx Controller</code><ul>
+<li>创建 <code>Namespace</code> 与 <code>账号</code></li>
+<li>创建角色并绑定账号</li>
+<li>创建 default server 的秘钥</li>
+<li>创建存放 <code>nginx.conf</code> 的 <code>Config Map</code></li>
+<li>创建 <code>ingress-class</code></li>
+<li>创建 <code>Nginx Controller Pod</code></li>
+</ul>
+</li>
+<li>暴露 <code>Nginx Controller</code> 服务</li>
+<li>创建 <code>Ingress</code> 规则<ul>
+<li><code>Host</code> 精准与通配符匹配</li>
+<li><code>Path</code> 前缀或精确匹配</li>
+<li><code>Backend</code></li>
+</ul>
+</li>
+</ol>
+<p>第一步：创建 <code>Nginx Controller</code></p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ git <span class="built_in">clone</span> https://github.com/nginxinc/kubernetes-ingress/</span><br><span class="line">$ <span class="built_in">cd</span> kubernetes-ingress/deployments</span><br><span class="line">$ git checkout v1.12.0</span><br></pre></td></tr></table></figure>
+<p>Namespace 与 账号</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ kubectl apply -f common/ns-and-sa.yaml</span><br><span class="line">$ kubectl apply -f rbac/rbac.yaml</span><br></pre></td></tr></table></figure>
+<p>default server 秘钥证书 与 Config Map</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ kubectl apply -f common/default-server-secret.yaml</span><br><span class="line">$ kubectl apply -f common/nginx-config.yaml</span><br><span class="line">$ kubectl apply -f common/ingress-class.yaml</span><br></pre></td></tr></table></figure>
+<p>创建 <code>Nginx-Ingress</code> 当一个新的 Ingress 对象由用户创建后，nginx-ingress-controller 就会根据 Ingress 对象里定义的内容，生成一份对应的 Nginx 配置文件（/etc/nginx/nginx.conf），并使用这个配置文件启动一个 Nginx 服务。</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ kubectl apply -f deployment/nginx-ingress.yaml</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>为了让用户能够用到这个 Nginx，我们就需要创建一个 Service 来把 Nginx Ingress Controller 管理的 Nginx 服务暴露出去。创建 <code>Node Port</code> , 暴露服务。Kubernetes将在集群的每个节点上随机分配两个端口。可以使用 <strong>任意节点</strong> + <strong>分配的特殊端口</strong> 即可访问服务。</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ kubectl create -f service/nodeport.yaml</span><br><span class="line"></span><br><span class="line">$ kubectl get svc -n nginx-ingress</span><br><span class="line">NAME            TYPE       CLUSTER-IP    EXTERNAL-IP   PORT(S)                      AGE</span><br><span class="line">nginx-ingress   NodePort   10.80.23.67   &lt;none&gt;        80:30595/TCP,443:30920/TCP   4m32s</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>这个 Service 的唯一工作，就是将所有携带 ingress-nginx 标签的 Pod 的 80 和 433 端口暴露出去。</p>
+<h1 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h1><p>Nginx 官方 ingress 提供了 cafe 、 tea 的例子，参考: <a href="https://github.com/nginxinc/kubernetes-ingress/tree/master/examples/complete-example">https://github.com/nginxinc/kubernetes-ingress/tree/master/examples/complete-example</a></p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">IC_IP=172.16.101.135   <span class="comment"># 宿主机ip</span></span><br><span class="line">IC_HTTPS_PORT=30920    <span class="comment"># nodeport</span></span><br></pre></td></tr></table></figure>
+<p>部署</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl create -f cafe.yaml</span><br><span class="line">kubectl create -f cafe-secret.yaml</span><br><span class="line">kubectl create -f cafe-ingress.yaml</span><br></pre></td></tr></table></figure>
+<p>验证：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ curl --resolve cafe.example.com:<span class="variable">$IC_HTTPS_PORT</span>:<span class="variable">$IC_IP</span> https://cafe.example.com:<span class="variable">$IC_HTTPS_PORT</span>/coffee --insecure</span><br><span class="line">Server address: 10.100.1.37:8080</span><br><span class="line">Server name: coffee-6f4b79b975-59d8f</span><br><span class="line">Date: 04/Sep/2021:15:36:01 +0000</span><br><span class="line">URI: /coffee</span><br><span class="line">Request ID: 1873881292193359134a0619136b2780</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h1 id="配置"><a href="#配置" class="headerlink" title="配置"></a>配置</h1><p>每次文件变化后，执行 <code>kubectl apply -f cafe-ingress.yaml</code>，实际会对Nginx进行一次reload。</p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">networking.k8s.io/v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Ingress</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">cafe-ingress</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">ingressClassName:</span> <span class="string">nginx</span></span><br><span class="line">  <span class="attr">tls:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">hosts:</span></span><br><span class="line">    <span class="bullet">-</span> <span class="string">cafe.example.com</span></span><br><span class="line">    <span class="attr">secretName:</span> <span class="string">cafe-secret</span></span><br><span class="line">  <span class="attr">rules:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">host:</span> <span class="string">cafe.example.com</span></span><br><span class="line">    <span class="attr">http:</span></span><br><span class="line">      <span class="attr">paths:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">path:</span> <span class="string">/tea</span></span><br><span class="line">        <span class="attr">pathType:</span> <span class="string">Prefix</span></span><br><span class="line">        <span class="attr">backend:</span></span><br><span class="line">          <span class="attr">service:</span></span><br><span class="line">            <span class="attr">name:</span> <span class="string">tea-svc</span></span><br><span class="line">            <span class="attr">port:</span></span><br><span class="line">              <span class="attr">number:</span> <span class="number">80</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">path:</span> <span class="string">/coffee</span></span><br><span class="line">        <span class="attr">pathType:</span> <span class="string">Prefix</span></span><br><span class="line">        <span class="attr">backend:</span></span><br><span class="line">          <span class="attr">service:</span></span><br><span class="line">            <span class="attr">name:</span> <span class="string">coffee-svc</span></span><br><span class="line">            <span class="attr">port:</span></span><br><span class="line">              <span class="attr">number:</span> <span class="number">80</span></span><br></pre></td></tr></table></figure>
+<p>执行上述命令后，会生成一个 ingress 规则。</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ kubectl get ingress </span><br><span class="line">NAME           CLASS   HOSTS              ADDRESS   PORTS     AGE</span><br><span class="line">cafe-ingress   nginx   cafe.example.com             80, 443   14h</span><br></pre></td></tr></table></figure>
+<p>而这个ingress 规则实质上是在 <code>ingress controller</code> 的 deployment pod 中的 <code>/etc/nginx/conf.d</code> 中生成一个规则。</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ kubectl <span class="built_in">exec</span> -it -n nginx-ingress nginx-ingress-c7cd9948d-r8hxz -- /bin/bash</span><br><span class="line">nginx@nginx-ingress-c7cd9948d-r8hxz:/$ <span class="built_in">cd</span> /etc/nginx/conf.d/</span><br><span class="line">nginx@nginx-ingress-c7cd9948d-r8hxz:/etc/nginx/conf.d$ ls</span><br><span class="line">default-cafe-ingress.conf</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p><code>nginx.conf</code> 相关配置遵从 configmap 模板配置, 同样更改会reload。<br>详见：<code>https://kubernetes.github.io/ingress-nginx/user-guide/nginx-configuration/configmap/</code></p>
+<blockquote>
+<p>k8s 官方的 ingress-nginx 是利用 balance by lua 的方式进行负载均衡。nginx 官方是利用 nginx reload 实现。</p>
+</blockquote>
+<h1 id="ingress-工作原理"><a href="#ingress-工作原理" class="headerlink" title="ingress 工作原理"></a>ingress 工作原理</h1><p>K8S 调度 <code>Nginx Ingress Controller Pod</code>, Go 语言基于Nginx 模板生成的 <code>nginx.conf</code> </p>
+<ul>
+<li>模板语法 <code>import &quot;text/template&quot;</code></li>
+<li>模板位置 Nginx 官方:<ul>
+<li><code>/nginx.ingress.tmpl</code> 和 <code>nginx.tmpl</code></li>
+</ul>
+</li>
+<li>填充模板的数据：<ul>
+<li><code>ConfigMap</code>, <code>Ingress</code>, <code>Service</code> 和  <code>Secrets</code></li>
+</ul>
+</li>
+</ul>
+<p>配置文件改变后，<strong>Nginx 官方的 Ingress (<a href="https://github.com/nginxinc/kubernetes-ingress">https://github.com/nginxinc/kubernetes-ingress</a>) </strong> 的做法是每次 reload。而 <strong>kubernetes 官方的 Ingress </strong>是基于 lua 实现的类似openresty 的 <code>balance by lua</code> 来实现配置重载。</p>
+<p>而配置文件本身是全部存在的 ETCD 中的。ETCD 基于 raft 协议实现高可用的一致性。具体可以参考我之前的文章 <a href="https://kiosk007.top/2020/05/30/go-etcd-%E7%9A%84%E5%9F%BA%E6%9C%AC%E6%93%8D%E4%BD%9C/">etcd 的基本入门</a></p>
+<p>Nginx 官方的Ingress 和 K8S 官方的Ingress 性能对比。</p>
+<ul>
+<li>静态部署：即 Nginx 配置文件不变, 可以看到开源的Nginx（蓝线）在压力逐渐增加时，时延变高的最慢。</li>
+</ul>
+<p><img src="https://img1.kiosk007.top/static/images/k8s/ingress/ingress_static_stress.png"></p>
+<ul>
+<li>动态部署: 即 Nginx 配置总是变，如 upstream 变化导致需要配置变化。官方Nginx的性能就拉垮了，压力到90多就时延上升一个台阶，到99.9时时延已经1分钟以上了。</li>
+</ul>
+<p><img src="https://img1.kiosk007.top/static/images/k8s/ingress/ingress_dynamic_stress.png"></p>
+<p>参考：<a href="https://www.nginx.org.cn/course/detail/12">K8S Ingress Controller技术细节探讨</a></p>
+<h2 id="Ingress-Controller"><a href="#Ingress-Controller" class="headerlink" title="Ingress Controller"></a>Ingress Controller</h2><p>Ingress Controller 完成了包含 <code>负载均衡/会话保持</code>、<code>协议转换</code>、<code>TLS 卸载、认证</code>、<code>文本压缩</code>、<code>请求认证</code>、<code>限流限速</code>、<code>Waf</code>、<code>全链路跟踪</code>、<code>日志监控</code> 等等功能。</p>
+<h2 id="第三方模块启用"><a href="#第三方模块启用" class="headerlink" title="第三方模块启用"></a><strong>第三方模块启用</strong></h2><p>Nginx 有大量的第三方模块，Ingress 复用 Nginx 时这些大量的第三方模块是用 <code>annotations</code> 的方式加载这些第三方模块。详见 <a href="https://kubernetes.github.io/ingress-nginx/user-guide/nginx-configuration/annotations/">K8S官方文档 Annotations</a> 和 <a href="https://docs.nginx.com/nginx-ingress-controller/configuration/ingress-resources/advanced-configuration-with-annotations/">Nginx 官方文档</a></p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">networking.k8s.io/v1beta1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Ingress</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">cafe-ingress</span></span><br><span class="line">  <span class="attr">annotations:</span></span><br><span class="line">    <span class="attr">nginx.org/proxy-connect-timeout:</span> <span class="string">&quot;30s&quot;</span></span><br><span class="line">    <span class="attr">nginx.org/proxy-read-timeout:</span> <span class="string">&quot;20s&quot;</span></span><br><span class="line">    <span class="attr">nginx.org/client-max-body-size:</span> <span class="string">&quot;4m&quot;</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="comment"># ingressClassName: nginx # use only with k8s version &gt;= 1.18.0</span></span><br><span class="line">  <span class="attr">tls:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">hosts:</span></span><br><span class="line">    <span class="bullet">-</span> <span class="string">cafe.example.com</span></span><br><span class="line">    <span class="attr">secretName:</span> <span class="string">cafe-secret</span></span><br><span class="line">  <span class="attr">rules:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">host:</span> <span class="string">cafe.example.com</span></span><br><span class="line">    <span class="attr">http:</span></span><br><span class="line">      <span class="attr">paths:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">path:</span> <span class="string">/tea</span></span><br><span class="line">        <span class="attr">backend:</span></span><br><span class="line">          <span class="attr">serviceName:</span> <span class="string">tea-svc</span></span><br><span class="line">          <span class="attr">servicePort:</span> <span class="number">80</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">path:</span> <span class="string">/coffee</span></span><br><span class="line">        <span class="attr">backend:</span></span><br><span class="line">          <span class="attr">serviceName:</span> <span class="string">coffee-svc</span></span><br><span class="line">          <span class="attr">servicePort:</span> <span class="number">80</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p><img src="https://img1.kiosk007.top/static/images/k8s/ingress/ingress_annotations.png"></p>
+<ul>
+<li>opentrace 全链路追踪</li>
+</ul>
+<p>Nginx 本身可以遵从全链路追踪 <code>opentracing</code> 架构规范实现（<a href="https://opentracing.io/）。通过为流行的平台提供一致的，富有表现力的，供应商中立的API，OpenTracing使开发人员可以轻松地通过O（1）配置更改添加（或切换）跟踪实现。OpenTracing还为OSS检测和特定于平台的跟踪帮助程序库提供了通用语言。">https://opentracing.io/）。通过为流行的平台提供一致的，富有表现力的，供应商中立的API，OpenTracing使开发人员可以轻松地通过O（1）配置更改添加（或切换）跟踪实现。OpenTracing还为OSS检测和特定于平台的跟踪帮助程序库提供了通用语言。</a></p>
+<p>比如全链路追踪的 <code>jaeger trace</code>。jaeger 本身搭建比较简单，但是其数据源需要 ingress Nginx 按照 opentracing 规范导入到 jaeger 中最使用 UI 查看。</p>
+<p><img src="https://img1.kiosk007.top/static/images/k8s/ingress/jaeger_trace.png"></p>
+<p><code>nginx ingress</code> 中的nginx 支持如 <code>https://github.com/opentracing-contrib/nginx-opentracing.git</code> 等模块。</p>
+<p>详见: <a href="https://www.nginx.org.cn/article/detail/517">采用 NGINX Ingress Controller for Kubernetes 支持 OpenTracing</a></p>
+<h2 id="nginx-conf-配置加载"><a href="#nginx-conf-配置加载" class="headerlink" title="nginx.conf 配置加载"></a><strong>nginx.conf 配置加载</strong></h2><p>nginx 的 config 配置文件是通过 <code>ConfigMap</code> 搭配 go 语言的 template 模板来更新 <code>nginx.conf</code> 。</p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">kind:</span> <span class="string">ConfigMap</span></span><br><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">nginx-config</span></span><br><span class="line">  <span class="attr">namespace:</span> <span class="string">nginx-ingress</span></span><br><span class="line"><span class="attr">data:</span></span><br><span class="line">  <span class="attr">worker-processes:</span> <span class="string">&quot;2&quot;</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>如下是进入到 <code>nginx ingress controller</code> pod 里看到的内容，<code>ConfigMap</code> 里data中的内容，<code>worker-processes: &quot;2&quot;</code> 会对应到 pod 里的 <code>nginx.tmpl</code> 的 <code>&#123;&#123;.WorkerProcesses&#125;&#125;</code></p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">nginx@nginx-ingress-c7cd9948d-r8hxz:/$ ls</span><br><span class="line">bin   dev		   docker-entrypoint.sh  home  lib64  mnt	     nginx.ingress.tmpl  nginx.transportserver.tmpl  opt   root  sbin  sys  usr</span><br><span class="line">boot  docker-entrypoint.d  etc			 lib   media  nginx-ingress  nginx.tmpl		 nginx.virtualserver.tmpl    proc  run	 srv   tmp  var</span><br><span class="line">nginx@nginx-ingress-c7cd9948d-r8hxz:/$ cat nginx.tmpl </span><br><span class="line"></span><br><span class="line">worker_processes  &#123;&#123;.WorkerProcesses&#125;&#125;;</span><br><span class="line">&#123;&#123;- <span class="keyword">if</span> .WorkerRlimitNofile&#125;&#125;</span><br><span class="line">worker_rlimit_nofile &#123;&#123;.WorkerRlimitNofile&#125;&#125;;&#123;&#123;end&#125;&#125;</span><br><span class="line">&#123;&#123;- <span class="keyword">if</span> .WorkerCPUAffinity&#125;&#125;</span><br><span class="line">worker_cpu_affinity &#123;&#123;.WorkerCPUAffinity&#125;&#125;;&#123;&#123;end&#125;&#125;</span><br><span class="line">&#123;&#123;- <span class="keyword">if</span> .WorkerShutdownTimeout&#125;&#125;</span><br><span class="line">worker_shutdown_timeout &#123;&#123;.WorkerShutdownTimeout&#125;&#125;;&#123;&#123;end&#125;&#125;</span><br><span class="line">daemon off;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h2 id="k8s与Nginx-官方-Ingres-区别"><a href="#k8s与Nginx-官方-Ingres-区别" class="headerlink" title="k8s与Nginx 官方 Ingres 区别"></a>k8s与Nginx 官方 Ingres 区别</h2><p>进程架构</p>
+<ul>
+<li>K8S 官方<ul>
+<li>/usr/bin/dumb-init</li>
+<li>nginx-ingress-controller</li>
+<li>/usr/local/nginx/sbin/nginx -c /etc/nginx/nginx.conf </li>
+</ul>
+</li>
+<li><p>Nginx 官方</p>
+<ul>
+<li>nginx-ingress</li>
+<li>/usr/sbin/nginx</li>
+</ul>
+</li>
+<li><p><strong>K8S 官方优势</strong></p>
+</li>
+</ul>
+<p>可以看出 K8S 官方是对容器的理解非常深，容器是单进程架构，这并不意味着容器里面只能跑一个进程，而是指容器内只能管理一个进程。K8S 的这一个进程就是 <code>/usr/bin/dumb-init</code> 仿照了操作系统中的 <code>systemd</code> 进程对这个POD容器进行管理。</p>
+<p>而Nginx官方的Ingress 是 <code>nginx-ingress</code> 进程。</p>
+<p>另一个就是K8S官方的负载均衡配置变更是用的 <code>Balance By Lua</code> ，这个在配置频繁变更时性能会很高。</p>
+<ul>
+<li><strong>Nginx 官方优势</strong></li>
+</ul>
+<p>但是 Nginx 官方的 Ingress 明显是对 <code>nginx</code> 的理解更加深刻的。Ingress 默认是不支持正则匹配，Nginx 官方则对此有优化，这个就是 <code>VirtualServer</code>、<code>VirtualServerRoute</code>。</p>
+<p><img src="https://img1.kiosk007.top/static/images/k8s/ingress/virtual_server.png"></p>
+<p>另外，Nginx 官方还提供了 <code>snippets</code> 。支持更高级的匹配模式，但其实也是一种全局的匹配。 具体参考 <a href="https://docs.nginx.com/nginx-ingress-controller/configuration/ingress-resources/advanced-configuration-with-snippets/">Advanced Configuration with Snippets</a></p>
+<p>支持添加 302 跳转，支持全局加 Header 。</p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">networking.k8s.io/v1beta1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Ingress</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">cafe-ingress-with-snippets</span></span><br><span class="line">  <span class="attr">annotations:</span></span><br><span class="line">    <span class="attr">nginx.org/server-snippets:</span> <span class="string">|</span></span><br><span class="line">      <span class="string">location</span> <span class="string">/</span> &#123;</span><br><span class="line">          <span class="string">return</span> <span class="number">302</span> <span class="string">/coffee;</span></span><br><span class="line">      &#125;      </span><br><span class="line">    <span class="attr">nginx.org/location-snippets:</span> <span class="string">|</span></span><br><span class="line">            <span class="string">add_header</span> <span class="string">my-test-header</span> <span class="string">test-value;</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">rules:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">host:</span> <span class="string">cafe.example.com</span></span><br><span class="line">  <span class="string">....</span></span><br></pre></td></tr></table></figure>
+<p>另外Nginx官方支持自定义模板。具体参考 <a href="https://docs.nginx.com/nginx-ingress-controller/configuration/ingress-resources/custom-annotations/">Custom Annotations</a></p>
+]]></content>
   </entry>
   <entry>
     <title>k8s 架构拓扑</title>
@@ -820,7 +1193,7 @@ func main() {
 <h2 id="Nginx-depolyment"><a href="#Nginx-depolyment" class="headerlink" title="Nginx depolyment"></a>Nginx depolyment</h2><p>新建文件: <code>nginx_http3-deployment.yaml</code></p>
 <figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">apiVersion: apps&#x2F;v1</span><br><span class="line">kind: Deployment</span><br><span class="line">metadata:</span><br><span class="line">  name: nginx-http3-deployment</span><br><span class="line">  namespace: default    #必填，Pod所属的命名空间</span><br><span class="line">  labels:               #自定义标签</span><br><span class="line">    app: nginx        #自定义标签名字&lt;key: value&gt;</span><br><span class="line">  annotations:          #自定义注释列表</span><br><span class="line">    imageregistry: &quot;https:&#x2F;&#x2F;hub.docker.com&#x2F;&quot;</span><br><span class="line">spec:</span><br><span class="line">  selector:</span><br><span class="line">    matchLabels:</span><br><span class="line">      app: nginx-http3  # 必填，通过此标签匹配对应pod</span><br><span class="line">  replicas: 1           # 副本集个数</span><br><span class="line">  template:             # 必填，应用容器模版定义</span><br><span class="line">    metadata:</span><br><span class="line">      labels:           # 必填，遇上面matchLabels的标签相同</span><br><span class="line">        app: nginx-http3</span><br><span class="line">    spec:</span><br><span class="line">      hostIPC: true  </span><br><span class="line">      hostNetwork: true   # 使用主机网络</span><br><span class="line">      #Pod的重启策略，Always表示一旦不管以何种方式终止运行，kubelet都将重启，OnFailure表示只有Pod以非0退出码退出才重启，Never表示不再重启该Pod</span><br><span class="line">      restartPolicy: Always   </span><br><span class="line">      shareProcessNamespace: true  # Pod 里的容器共享 PID Namespace</span><br><span class="line">      containers:</span><br><span class="line">      - name: nginx</span><br><span class="line">        image: weijiaxiang007&#x2F;nginx-http3:v0.2</span><br><span class="line">        imagePullPolicy: IfNotPresent   # [Always | Never | IfNotPresent] 获取镜像的策略 Alawys表示下载镜像;IfnotPresent表示优先使用本地镜像，否则下载镜像;Nerver表示仅使用本地镜像</span><br><span class="line">        workingDir: &quot;&#x2F;nginx&#x2F;&quot;            # 选填，容器的工作目录</span><br><span class="line">        volumeMounts:                   # 挂载到容器内部的存储卷配置</span><br><span class="line">        - mountPath: &quot;&#x2F;nginx&#x2F;&quot;</span><br><span class="line">          name: nginx-vol               # 引用pod定义的共享存储卷的名称</span><br><span class="line">        livenessProbe:                  # 对Pod内个容器健康检查的设置，当探测无响应几次后将自动重启该容器，检查方法有exec、httpGet和tcpSocket</span><br><span class="line">          httpGet:       </span><br><span class="line">            path: &#x2F;_check_domain_health      </span><br><span class="line">            port: 80</span><br><span class="line">            scheme: HTTP       </span><br><span class="line">          initialDelaySeconds: 30       # 容器启动完成后首次探测的时间，单位为秒</span><br><span class="line">          periodSeconds: 1200             # 对容器监控检查的定期探测时间设置，单位秒，默认10秒一次</span><br><span class="line">          timeoutSeconds: 1            # 对容器健康检查探测等待响应的超时时间，单位秒，默认1秒</span><br><span class="line">        resources:</span><br><span class="line">          requests:</span><br><span class="line">            cpu: 50m</span><br><span class="line">            memory: 200Mi</span><br><span class="line">          limits:</span><br><span class="line">            cpu: 500m</span><br><span class="line">            memory: 500Mi</span><br><span class="line">        env:</span><br><span class="line">          - name: NGINX_VERSION</span><br><span class="line">            value: &quot;1.21.0&quot;</span><br><span class="line">          - name: RUN_DEV</span><br><span class="line">            value: &quot;boe&quot;</span><br><span class="line">      - name: shell</span><br><span class="line">        image: ubuntu    </span><br><span class="line">        stdin: true    </span><br><span class="line">        tty: true</span><br><span class="line">        workingDir: &quot;&#x2F;nginx&#x2F;&quot;            # 选填，容器的工作目录</span><br><span class="line">        command: [&quot;&#x2F;bin&#x2F;bash&quot;,&quot;-c&quot;,&quot;sleep 100000000&quot;]</span><br><span class="line">        volumeMounts:                   # 挂载到容器内部的存储卷配置</span><br><span class="line">          - mountPath: &quot;&#x2F;nginx&#x2F;&quot;</span><br><span class="line">            name: nginx-vol               # 引用pod定义的共享存储卷的名称</span><br><span class="line">        lifecycle:      </span><br><span class="line">          postStart:        </span><br><span class="line">            exec:          </span><br><span class="line">              command: [&quot;&#x2F;bin&#x2F;sh&quot;, &quot;-c&quot;, &quot;echo Nginx HTTP3 Server Start from the postStart handler &gt; &#x2F;usr&#x2F;share&#x2F;message&quot;]      </span><br><span class="line">          preStop:        </span><br><span class="line">            exec:          </span><br><span class="line">              command: [&quot;&#x2F;sbin&#x2F;nginx&quot;,&quot;-s&quot;,&quot;quit&quot;]</span><br><span class="line">      volumes:                # 在该pod上定义共享存储卷列表</span><br><span class="line">      - name: nginx-vol       # 共享存储卷名称 （volumes类型有很多种）</span><br><span class="line">        hostPath:</span><br><span class="line">          path: &#x2F;host</span><br><span class="line"></span><br></pre></td></tr></table></figure>
 <p>创建 deployment<br><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl create -f nginx_http3-deployment.yaml</span><br></pre></td></tr></table></figure><br>查看 deployment 状态<br><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">➜  ~ kubectl get pods</span><br><span class="line">NAME                                      READY   STATUS    RESTARTS   AGE</span><br><span class="line">nginx-http3-deployment-7cf4c654b5-6km4p   2/2     Running   0          31m</span><br><span class="line">➜  ~ kubectl get deployment</span><br><span class="line">NAME                     READY   UP-TO-DATE   AVAILABLE   AGE</span><br><span class="line">nginx-http3-deployment   1/1     1            1           32m</span><br><span class="line"></span><br></pre></td></tr></table></figure><br>验证<br><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">➜  curl https:&#x2F;&#x2F;webtransport.kiosk007.top:443&#x2F;ping --resolve webtransport.kiosk007.top:443:192.168.49.2</span><br><span class="line">pong</span><br></pre></td></tr></table></figure></p>
-<h1 id="ingress"><a href="#ingress" class="headerlink" title="ingress"></a>ingress</h1>]]></content>
+]]></content>
   </entry>
   <entry>
     <title>尝试 Nginx 上使用HTTP3</title>
@@ -905,253 +1278,6 @@ func main() {
       </categories>
       <tags>
         <tag>network</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>QUIC 发生了什么</title>
-    <url>/2021/07/24/QUIC-%E5%8F%91%E7%94%9F%E4%BA%86%E4%BB%80%E4%B9%88/</url>
-    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script><p>从 HTTP/1.1（1999 年发布）到 HTTP/2 发布（2015 年发布）之间的发展差距很大，随着 2019 年 HTTP/3 的发布，HTTP/3 即将成为互联网上超文本传输协议的下一代协议，HTTP/3 是Google QUIC协议的演变。它与传统的 HTTP 有很大的不同。QUIC 是一种新的可靠传输协议，可以被视为一种下一代TCP。</p>
-<a id="more"></a>
-<p>QUIC 连接通过 UDP 端口和 IP 地址建立的，一旦建立，该连接就通过其“连接 ID”相关联（每个连接都拥有一组连接标识符或连接 ID，每个连接标识符都可用于识别连接）。</p>
-<p>QUIC 提供 0-RTT 和 1-RTT 连接设置，所以建立新连接时，会比传统的 TCP + TLS 的组合要快许多。</p>
-<h1 id="HTTP-的演变"><a href="#HTTP-的演变" class="headerlink" title="HTTP 的演变"></a>HTTP 的演变</h1><p>超文本传输协议 (HTTP) 是运行在 TCP/IP 之上的应用层协议，<br>HTTP 有 4 个稳定版本——HTTP/0.9、HTTP/1.0、HTTP/1.1 和 HTTP/2。在 2021年七月，市面上已经有 三分之二的浏览器支持了 HTTP/3 。</p>
-<p>同年5月底，IETF：QUIC Version 1 (<a href="https://www.rfc-editor.org/rfc/rfc9000.html#name-version-negotiation">RFC 9000</a>) 作为标准化版本现已发布，QUIC部署将从使用临时草案版本转向新创建的Version 1。</p>
-<p><img src="https://img1.kiosk007.top/static/images/network/QUIC/http_protocol_versions.png"></p>
-<h1 id="QUIC-从哪来"><a href="#QUIC-从哪来" class="headerlink" title="QUIC 从哪来"></a>QUIC 从哪来</h1><p>IETF 并不是从头开始研究 QUIC。2012 年，<a href="https://blog.chromium.org/2013/06/experimenting-with-quic.html">谷歌设计了自己的 QUIC 版本</a>， 随后 Chrome 浏览器及其Google的大部分服务相继支持QUIC，包括 Youtube 和 Google 搜索。</p>
-<p>IETF QUIC 与 早期的 gQUIC 相比也已经有了比较大的变化，这里不妨列举几个。</p>
-<ul>
-<li>加密协商：谷歌 QUIC 是定制加密握手，而 IETF 是采用了 TLS1.3</li>
-<li>分离：IETF QUIC 的层级是分明的，其上可以承载的应用层协议不止 HTTP 协议</li>
-<li>头部压缩：gQUIC 沿用了HTTP2的 HPack，而IETF QUIC 使用的是QPACK。</li>
-</ul>
-<h1 id="QUIC-的版本"><a href="#QUIC-的版本" class="headerlink" title="QUIC 的版本"></a>QUIC 的版本</h1><p>目前有<a href="https://github.com/quicwg/base-drafts/wiki/Implementations">15种实验型QUIC</a>。【RFC9000 确定后，所有的QUIC版本会趋于统一】。但是这些实验性QUIC互操性比较差，因为各家的QUIC的实现标准不统一，对具体的一些功能实现存在diff。</p>
-<p class="div-border yellow"> 数据截取于 2021.07</p>
-
-<h2> <a href="https://github.com/aiortc/aioquic" aria-hidden="true" class="header-anchor">aioquic</a></h2>
-
-<p>使用Python和asyncio的QUIC实现</p>
-<blockquote>
-<ul>
-<li>Language: Python </li>
-<li>Version: draft-29 through version 1(RCF 9000)</li>
-<li>Handshake: TLS 1.3</li>
-<li>Protocol IDs: <code>0xff00001d</code>, <code>0xff00001e</code>, <code>0xff00001f</code>, <code>0xff000020</code>, <code>0x1</code></li>
-</ul>
-</blockquote>
-<h2> <a href="https://github.com/litespeedtech/lsquic" aria-hidden="true" class="header-anchor">Chromium</a></h2>
-
-<p>Chromium的QUIC实现（chrome85.0.4171.0及更高版本支持draft-29）</p>
-<blockquote>
-<ul>
-<li><strong>Languages</strong>: C, C++</li>
-<li><strong>Versions</strong>: Q043, Q046, Q050, T050, T051, draft-27, draft-29.</li>
-<li><strong>Handshakes</strong>: QUIC Crypto, TLS</li>
-<li><strong>Protocol IDs</strong>: <code>Q043</code>, <code>Q046</code>, <code>Q050</code>, <code>T050</code>, <code>T051</code>, <code>0xff00001b</code>, <code>0xff00001d</code></li>
-<li><strong>ALPNs</strong>: h3-Q043, h3-Q046, h3-Q050, h3-T050, h3-T051, h3-27, h3-29</li>
-<li>Google将实现命名为“quiche”，但它与Cloudflare的Rust实现完全无关。</li>
-</ul>
-</blockquote>
-<h2> <a href="https://github.com/litespeedtech/lsquic" aria-hidden="true" class="header-anchor">lsquic</a></h2>
-
-<p>LiteSpeed QUIC和HTTP/3库。适用于Linux、FreeBSD、MacOS、Android和Windows。</p>
-<blockquote>
-<ul>
-<li><strong>Language</strong>: C</li>
-<li><strong>Version</strong>: v1, Draft-34, Draft-29, Draft-27, Q043, Q046, and Q050.</li>
-<li><strong>Roles</strong>: Client, Server, Library</li>
-<li><strong>Handshake</strong>: QUIC Crypto, RFC 8446</li>
-<li><strong>Protocol</strong> IDs: <code>0x00000001</code>, <code>0xFF000022</code>, <code>0xFF00001D</code>, <code>0xFF00001B</code></li>
-</ul>
-</blockquote>
-<p>当前互联网上的<a href="https://quic.netray.io/stats.html">QUIC流量</a>，draft-29 和 Version 1 版本 的量级在逐渐上升。国内的一些大厂也在使用QUIC来作为当前主要的流量接入，比如微信的视频号就使用 gQUIC 43 、快手也宣布了线上的<a href="https://www.infoq.cn/article/41HJkeZM7hEgIYlJRFK0">千万级QUIC计划</a>。</p>
-<p><img src="https://img1.kiosk007.top/static/images/network/QUIC/quic_version.png"></p>
-<p>相信今年的 RFC9000 推出 QUICv1 版本后，QUIC的互操性能得到更广泛的运用。当前各大版本实现的<a href="https://interop.seemann.io/">QUIC互操性</a>能得到进一步的提升。</p>
-<p><img src="https://img1.kiosk007.top/static/images/network/QUIC/quic_interop.png"></p>
-<h1 id="QUIC-实验"><a href="#QUIC-实验" class="headerlink" title="QUIC 实验"></a>QUIC 实验</h1><p>当前的QUIC 版本很多，支持的比较完整的是 Chromium 和 lsquic 。</p>
-<p>下面将以 <a href="https://github.com/litespeedtech/lsquic">lsquic</a> 为例，实际剖析一下QUIC。</p>
-<p>目前支持的QUIC版本有v1、Internet draft-27 和 draft-29, 包括老一些的Google QUIC 版本 <code>Q043</code> 、<code>Q046</code> 和 <code>Q050</code> 。</p>
-<p>相关文档: <a href="https://lsquic.readthedocs.io/en/latest/">https://lsquic.readthedocs.io/en/latest/</a></p>
-<p>要构建LSQUIC，需要CMake、zlib和BoringSSL。</p>
-<h2 id="编译安装"><a href="#编译安装" class="headerlink" title="编译安装"></a>编译安装</h2><ul>
-<li>Building BoringSSL</li>
-</ul>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># 国内可用 git clone https://github.com/google/boringssl.git</span></span><br><span class="line">git <span class="built_in">clone</span> https://boringssl.googlesource.com/boringssl</span><br><span class="line"><span class="built_in">cd</span> boringssl</span><br><span class="line"></span><br><span class="line"><span class="comment"># 切换到特殊版本</span></span><br><span class="line">git checkout a2278d4d2cabe73f6663e3299ea7808edfa306b9</span><br><span class="line"></span><br><span class="line"><span class="comment"># 编译 </span></span><br><span class="line">cmake . &amp;&amp;  make</span><br><span class="line"></span><br><span class="line"><span class="comment"># 记录当前位置</span></span><br><span class="line">BORINGSSL=<span class="variable">$PWD</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<ul>
-<li>Building LSQUIC Library</li>
-</ul>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># 注意：测试程序由 libevent 驱动，测试程序需要先装 libevent-dev</span></span><br><span class="line">sudo apt-get install libevent-dev</span><br><span class="line"></span><br><span class="line">git <span class="built_in">clone</span> https://github.com/litespeedtech/lsquic.git</span><br><span class="line"><span class="built_in">cd</span> lsquic</span><br><span class="line">git submodule init</span><br><span class="line">git submodule update</span><br><span class="line"></span><br><span class="line"><span class="comment"># Statically:</span></span><br><span class="line"><span class="comment"># $BORINGSSL is the top-level BoringSSL directory from the previous step</span></span><br><span class="line">cmake -DBORINGSSL_DIR=<span class="variable">$BORINGSSL</span> .</span><br><span class="line">make</span><br><span class="line"></span><br><span class="line"><span class="comment"># As a dynamic library:</span></span><br><span class="line">cmake -DLSQUIC_SHARED_LIB=1 -DBORINGSSL_DIR=<span class="variable">$BORINGSSL</span> .</span><br><span class="line">make</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<ul>
-<li>demo</li>
-</ul>
-<p>quic 的 demo 在 $lsquic_pwd/bin 目录下, 我们实验用就用 <code>http_client</code> 吧。</p>
-<h2 id="实验"><a href="#实验" class="headerlink" title="实验"></a>实验</h2><p>先看看 <code>http_client</code> 支持的几个命令行参数.</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">./http_client -<span class="built_in">help</span> </span><br><span class="line">Usage: http_client [opts]</span><br><span class="line"></span><br><span class="line">Options:</span><br><span class="line">   -p PATH     Path to request.  May be specified more than once.  If no</span><br><span class="line">                 path is specified, the connection is closed as soon as</span><br><span class="line">                 handshake succeeds.</span><br><span class="line">   -n CONNS    Number of concurrent connections.  Defaults to 1.</span><br><span class="line">   -r NREQS    Total number of requests to send.  Defaults to 1.</span><br><span class="line">   -R MAXREQS  Maximum number of requests per single connection.  Some</span><br><span class="line">                 connections will have fewer requests than this.</span><br><span class="line">   -w CONCUR   Number of concurrent requests per single connection.</span><br><span class="line">                 Defaults to 1.</span><br><span class="line">   -M METHOD   Method.  Defaults to GET.</span><br><span class="line">   -P PAYLOAD  Name of the file that contains payload to be used <span class="keyword">in</span> the</span><br><span class="line">                 request.  This adds two more headers to the request:</span><br><span class="line">                 content-type: application/octet-stream and</span><br><span class="line">                 content-length</span><br><span class="line">   -K          Discard server response</span><br><span class="line">   -I          Abort on incomplete reponse from server</span><br><span class="line">   -4          Prefer IPv4 when resolving hostname</span><br><span class="line">   -6          Prefer IPv6 when resolving hostname</span><br><span class="line">   -C DIR      Certificate store.  If specified, server certificate will</span><br><span class="line">                 be verified.</span><br><span class="line">   -a          Display server certificate chain after successful handshake.</span><br><span class="line">   -b N_BYTES  Send RESET_STREAM frame after the client has <span class="built_in">read</span> n bytes.</span><br><span class="line">   -t          Print stats to stdout.</span><br><span class="line">   -T FILE     Print stats to FILE.  If FILE is -, <span class="built_in">print</span> stats to stdout.</span><br><span class="line">   -q FILE     QIF mode: issue requests from the QIF file and validate</span><br><span class="line">                 server responses.</span><br><span class="line">   -e TOKEN    Hexadecimal string representing resume token.</span><br><span class="line">   -3 MAX      Close stream after reading at most MAX bytes.  The actual</span><br><span class="line">                 number of bytes <span class="built_in">read</span> is randominzed.</span><br><span class="line">   -9 SPEC     Priority specification.  May be specified several <span class="built_in">times</span>.</span><br><span class="line">                 SPEC takes the form stream_id:nread:UI, <span class="built_in">where</span> U is</span><br><span class="line">                 urgency and I is incremental.  Matched \d+:\d+:[0-7][01]</span><br><span class="line">   -7 DIR      Save fetched resources into this directory.</span><br><span class="line">   -Q ALPN     Use hq ALPN.  Specify, <span class="keyword">for</span> example, <span class="string">&quot;h3-29&quot;</span>.</span><br><span class="line">   -0 FILE     Provide session resumption file (reading or writing)</span><br><span class="line">   -s SVCPORT  Service port.  Takes on the form of host:port, host,</span><br><span class="line">                 or port.  If host is not an IPv4 or IPv6 address, it is</span><br><span class="line">                 resolved.  If host is not <span class="built_in">set</span>, the value of SNI is</span><br><span class="line">                 used (see the -H flag).  If port is not <span class="built_in">set</span>, the default</span><br><span class="line">                 is 443.</span><br><span class="line">                 Examples:</span><br><span class="line">                     127.0.0.1:12345</span><br><span class="line">                     ::1:443</span><br><span class="line">                     example.com</span><br><span class="line">                     example.com:8443</span><br><span class="line">                     8443</span><br><span class="line">                 If no -s option is given, 0.0.0.0:12345 address</span><br><span class="line">                 is used.</span><br><span class="line">   -D          Do not <span class="built_in">set</span> <span class="string">&#x27;do not fragment&#x27;</span> flag on outgoing UDP packets</span><br><span class="line">   -z BYTES    Maximum size of outgoing UDP packets (client only).</span><br><span class="line">                 Overrides -o base_plpmtu.</span><br><span class="line">   -L LEVEL    Log level <span class="keyword">for</span> all modules.  Possible values are `debug<span class="string">&#x27;,</span></span><br><span class="line"><span class="string">                 `info&#x27;</span>, `notice<span class="string">&#x27;, `warn&#x27;</span>, `error<span class="string">&#x27;, `alert&#x27;</span>, `emerg<span class="string">&#x27;,</span></span><br><span class="line"><span class="string">                 and `crit&#x27;</span>.</span><br><span class="line">   -l LEVELS   Log levels <span class="keyword">for</span> modules, e.g.</span><br><span class="line">                 -l event=info,engine=debug</span><br><span class="line">               Can be specified more than once.</span><br><span class="line">   -m MAX      Maximum number of outgoing packet buffers that can be</span><br><span class="line">                 assigned at any one time.  By default, there is no max.</span><br><span class="line">   -y style    Timestamp style used <span class="keyword">in</span> <span class="built_in">log</span> messages.  The following styles</span><br><span class="line">                 are supported:</span><br><span class="line">                   0   No timestamp</span><br><span class="line">                   1   Millisecond time (this is the default).</span><br><span class="line">                         Example: 11:04:05.196</span><br><span class="line">                   2   Full date and millisecond time.</span><br><span class="line">                         Example: 2017-03-21 13:43:46.671</span><br><span class="line">                   3   Chrome-like timestamp: date/time.microseconds.</span><br><span class="line">                         Example: 1223/104613.946956</span><br><span class="line">                   4   Microsecond time.</span><br><span class="line">                         Example: 11:04:05.196308</span><br><span class="line">                   5   Full date and microsecond time.</span><br><span class="line">                         Example: 2017-03-21 13:43:46.671345</span><br><span class="line">   -S opt=val  Socket options.  Supported options:</span><br><span class="line">                   sndbuf=12345    <span class="comment"># Sets SO_SNDBUF</span></span><br><span class="line">                   rcvbuf=12345    <span class="comment"># Sets SO_RCVBUF</span></span><br><span class="line">   -W          Use stock PMI (malloc &amp; free)</span><br><span class="line">   -g          Use sendmmsg() to send packets.</span><br><span class="line">   -j          Use recvmmsg() to receive packets.</span><br><span class="line">   -H host     Value of `host<span class="string">&#x27; HTTP header.  This is also used as SNI</span></span><br><span class="line"><span class="string">                 in Client Hello.  This option is used to override the</span></span><br><span class="line"><span class="string">                 `host&#x27;</span> part of the address specified using -s flag.</span><br><span class="line">   -G dir      SSL keys will be logged to files <span class="keyword">in</span> this directory.</span><br><span class="line">   -k          Connect UDP socket.  Only meant to be used with clients</span><br><span class="line">                 to pick up ICMP errors.</span><br><span class="line">   -i USECS    Clock granularity <span class="keyword">in</span> microseconds.  Defaults to 1000.</span><br><span class="line">   -h          Print this <span class="built_in">help</span> screen and <span class="built_in">exit</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<h1 id="QUIC-发生了什么"><a href="#QUIC-发生了什么" class="headerlink" title="QUIC 发生了什么"></a>QUIC 发生了什么</h1><p>lsquic 提供了测试网站 <code>www.litespeedtech.com</code>，我们用下面的命令行工具访问这个网站, 并使用Wireshark 抓包和 <a href="https://zhuanlan.zhihu.com/p/151858528">qlog 去解析QUIC</a>，探索一些QUIC究竟发生了什么。</p>
-<p class="div-border green">Wireshark （3.4.2）已经支持了解析 IETF QUIC，加载秘钥的方法参考 <a href="https://unit42.paloaltonetworks.com/wireshark-tutorial-decrypting-https-traffic/">Wireshark Tutorial: Decrypting HTTPS Traffic
-</a></p>
-
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># 不指定版本。默认是使用 Version 1 版本 </span></span><br><span class="line">$ http_client -H www.litespeedtech.com:443 -p /  -G . -o version=h3-29</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<p>当前目录下会生成一个 sslkeylog <code>F9CE5E3D598B8D80.keys</code>，wireshark 导入，注意<a href="https://github.com/quicwg/base-drafts/wiki/Tools#wireshark">Wireshark 要装最新版本（当前是 3.4.2）</a>。</p>
-<blockquote>
-<p>注意： Wireshark 本身无法解密 GQUIC 数据包，即使已配置NSS Keylogging。</p>
-</blockquote>
-<p class="div-border green">更多QUIC debug or 可视化工具参考: https://github.com/quicwg/base-drafts/wiki/Tools </p>
-
-<p>抓包内容如下：<br><img src="https://img1.kiosk007.top/static/images/network/QUIC/quic_capture_handshake.png"></p>
-<p><strong>这里再介绍一下HTTP3的分层结构。</strong></p>
-<p>一个 HTTP3 包会按照以下方式分层。实时上 QUIC 已经完全可以理解为一个传输层协议了，QUIC的实现也是和HTTP协议分离的，正如 RFC 9000 所描述的。“<a href="https://www.rfc-editor.org/rfc/rfc9000.html#section-1-2">QUIC 是一种面向连接的协议，它在客户端和服务器之间创建有状态的交互。</a>”</p>
-<p class="div-border blue"> <a href="https://github.com/lucas-clemente/quic-go/blob/master/example/echo/echo.go">  quic-go 的 echo 示例 </a> 也在其示例代码中提供了QUIC层的demo `session.OpenStreamSync(context.Background())` </p>
-
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">UDP Header</span><br><span class="line">Packet Header     -----</span><br><span class="line">QUIC Frame Header    --  TLS1.3</span><br><span class="line">HTTP3 Frame Header   --   </span><br><span class="line">HTTP Message      -----</span><br></pre></td></tr></table></figure>
-<h2 id="Packet-Header"><a href="#Packet-Header" class="headerlink" title="Packet Header"></a>Packet Header</h2><p>Packet Header实现了可靠的连接。当UDP报文丢失后，通过Packet Header中的Packet Number实现报文重传。连接也是通过其中的Connection ID字段定义的</p>
-<p>这里会有两种 Header 类型，<strong>Long Header</strong> 和 <strong>Short Header</strong>。Long Header 用于初始化交换 直到 可以1RTT可以被激动和版本协商完成。Short Header 用于承载数据。</p>
-<ul>
-<li><strong>Long Header</strong></li>
-</ul>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"> 0                   1                   2                   3</span><br><span class="line"> 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1</span><br><span class="line">+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</span><br><span class="line">|S|Typ|  Next   |              Magic <span class="string">&quot;uic&quot;</span>/<span class="string">&quot;UIC&quot;</span>                |</span><br><span class="line">+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</span><br><span class="line">|                                                               |</span><br><span class="line">+                         Connection ID                         +</span><br><span class="line">|                                                               |</span><br><span class="line">+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</span><br><span class="line">|                            Version                            |</span><br><span class="line">+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</span><br><span class="line">|                         Packet Number                         |</span><br><span class="line">+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</span><br><span class="line">|                       [Header Extensions]                   ...</span><br><span class="line">+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</span><br><span class="line">|                           Payload                           ...</span><br><span class="line">+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</span><br></pre></td></tr></table></figure>
-<p>建立连接时，连接是由服务器通过Source Connection ID字段分配的，这样，后续传输时，双方只需要固定住Destination Connection ID，就可以在客户端IP地址、端口变化后，绕过UDP四元组（与TCP四元组相同），实现连接迁移功能。如下图，后续的DCID和SCID都会统一为 <code>752566b9c5e2b77a</code></p>
-<p><img src="https://img1.kiosk007.top/static/images/network/QUIC/quic_connection_id.png"></p>
-<ul>
-<li><strong>Short Header</strong></li>
-</ul>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">0                   1                   2                   3</span><br><span class="line"> 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1</span><br><span class="line">+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</span><br><span class="line">|S|K|                Packet Number (30)                         |</span><br><span class="line">+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</span><br><span class="line">|                                                               |</span><br><span class="line">+                         Connection ID                         +</span><br><span class="line">|                                                               |</span><br><span class="line">+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</span><br></pre></td></tr></table></figure>
-<p>Packet Number是每个报文独一无二的序号，基于它可以实现丢失报文的精准重发。</p>
-<p>参考: <a href="https://gist.github.com/martinthomson/744d04cbcec9be554f2f8e7bae2715b8">martinthomson/quic_header.md</a></p>
-<h2 id="QUIC-Frame-Header"><a href="#QUIC-Frame-Header" class="headerlink" title="QUIC Frame Header"></a>QUIC Frame Header</h2><p>在Packet Header之上的QUIC Frame Header, QUIC中的流为应用程序提供了轻量级的有序字节流抽象。流可以是单向的或双向的，而且Stream之间可以实现真正的并发。</p>
-<p>所有的帧被包含在单独的QUIC Packet 中，且没有帧可以跨越QUIC Packet 边界。一个Packet报文中可以存放多个QUIC Frame，当然所有Frame的长度之和不能大于PMTUD（Path Maximum Transmission Unit Discovery，这是大于1200字节的值）, 一个QUIC Frame 也不允许跨Packet。</p>
-<p><img src="https://img1.kiosk007.top/static/images/network/QUIC/quic_frame1.png"></p>
-<p>每一个QUIC Frame 都有明确的帧类型。</p>
-<p>参考： <a href="https://quic.readthedocs.io/zh/latest/Frame%20Types%20and%20Formats.html">帧类型和格式</a></p>
-<p class="div-border red"> 上述文档比较老，很多数据有变动，下面是结合 <a href="https://www.rfc-editor.org/rfc/rfc9000.html#name-frames-and-frame-types"> RFC9000 </a> 的版本 </p>
-
-
-
-
-<p>当前定义的<strong>普通帧类型</strong>如下：</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">+-----------------------+-----------------------------+------------+</span><br><span class="line">| Type-field value      |     Control Frame-type      |    Spec    |</span><br><span class="line">+-----------------------+-----------------------------+------------+</span><br><span class="line">| 00000000B (0x00)      |  PADDING                    |     NP     |</span><br><span class="line">| 00000001B (0x01)      |  PING                       |            |</span><br><span class="line">| 00000010B (0x02-0x03) |  ACK                        |     NC     |</span><br><span class="line">| 00000100B (0x04)      |  RESET_STREAM               |            |</span><br><span class="line">| 00000101B (0x05)      |  STOP_SENDING               |            |</span><br><span class="line">| 00000110B (0x06)      |  CRYPTO                     |            |</span><br><span class="line">| 00000111B (0x07)      |  NEW_TOKEN                  |            |</span><br><span class="line">| 00001000B (0x08-0x0F) |  STREAM                     |     F      |</span><br><span class="line">| 00010000B (0x10)      |  MAX_DATA                   |            |</span><br><span class="line">| 00010001B (0x11)      |  MAX_STREAM_DATA            |            |</span><br><span class="line">| 00001100B (0x12-0x13) |  MAX_STREAMS                |            |</span><br><span class="line">| 00001110B (0x14)      |  DATA_BLOCKED               |            |</span><br><span class="line">| 00001111B (0x15)      |  STREAM_DATA_BLOCKED        |            |</span><br><span class="line">| 00010000B (0x16-0x17) |  STREAMS_BLOCKED            |            |</span><br><span class="line">| 00010010B (0x18)      |  NEW_CONNECTION_ID	      |     P      |</span><br><span class="line">| 00010011B (0x19)      |  RETIRE_CONNECTION_ID       |            |</span><br><span class="line">| 00010100B (0x1a)      |  PATH_CHALLENGE             |     P      |</span><br><span class="line">| 00010101B (0x1b)      |  PATH_RESPONSE              |     P      |</span><br><span class="line">| 00010110B (0x1c-0x1d) |  CONNECTION_CLOSE           |     N      |</span><br><span class="line">| 00011000B (0x1e)      |  HANDSHAKE_DONE             |            |</span><br><span class="line">+-----------------------+-----------------------------+------------+</span><br></pre></td></tr></table></figure>
-<blockquote>
-<p>第三列 SPEC 规定了该帧的一些特殊用法<br>N : 该类帧不会被ACK<br>C : 出于拥塞控制目的,该类型帧不会被计入飞行中的字节数<br>P : 该类型帧的数据包可用于在连接迁移期间探测新的网络路径<br>F : 该类型帧用于流控</p>
-</blockquote>
-<ul>
-<li><strong>PADDING 帧</strong>：PADDING帧使用0x00字节填充一个包。当遇到该帧时，包的剩余部分需要被填充字节。 该帧包含0x00字节并扩展至QUIC包的末端。</li>
-<li><strong>PING 帧</strong>：PING帧用来验证对端是否仍然存活。PING帧不包含载荷。 PING帧的接收方只需要应答（ACK）包含该帧的包。 PING帧应该被用于当一条流被打开时，保持连接存活。 默认是30s</li>
-<li><strong>ACK 帧</strong>: 发送ACK帧以通知对端已经接收了哪些分组，以及接收方仍然认为丢失了哪些分组（可能需要重新发送丢失分组的内容）。<ul>
-<li>如果帧类型为0x02：普通的ACK应答作用</li>
-<li>如果帧类型为0x03：则ACK帧还包含在此点之前在连接上接收到的具有相关ECN标记的QUIC数据包的累积计数。如果发送的数据包启用了ECN，则应使用ECN部分中的信息来管理拥塞状态</li>
-</ul>
-</li>
-<li><strong>RST_STREAM 帧</strong>：RST_STREAM帧允许异常终止一条流。当这个帧是流的创建者发出的，表示创建者希望取消这条流。 当接收端发送这个帧，表示有错误或者当前接收端不希望接收这个流，因此这个流应该被关闭。</li>
-<li><strong>STOP_SENDING 帧</strong>：请求对等方停止流上的传输.</li>
-<li><strong>CRYPTO 帧</strong>：用于传输加密握手消息，加密帧在功能上与STREAM帧相同,但是不受流控。加密帧上传输 TLS 握手细信息。</li>
-<li><strong>NEW_TOKEN 帧</strong>：为客户端提供一个令牌，以便用于之后的链接0-RTT。</li>
-<li><strong>STREAM 帧</strong> : STREAM帧同时被用于隐式地创建流和在流上发送数据。STREAM帧中的类型字段的格式为0B00001xxx（或0x08到0x0f的一组值）,帧类型的三个低阶位确定帧中存在的字段。流可以是单向的，也可以是双向的，对于连接上的所有流都是唯一的。流低2位可标识是客户端还是服务端发起的单向流或双向流。<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">Bits	Stream Type</span><br><span class="line">0x00	Client-Initiated, Bidirectional</span><br><span class="line">0x01	Server-Initiated, Bidirectional</span><br><span class="line">0x02	Client-Initiated, Unidirectional</span><br><span class="line">0x03	Server-Initiated, Unidirectional</span><br></pre></td></tr></table></figure></li>
-<li><strong>MAX_DATA 帧</strong>：用于流控,用于通知对端整个连接上可发送的最大数据量。</li>
-<li><strong>MAX_STREAM_DATA 帧</strong>：用于流控，用于通知对端流上可发送的最大数据量。</li>
-<li><strong>MAX_STREAMS 帧</strong>：通知对等端允许打开的给定类型的流的最大数。<ul>
-<li>0x12 的MAX_STREAM适用于双向流</li>
-<li>0x13 的MAX_STREAM适用于单向流</li>
-</ul>
-</li>
-<li><strong>DATA_BLOCKED 帧</strong>：BLOCKED帧用于向远端指明本端点已经准备好发送数据了（且有数据要发送）， 但是当前被流量控制阻塞了。这是一个纯粹的信息帧，它对于调试极其有用。 BLOCKED帧的接收者应该简单的丢弃它（可能在打印了一条有帮助的log消息之后）</li>
-<li><strong>STREAM_DATA_BLOCKED 帧</strong>：当发送方希望发送数据但由于流级流控制而无法发送数据时，发送方应发送 STREAM_DATA_BLOCKED。</li>
-<li><strong>STREAMS_BLOCKED 帧</strong>：当发送方希望打开流，但由于其对等方设置的最大流限制而无法打开流时，发送方应发送STREAMS_BLOCKED,<ul>
-<li>0x16 的STREAMS_BLOCKED适用于双向流</li>
-<li>0x17 的STREAMS_BLOCKED适用于单向流</li>
-</ul>
-</li>
-<li><strong>NEW_CONNECTION_ID 帧</strong>：发送一个新的 NEW_CONNECTION_ID 帧, 为其对端提供可用于在迁移连接时中断可链接性的替代连接ID</li>
-<li><strong>RETIRE_CONNECTION_ID 帧</strong>: 一端发送 RETIRE_CONNECTION_ID 表示不再使用对端发送的CONNECTION ID ，包含握手时确定的 连接id，后续可以发送新的 CONNECTION ID 再。</li>
-<li><strong>PATH_CHALLENGE 帧</strong>：来检查对等方的可达性，并在连接迁移期间进行路径验证</li>
-<li><strong>PATH_RESPONSE 帧</strong>: PATH_CHALLENGE 的响应帧</li>
-<li><strong>CONNECTION_CLOSE 帧</strong>：CONNECTION_CLOSE帧用来通知连接将被关闭。如果流仍然有数据在发送，那么在连接关闭时， 这些流将被隐式关闭。</li>
-<li><strong>HANDSHAKE_DONE 帧</strong>：向客户端发送握手确认信号。</li>
-</ul>
-<h2 id="HTTP3-Frame-Header"><a href="#HTTP3-Frame-Header" class="headerlink" title="HTTP3 Frame Header"></a>HTTP3 Frame Header</h2><p>QUIC 的 STREAM 帧是实际承载流量的帧。自然也是 <a href="https://quicwg.org/base-drafts/draft-ietf-quic-http.html#name-reserved-frame-types">HTTP3 协议</a>的承载。</p>
-<p><img src="https://img1.kiosk007.top/static/images/network/QUIC/quic_stream_frame.png"> </p>
-<p>Stream Frame头部的3个字段，完成了多路复用、有序字节流以及报文段层面的二进制分隔功能</p>
-<ul>
-<li><strong>Stream ID</strong> 标识了一个有序字节流。当HTTP Body非常大，需要跨越多个Packet时，只要在每个Stream Frame中含有同样的Stream ID，就可以传输任意长度的消息。多个并发传输的HTTP消息，通过不同的Stream ID加以区别</li>
-<li>消息序列化后的“有序”特性，是通过Offset字段完成的，它类似于TCP协议中的Sequence序号，用于实现Stream内多个Frame间的累计确认功能；</li>
-<li>Length指明了Frame数据的长度。</li>
-</ul>
-<p>HTTP3 的Frame 继承了 HTTP2 的Frame 设计。</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">Frame         Control Stream	Request Stream	Push Stream	</span><br><span class="line">DATA          No                Yes               Yes	</span><br><span class="line">HEADERS       No                Yes               Yes	</span><br><span class="line">CANCEL_PUSH   Yes               No                No	</span><br><span class="line">SETTINGS      Yes              (1)                No	</span><br><span class="line">PUSH_PROMISE  No                Yes               No	</span><br><span class="line">GOAWAY        Yes               No                No	</span><br><span class="line">MAX_PUSH_ID   Yes               No                No	</span><br><span class="line">Reserved      Yes               Yes               Yes	</span><br></pre></td></tr></table></figure>
-<p>QUIC Stream Frame定义了有序字节流，且多个Stream间的传输没有时序性要求，这样，HTTP消息基于QUIC Stream就实现了真正的多路复用，队头阻塞问题自然就被解决掉了。</p>
-<p><strong>HTTP Header头部的编码方式，它需要面对另一种队头阻塞问题</strong></p>
-<p>与HTTP2中的HPACK编码方式相似，HTTP3中的QPACK也采用了静态表、动态表及Huffman编码：</p>
-<p>在HTTP2中，共有61个静态表项,而在QPACK中，则上升为98个静态表项, 比如 qpack 的golang 实现中的 <code>staticTableEntries</code> 所示。可以从<a href="https://github.com/marten-seemann/qpack/blob/master/static_table.go">这里</a>找到 HTTP3 的完整静态表</p>
-<p><img src="https://img1.kiosk007.top/static/images/network/QUIC/qpack.png"></p>
-<p>相较于HTTP3的静态表，和HTTP2协议其实并没有特别大的变化。但动态表编解码方式差距很大。</p>
-<p>所谓动态表，就是将未包含在静态表中的Header项，在其首次出现时加入动态表，这样后续传输时仅用1个数字表示，大大提升了编码效率。因此，动态表是天然具备时序性的，如果首次出现的请求出现了丢包，后续请求解码HPACK头部时，一定会被阻塞！</p>
-<p>事实上，QPACK将动态表的编码、解码独立在单向Stream中传输，仅当单向Stream中的动态表编码成功后，接收端才能解码双向Stream上HTTP消息里的动态表索引。</p>
-<p>因此，当Stream ID是0、4、8、12时，这就是客户端发起的双向Stream（HTTP3不支持服务器发起双向Stream），它用于传输HTTP请求与响应。单向Stream有很多用途，所以它在数据前又多出一个Stream Type字段：</p>
-<p><img src="https://img1.kiosk007.top/static/images/network/QUIC/quic_stream_type.png"></p>
-<p>Stream Type有以下取值：</p>
-<ul>
-<li>0x00：控制Stream，传递各类Stream控制消息；</li>
-<li>0x01：服务器推送消息；</li>
-<li>0x02：用于编码QPACK动态表，比如面对不属于静态表的HTTP请求头部，客户端可以通过这个Stream发送动态表编码；</li>
-<li>0x03：用于通知编码端QPACK动态表的更新结果。</li>
-</ul>
-<p>由于HTTP3的STREAM之间是乱序传输的，因此，若先发送的编码Stream后到达，双向Stream中的QPACK头部就无法解码，此时传输HTTP消息的双向Stream就会进入Block阻塞状态（两端可以通过控制帧定义阻塞Stream的处理方式）。</p>
-<p>QPack 在编解码原理上和 HPack 没有本质区别。从 <a href="https://github.com/marten-seemann/qpack">QPACK</a> 的代码中可以看出，其内部完全是套了一层 HAPCK 的实现</p>
-<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="comment">// WriteField encodes f into a single Write to e&#x27;s underlying Writer.</span></span><br><span class="line"><span class="comment">// This function may also produce bytes for the Header Block Prefix</span></span><br><span class="line"><span class="comment">// if necessary. If produced, it is done before encoding f.</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(e *Encoder)</span> <span class="title">WriteField</span><span class="params">(f HeaderField)</span> <span class="title">error</span></span> &#123;</span><br><span class="line">	<span class="comment">// write the Header Block Prefix</span></span><br><span class="line">	<span class="keyword">if</span> !e.wrotePrefix &#123;</span><br><span class="line">		e.buf = appendVarInt(e.buf, <span class="number">8</span>, <span class="number">0</span>)</span><br><span class="line">		e.buf = appendVarInt(e.buf, <span class="number">7</span>, <span class="number">0</span>)</span><br><span class="line">		e.wrotePrefix = <span class="literal">true</span></span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	idxAndVals, nameFound := encoderMap[f.Name]</span><br><span class="line">	<span class="keyword">if</span> nameFound &#123;</span><br><span class="line">		<span class="keyword">if</span> idxAndVals.values == <span class="literal">nil</span> &#123;</span><br><span class="line">			<span class="keyword">if</span> <span class="built_in">len</span>(f.Value) == <span class="number">0</span> &#123;</span><br><span class="line">				e.writeIndexedField(idxAndVals.idx)</span><br><span class="line">			&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">				e.writeLiteralFieldWithNameReference(&amp;f, idxAndVals.idx)</span><br><span class="line">			&#125;</span><br><span class="line">		&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">			valIdx, valueFound := idxAndVals.values[f.Value]</span><br><span class="line">			<span class="keyword">if</span> valueFound &#123;</span><br><span class="line">				e.writeIndexedField(valIdx)</span><br><span class="line">			&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">				e.writeLiteralFieldWithNameReference(&amp;f, idxAndVals.idx)</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">		e.writeLiteralFieldWithoutNameReference(f)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	e.w.Write(e.buf)</span><br><span class="line">	e.buf = e.buf[:<span class="number">0</span>]</span><br><span class="line">	<span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h1 id="QUIC-Feature"><a href="#QUIC-Feature" class="headerlink" title="QUIC Feature"></a>QUIC Feature</h1><h2 id="0-RTT"><a href="#0-RTT" class="headerlink" title="0 RTT"></a>0 RTT</h2><p>使用 0-RTT 取决于客户端和服务器使用从先前连接协商的协议参数。为了启用 0-RTT, 客户端将服务器传输参数与它在连接上收到的 session tickets 一起存储, 另外还存储应用程序或加密握手所需的信息。</p>
-<p>和握手相关的报头都是长报头(<code>Long Packet</code>) 。分别是 <strong><code>Initial (0x00)</code></strong>、<strong><code>0-RTT    (0x01)</code></strong>、<strong><code>Handshake (0x02)</code></strong>、<strong><code>Retry (0x03)</code></strong>。</p>
-<ul>
-<li><code>CRYPTO</code> 帧可以在不同的数据包编号空间（packet number spaces）中发送。CRYPTO 帧使用偏移量（offsets）来确保加密握手数据的有序传递的在每个包编号空间（packet number spaces）都是从零开始。</li>
-</ul>
-<p><strong>握手流程示例</strong></p>
-<ol>
-<li>QUIC 在握手前会先进行地址验证（Address Validation），确保请求包里面的源地址不是伪造的。</li>
-<li>一旦地址验证交换完成，就可以使用加密握手来获取加密密钥。加密握手通过初始（Initial）和握手（Handshake）包进行传输。</li>
-<li>下图展示了 1-RTT 握手的示例。每行显示一个 QUIC 包（packet），首先显示包类型（type）和包编号（number），然后是帧（frames）。例如，第一个包是 Initial 类型，包编号为 0，并且包含一个携带 ClientHello（缩写：CH） 的 CRYPTO 帧。</li>
-<li>多个 QUIC 数据包（即便是不同的类型）也可以合并成一个单独的 UDP 数据报（datagram）。因此，下图所示的 1-RTT 握手可以由 4 个UDP数据报（datagrams）组成。如果受协议固有的限制（如拥塞控制（congestion control）和反放大（anti-amplification））也可以使用更多的数据报。</li>
-</ol>
-<ul>
-<li>1 - RTT</li>
-</ul>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">Client                                                  Server</span><br><span class="line"></span><br><span class="line">Initial[0]: CRYPTO[CH] -&gt;</span><br><span class="line"></span><br><span class="line">                                 Initial[0]: CRYPTO[SH] ACK[0]</span><br><span class="line">                       Handshake[0]: CRYPTO[EE, CERT, CV, FIN]</span><br><span class="line">                                 &lt;- 1-RTT[0]: STREAM[1, &quot;...&quot;]</span><br><span class="line"></span><br><span class="line">Initial[1]: ACK[0]</span><br><span class="line">Handshake[0]: CRYPTO[FIN], ACK[0]</span><br><span class="line">1-RTT[0]: STREAM[0, &quot;...&quot;], ACK[0] -&gt;</span><br><span class="line"></span><br><span class="line">                                          Handshake[1]: ACK[0]</span><br><span class="line">         &lt;- 1-RTT[1]: HANDSHAKE_DONE, STREAM[3, &quot;...&quot;], ACK[0]</span><br></pre></td></tr></table></figure>
-<ul>
-<li>0 - RTT</li>
-</ul>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">Client                                                  Server</span><br><span class="line"></span><br><span class="line">Initial[0]: CRYPTO[CH]</span><br><span class="line">0-RTT[0]: STREAM[0, &quot;...&quot;] -&gt;</span><br><span class="line"></span><br><span class="line">                                 Initial[0]: CRYPTO[SH] ACK[0]</span><br><span class="line">                                  Handshake[0] CRYPTO[EE, FIN]</span><br><span class="line">                          &lt;- 1-RTT[0]: STREAM[1, &quot;...&quot;] ACK[0]</span><br><span class="line"></span><br><span class="line">Initial[1]: ACK[0]</span><br><span class="line">Handshake[0]: CRYPTO[FIN], ACK[0]</span><br><span class="line">1-RTT[1]: STREAM[0, &quot;...&quot;] ACK[0] -&gt;</span><br><span class="line"></span><br><span class="line">                                          Handshake[1]: ACK[0]</span><br><span class="line">         &lt;- 1-RTT[1]: HANDSHAKE_DONE, STREAM[3, &quot;...&quot;], ACK[1]</span><br></pre></td></tr></table></figure>
-<p>如下是取自于 qvis的 1-RTT 握手请求。</p>
-<p><img src="https://img1.kiosk007.top/static/images/network/QUIC/qvis_quictools_info.png"></p>
-<h2 id="地址验证（Address-Validation）"><a href="#地址验证（Address-Validation）" class="headerlink" title="地址验证（Address Validation）"></a>地址验证（Address Validation）</h2><p>地址验证主要是用于确保端点（endpoint）不能被用于流量放大攻击（traffic amplification attack）。攻击者如果伪造数据包的源地址为受害者的地址，发送大量的数据包给服务端，如果服务端没有进行地址验证，直接响应大量数据包给源地址（受害者），就会被攻击者利用、进行流量放大攻击。</p>
-<p>QUIC 针对放大攻击的主要防御措施是验证端点（endpoint）是否能够在其声明的传输地址接收数据包。地址验证在<strong>连接建立（connection establishment）期间</strong>和 <strong>连接迁移（connection migration）期间</strong>进行。</p>
-<ul>
-<li>连接建立时，为了验证客户端的地址是否是攻击者伪造的，服务端会生成一个令牌（token）并通过重试包（Retry packet）响应给客户端。客户端需要在后续的初始包（Initial packet）带上这个令牌，以便服务端进行地址验证。</li>
-<li>服务端可以在当前连接中通过 NEW_TOKEN 帧预先发布令牌，以便客户端在后续的新连接使用，这是 QUIC 实现 0-RTT 很重要的一个功能。</li>
-<li>当我们的网络路径变化时（比如从蜂窝网络切换到 WIFI），QUIC 提供了连接迁移（connection migration）的功能来避免连接中断。QUIC 通过路径验证（Path Validation）验证网络新地址的可达性（reachability），防止在连接迁移中的地址是攻击者伪造的。</li>
-</ul>
-<p><strong>使用重试数据包（Retry Packets）验证地址</strong></p>
-<p>在接收到客户端的初始数据包（Initial packet）后，服务端可以通过发送包含令牌（token）的重试数据包（Retry packet）来请求地址验证。客户端在接收到这个重试数据包（Retry packet）的令牌（token）之后，必须在该连接中后续所有初始数据包（Initial packet）中附上该令牌（token）。</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">Client                                                  Server</span><br><span class="line"></span><br><span class="line">Initial[0]: CRYPTO[CH] -&gt;</span><br><span class="line"></span><br><span class="line">                                                &lt;- Retry+Token</span><br><span class="line"></span><br><span class="line">Initial+Token[1]: CRYPTO[CH] -&gt;</span><br><span class="line"></span><br><span class="line">                                 Initial[0]: CRYPTO[SH] ACK[1]</span><br><span class="line">                       Handshake[0]: CRYPTO[EE, CERT, CV, FIN]</span><br><span class="line">                                 &lt;- 1-RTT[0]: STREAM[1, &quot;...&quot;]</span><br></pre></td></tr></table></figure>
-<p><strong>后续的连接使用 NEW_TOKEN 帧的令牌（token）</strong></p>
-<p>服务端可以在一次连接中向客户端提供地址验证令牌（token），该令牌可用于后续的连接。这对于 0-RTT 尤其重要，后续的新连接可以直接使用该令牌进行地址验证，而无需额外的 1-RTT。</p>
-<p>服务端使用 NEW_TOKEN 帧向客户端提供地址验证令牌，该令牌可用于验证后续的连接。在后续的连接中，客户端在初始数据包（Initial packets）中包含该令牌，以提供地址验证。</p>
-<p>重试数据包（Retry packet）中提供的令牌只能立即使用，不能用于后续连接的地址验证。而 NEW_TOKEN 帧生成的令牌可以在一个时间范围内使用，这个令牌应该有一个过期时间，可以是显式的过期时间，也可以是可用于动态计算过期时间的时间戳（timestamp）。服务端可以存储过期时间，也可以在令牌中以加密的形式包含它。</p>
-<p>参考： <a href="https://zhuanlan.zhihu.com/p/290694322">跟坚哥学QUIC系列：地址验证（Address Validation)</a></p>
-<h2 id="链接迁移"><a href="#链接迁移" class="headerlink" title="链接迁移"></a>链接迁移</h2><p>QUIC 使用连接ID（而不是 ip + port）来确保数据包的路由一致性。如果用户的 IP 发生变化时，比如从移动蜂窝 4G 网络切换到 WiFi，IP 地址会改变。而使用一个唯一的连接ID 可以确保用户的 IP 变化时业务请求依然能够被继续处理，不用重新建连，可以继续使用当前连接ID 路由数据包，因此 QUIC 可以通过这个特性支持连接迁移</p>
-<p>QUIC 的数据包（packets）长报头（long header）包含两个连接ID：目标连接ID（Destination Connection ID）由数据包的接收者选择并用于提供一致的路由，源连接ID（Source Connection ID）用于对端（peer）响应时使用的目标连接ID（Destination Connection ID）。</p>
-<p>在握手过程中，带有长报头的包用于建立两端（both endpoints）使用的连接ID。在处理第一个初始数据包（Initial packet）之后，每个端点使用其接收到的源连接ID（Source Connection ID）字段的值设置为后续数据包中的目标连接ID（Destination Connection ID）字段。</p>
-<p>当客户端发送了一个初始包（Initial packet），而该客户端之前没有从服务端接收过初始数据包（Initial packet）或重试包（Retry packet），则客户端将用一个不可预测的值（长度至少为8字节）填充到目标连接ID字段。在从服务端接收到数据包之前，客户端必须对该连接中的所有数据包使用相同的目标连接ID值。</p>
-<p>当第一次从服务端接收到初始（Initial）或重试（Retry）数据包时，客户端使用服务端提供的源连接ID作为后续数据包（包括任何 0-RTT 数据包）的目标连接ID。这意味着在建立连接的过程中，客户端可能需要两次更改它的目标连接ID字段：一次用于响应重试（Retry），一次用于响应来自服务端的初始数据包（Initial）。一旦客户端从服务端接收到有效的初始数据包，客户端必须丢弃它后续接收到的具有不同源连接ID的数据包。</p>
-<p>服务端必须根据第一个接收到的初始数据包（Initial packet）的源连接ID，设置为用于发送数据包的目标连接ID。后续只有当接收到 NEW_CONNECTION_ID 帧时，才允许对目标连接ID进行更改。如果后续初始数据包包含不同的源连接ID，则必须将其丢弃。这样可以避免由于无状态（stateless）处理具有不同源连接ID的多个初始数据包而导致的不可预测结果。</p>
-<p>参考文章： </p>
-<ul>
-<li><a href="https://www.ietf.org/blog/whats-happening-quic/">What’s Happening with QUIC</a></li>
-<li><a href="https://blogs.keysight.com/blogs/tech/nwvs.entry.html/2021/07/16/road_to_quic-DGa5.html">Road To QUIC</a></li>
-<li><a href="https://www.nginx.org.cn/article/detail/422">深入剖析HTTP3协议</a></li>
-<li><a href="https://zhuanlan.zhihu.com/p/290694322">跟坚哥学QUIC系列：地址验证（Address Validation)</a></li>
-</ul>
-]]></content>
-      <categories>
-        <category>network</category>
-      </categories>
-      <tags>
-        <tag>QUIC</tag>
       </tags>
   </entry>
   <entry>
@@ -1505,7 +1631,7 @@ func main() {
 </blockquote>
 <a id="more"></a>
 <hr>
-<p><img src="/images/network/HTTP2/http-timeline.png"></p>
+<p><img src="https://img1.kiosk007.top/static/images/network/HTTP2/http-timeline.png"></p>
 <h1 id="为什么要H2"><a href="#为什么要H2" class="headerlink" title="为什么要H2"></a>为什么要H2</h1><p>要解答这个问题，首先就需要知道HTTP1.x 出了什么问题。HTTP协议自1991年诞生依赖，很少有过大修大改。在H2之前最新版本的HTTP1.1已经为网络世界服务了15多年。随着互联网的发展速度越发的迅速，大量的消息充斥，而我们又对信息加载速度的一再苛刻要求。急需改变当前状况。</p>
 <h2 id="HTTP1-1-PipeLine"><a href="#HTTP1-1-PipeLine" class="headerlink" title="HTTP1.1 PipeLine"></a>HTTP1.1 PipeLine</h2><p>HTTP1.1被限制为每个TCP连接仅处理一个未完成的请求，从而迫使浏览器使用多个TCP连接来同时处理多个请求。</p>
 <p>但是，并行使用太多TCP连接会导致TCP拥塞，从而导致网络资源的不公平垄断。Web浏览器在使用多个连接来处理请求可能造成网络请求的大幅度占用，因此降低了其他用户的网络性能。</p>
@@ -1621,13 +1747,22 @@ func main() {
 <blockquote>
 <p>空间节省了 71.44% , 访问的次数越多，节约的空间越多，访问一次只会发挥 静态表和huffman 算法的作用。</p>
 </blockquote>
-<h2 id="流优先级"><a href="#流优先级" class="headerlink" title="流优先级"></a>流优先级</h2><p><img src="/images/network/HTTP2/http2-weight.png" style="height:140px"></p>
-<h2 id="Server-Push"><a href="#Server-Push" class="headerlink" title="Server Push"></a>Server Push</h2><p><img src="/images/network/HTTP2/http2-push.png" style="height:150px"></p>
+<h2 id="流优先级-amp-amp-流控"><a href="#流优先级-amp-amp-流控" class="headerlink" title="流优先级 &amp;&amp; 流控"></a>流优先级 &amp;&amp; 流控</h2><p><img src="https://img1.kiosk007.top/static/images/network/HTTP2/http2-weight.png" style="height:140px"></p>
+<p>这里就先说流控吧。</p>
+<p>HTTP2 一般 Connection 和 Stream 的初始 flow-control window 大小都是 65535 bytes （如果一切顺利不丢包的情况下，RTT为 100ms，则每秒最多能发送65535*(1000/100)的数据，大约就是600KB/s）。通过发送 SETTINGS Frame，携带 <a href="http://httpwg.org/specs/rfc7540.html#SETTINGS_INITIAL_WINDOW_SIZE">SETTINGS_INITIAL_WINDOW_SIZE</a> ，修改初始窗口大小。如果当前窗口已存在，会做delta 更新，这个值即为新的 stream flow-control window 初始大小。</p>
+<p><img src="https://img1.kiosk007.top/static/images/network/HTTP2/http2-flow-control0.png"></p>
+<p>通过对官方代码按照 RFC 实现的http2库分析：</p>
+<p>首先服务端视角，入向流量每收到一个 <code>DataFrame</code> 都会在自身链接级别和流级别更新当前的 <strong>flow-control</strong>，而每创建一个新stream时，其入向 <strong>sc.inflow</strong> 是继承当前连接级别的 <strong>flow-control</strong> 。<strong>即所有 stream 级别的窗口之和等于 Connection 级别的窗口。</strong></p>
+<p><img src="https://img1.kiosk007.top/static/images/network/HTTP2/http2-flow-control1.png"></p>
+<p><img src="https://img1.kiosk007.top/static/images/network/HTTP2/http2-flow-control2.png"></p>
+<p>整个发送过程会遵从流控限制，如果窗口 &gt; 0 但是 窗口 &lt; 客户端要发送的数据，客户端要发送的数据会被分成2部分，其中流控内的数据会被发送</p>
+<p><img src="https://img1.kiosk007.top/static/images/network/HTTP2/http2-flow-control3.png"></p>
+<p>在一次实际的上传过程中，观察到如下的一次上传的 netlog。服务端的窗口经常因为耗尽而等待，等待时长约 70ms + ，与akamai 的 ping 延迟基本也在 30-60ms 。每次窗口恢复和挤牙膏一样非常缓慢。<br><img src="https://img1.kiosk007.top/static/images/network/HTTP2/http2-flow-control4.png"></p>
+<h2 id="Server-Push"><a href="#Server-Push" class="headerlink" title="Server Push"></a>Server Push</h2><p><img src="https://img1.kiosk007.top/static/images/network/HTTP2/http2-push.png" style="height:150px"></p>
 <p><a href="https://httpwg.org/specs/rfc7540.html#PUSH_PROMISE">Push Promise</a> 是HTTP2 与 HTTP1.1 最大的一个区别，它是指在客户端在发起一个请求时，服务端在返回该请求响应之前，返回一个 PushPromise 表示有资源要推送，并且会再新开一个偶数流，推送内容，在客户端发起请求之前让客户端拿到数据。如下是 push promise 的服务端实现。</p>
 <p><img src="https://img1.kiosk007.top/static/images/network/HTTP2/http2-serverpush.png" style="height:400px"></p>
 <figure class="highlight golang"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">NewPushHandler</span><span class="params">()</span> <span class="title">http</span>.<span class="title">Handler</span></span> &#123;</span><br><span class="line">	<span class="keyword">return</span> http.HandlerFunc(<span class="function"><span class="keyword">func</span><span class="params">(w http.ResponseWriter, r *http.Request)</span></span> &#123;</span><br><span class="line">		<span class="keyword">for</span> path, handler := <span class="keyword">range</span> pushResources &#123;</span><br><span class="line">			<span class="keyword">if</span> r.URL.Path == path &#123;</span><br><span class="line">				handler.ServeHTTP(w, r)</span><br><span class="line">				<span class="keyword">return</span></span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		cacheBust := time.Now().UnixNano()</span><br><span class="line">		<span class="keyword">if</span> pusher, ok := w.(http.Pusher); ok &#123;</span><br><span class="line">			<span class="keyword">for</span> path := <span class="keyword">range</span> pushResources &#123;</span><br><span class="line">				url := fmt.Sprintf(<span class="string">&quot;%s?%d&quot;</span>, path, cacheBust)</span><br><span class="line">				<span class="keyword">if</span> err := pusher.Push(url, <span class="literal">nil</span>); err != <span class="literal">nil</span> &#123;</span><br><span class="line">					log.Printf(<span class="string">&quot;Failed to push %v: %v&quot;</span>, path, err)</span><br><span class="line">				&#125;</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">		time.Sleep(<span class="number">100</span> * time.Millisecond) <span class="comment">// fake network latency + parsing time</span></span><br><span class="line">		<span class="keyword">if</span> err := PushTmpl.Execute(w, <span class="keyword">struct</span> &#123;</span><br><span class="line">			CacheBust   <span class="keyword">int64</span></span><br><span class="line">			HTTPSHost   <span class="keyword">string</span></span><br><span class="line">			HTTP1Prefix <span class="keyword">string</span></span><br><span class="line">		&#125;&#123;</span><br><span class="line">			CacheBust:   cacheBust,</span><br><span class="line">			HTTPSHost:   HttpsHost(),</span><br><span class="line">			HTTP1Prefix: Http1Prefix(),</span><br><span class="line">		&#125;); err != <span class="literal">nil</span> &#123;</span><br><span class="line">			log.Printf(<span class="string">&quot;Executing server push template: %v&quot;</span>, err)</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h2 id="二进制协议"><a href="#二进制协议" class="headerlink" title="二进制协议"></a>二进制协议</h2><p><img src="/images/network/HTTP2/binary-protocols-2.png" style="height:100px"></p>
-<h1 id="H2内部剖析"><a href="#H2内部剖析" class="headerlink" title="H2内部剖析"></a>H2内部剖析</h1><h2 id="连接前言"><a href="#连接前言" class="headerlink" title="连接前言"></a>连接前言</h2><p>TLS 握手成功之后，客户端需要发送一个”连接前言”（connection preface），用来确认HTTP/2的连接。Magic被称为H2不可知的魔法。而PRISM，其实就是在暗讽2013年斯诺登事件爆出的“棱镜计划”。</p>
+<h2 id="连接前言"><a href="#连接前言" class="headerlink" title="连接前言"></a>连接前言</h2><p>TLS 握手成功之后，客户端需要发送一个”连接前言”（connection preface），用来确认HTTP/2的连接。Magic被称为H2不可知的魔法。而PRISM，其实就是在暗讽2013年斯诺登事件爆出的“棱镜计划”。</p>
 <p>参考：<a href="https://blog.jgc.org/2015/11/the-secret-message-hidden-in-every.html">https://blog.jgc.org/2015/11/the-secret-message-hidden-in-every.html</a><br><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">Magic: PRI * HTTP&#x2F;2.0\r\n\r\nSM\r\n\r\n</span><br></pre></td></tr></table></figure></p>
 <p>参考：</p>
 <ul>

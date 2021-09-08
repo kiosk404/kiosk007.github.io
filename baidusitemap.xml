@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
+    <loc>http://kiosk007.top/2021/09/05/Nginx-Ingress/</loc>
+    <lastmod>2021-09-05</lastmod>
+  </url>
+  <url>
     <loc>http://kiosk007.top/2021/08/05/k8s%E6%9E%B6%E6%9E%84%E6%8B%93%E6%89%91/</loc>
     <lastmod>2021-08-04</lastmod>
   </url>
