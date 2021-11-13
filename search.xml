@@ -2899,6 +2899,7 @@ Identity中包含的是客户端愿意进行协商的服务器身份列表。PSK
     <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script><p>只是git入门的简单指南。没什么大不了的 :)</p>
 <a id="more"></a>
 <p>Git 是一个开源的分布式版本控制系统，用于敏捷高效地处理任何或小或大的项目。Git 与常用的版本控制工具 CVS, Subversion 等不同，它采用了分布式版本库的方式，不必服务器端软件支持。<br><img src="https://img1.kiosk007.top/static/images/git/git.png" style="height:340px"></p>
+<p>参考: <a href="https://git-scm.com/book/zh/v2">https://git-scm.com/book/zh/v2</a></p>
 <h1 id="安装-git"><a href="#安装-git" class="headerlink" title="安装 git"></a>安装 git</h1><p><a href="https://git-scm.com/download/linux">安装 Git Linux 版</a><br><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ apt-get install git</span><br><span class="line">$ apt-get install gitk</span><br></pre></td></tr></table></figure><br>gitk 是可以可视化的git客户端工具，更多工具参考 <a href="https://git-scm.com/download/gui/linux">git-gui</a> ，如 <a href="https://juejin.cn/post/6844903904451231757">Gitkraken (小章鱼)</a>、 <a href="https://magit.vc/manual/magit/Installing-from-the-Git-Repository.html#Installing-from-the-Git-Repository">magit</a> 等等</p>
 <h1 id="配置"><a href="#配置" class="headerlink" title="配置"></a>配置</h1><ul>
 <li><strong>配置 user 信息</strong></li>
