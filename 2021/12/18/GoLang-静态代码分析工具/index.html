@@ -1,0 +1,167 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"><meta name="description" content="GoLang 静态代码分析工具"><meta name="keywords" content="golang"><meta name="author" content="kiosk"><meta name="copyright" content="kiosk"><title>GoLang 静态代码分析工具 | kiosk007's Blog</title><link rel="shortcut icon" href="/img/favicon-16x16-dragon.png"><link rel="stylesheet" href="/css/index.css?version=1.9.0"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome@latest/css/font-awesome.min.css?version=1.9.0"><link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.3.1/css/all.css?version=1.9.0"><meta name="format-detection" content="telephone=no"><meta http-equiv="x-dns-prefetch-control" content="on"><link rel="dns-prefetch" href="https://cdn.jsdelivr.net"><link rel="dns-prefetch" href="https://hm.baidu.com"><script>var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?6f3d277b6c83066a05a8b7db067b2308";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();</script><meta http-equiv="Cache-Control" content="no-transform"><meta http-equiv="Cache-Control" content="no-siteapp"><script>var GLOBAL_CONFIG = { 
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"search.xml","languages":{"hits_empty":"We didn't find any results for the search: ${query}"}},
+  copy: {
+    success: 'Copy successfully',
+    error: 'Copy error',
+    noSupport: 'The browser does not support'
+  },
+  hexoVersion: '5.3.0'
+} </script><meta name="generator" content="Hexo 5.3.0"><link rel="alternate" href="/atom.xml" title="kiosk007's Blog" type="application/atom+xml">
+</head><body><i class="fa fa-arrow-right" id="toggle-sidebar" aria-hidden="true"></i><div id="sidebar" data-display="true"><div class="toggle-sidebar-info text-center"><span data-toggle="Toggle article">Toggle site</span><hr></div><div class="sidebar-toc"><div class="sidebar-toc__title">Catalog</div><div class="sidebar-toc__progress"><span class="progress-notice">You've read</span><span class="progress-num">0</span><span class="progress-percentage">%</span><div class="sidebar-toc__progress-bar"></div></div><div class="sidebar-toc__content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%AE%89%E8%A3%85"><span class="toc-number">1.</span> <span class="toc-text">安装</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%BC%98%E5%8A%BF"><span class="toc-number">2.</span> <span class="toc-text">优势</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E8%BF%90%E8%A1%8C"><span class="toc-number">3.</span> <span class="toc-text">运行</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#golangci-lint-%E5%91%BD%E4%BB%A4"><span class="toc-number">4.</span> <span class="toc-text">golangci-lint 命令</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#golangci-lint-%E9%85%8D%E7%BD%AE"><span class="toc-number">5.</span> <span class="toc-text">golangci-lint 配置</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%BF%BD%E7%95%A5%E6%A3%80%E6%9F%A5"><span class="toc-number">6.</span> <span class="toc-text">忽略检查</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%BB%A7%E6%89%BF%E5%88%B0CI"><span class="toc-number">7.</span> <span class="toc-text">继承到CI</span></a></li></ol></div></div><div class="author-info hide"><div class="author-info__avatar text-center"><img src="https://img1.kiosk007.top/static/images/avatar.jpg"></div><div class="author-info__name text-center">kiosk</div><div class="author-info__description text-center">NoOps</div><div class="follow-button"><a target="_blank" rel="noopener" href="https://github.com/weijiaxiang007">Ordinary But Great</a></div><hr><div class="author-info-articles"><a class="author-info-articles__archives article-meta" href="/archives"><span class="pull-left">Articles</span><span class="pull-right">45</span></a><a class="author-info-articles__tags article-meta" href="/tags"><span class="pull-left">Tags</span><span class="pull-right">20</span></a><a class="author-info-articles__categories article-meta" href="/categories"><span class="pull-left">Categories</span><span class="pull-right">11</span></a></div></div></div><div id="content-outer"><div id="top-container" style="background-image: url(https://img1.kiosk007.top/static/images/backgroud_sbpk.jpg)"><div id="page-header"><span class="pull-left"> <a id="site-name" href="/">kiosk007's Blog</a></span><i class="fa fa-bars toggle-menu pull-right" aria-hidden="true"></i><span class="pull-right menus">   <a class="site-page" href="/">首页</a><a class="site-page" href="/about/">关于</a><a class="site-page" href="/archives/">文章</a><a class="site-page" href="/tags/">标签</a><a class="site-page" href="/categories/">分类</a><a class="site-page" href="/express/">Express</a></span><span class="pull-right"><a class="site-page social-icon search"><i class="fa fa-search"></i><span> Search</span></a></span></div><div id="post-info"><div id="post-title">GoLang 静态代码分析工具</div><div id="post-meta"><time class="post-meta__date"><i class="fa fa-calendar" aria-hidden="true"></i> 2021-12-18</time><span class="post-meta__separator">|</span><i class="fa fa-inbox post-meta__icon" aria-hidden="true"></i><a class="post-meta__categories" href="/categories/programming/">programming</a><div class="post-meta-wordcount"><span>Word count: </span><span class="word-count">1.9k</span><span class="post-meta__separator">|</span><span>Reading time: 7 min</span></div></div></div></div><div class="layout" id="content-inner"><article id="post"><div class="article-container" id="post-content"><p>在日常Golang编程过程中，需要对 Go 代码做静态代码检查。虽然 Go 命令提供了 <code>go vet</code> 和 <code>go tool vet</code>，但是它们检查的内容还不够全面。go 的 vet 工具可以用来检查 go 代码中可以通过编译但仍然有可能存在错误的代码。包括并发访问安全、死锁、泄露上下文、结构体反射等等，参考<a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/357406395">文章</a></p>
+<a id="more"></a>
+<p>可用于 Go 语言代码分析的工具有很多，比如 golint、gofmt、misspell 等，如果一一引用配置，就会比较烦琐，所以通常我们不会单独地使用它们，而是使用 golangci-lint。</p>
+<p>golangcli-lint 官网 : <a target="_blank" rel="noopener" href="https://golangci-lint.run/">https://golangci-lint.run/</a></p>
+<p>golangci-lint 是一个集成工具，它集成了很多静态代码分析工具，便于我们使用。通过配置这一工具，我们可以很灵活地启用需要的代码规范检查。</p>
+<h1 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h1><p><code>golangci-lint</code> 本身是通过 GO 编写，所以可以直接使用 <code>go get</code> 安装。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">go get github.com/golangci/golangci-lint/cmd/golangci-lint</span><br></pre></td></tr></table></figure>
+<p>或者按照官网的方式<a target="_blank" rel="noopener" href="https://golangci-lint.run/usage/install/">安装</a></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># binary will be $(go env GOPATH)/bin/golangci-lint</span></span><br><span class="line">curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.43.0</span><br><span class="line"></span><br><span class="line"><span class="comment"># or install it into ./bin/</span></span><br><span class="line">curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s v1.43.0</span><br><span class="line"></span><br><span class="line"><span class="comment"># In alpine linux (as it does not come with curl by default)</span></span><br><span class="line">wget -O- -nv https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s v1.43.0</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>安装完成后，在终端输入如下命令，检测是否安装成功</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">golangci-lint --version</span><br><span class="line">golangci-lint has version v1.43.0 built </span><br></pre></td></tr></table></figure>
+<h1 id="优势"><a href="#优势" class="headerlink" title="优势"></a>优势</h1><p>选择 <code>golangci-lint</code>，是因为它具有其他静态代码检查工具不具备的一些优点。</p>
+<ul>
+<li>速度非常快：golangci-lint 是基于 gometalinter 开发的，但是平均速度要比 gometalinter 快 5 倍。golangci-lint 速度快的原因有三个：可以并行检查代码；可以复用 go build 缓存；会缓存分析结果。</li>
+<li>可配置：支持 YAML 格式的配置文件，让检查更灵活，更可控。</li>
+<li>IDE 集成：可以集成进多个主流的 IDE，例如 VS Code、GNU Emacs、Sublime Text、Goland 等。</li>
+<li>linter 聚合器：1.41.1 版本的 golangci-lint 集成了 76 个 linter，不需要再单独安装这 76 个 linter。并且 golangci-lint 还支持自定义 linter。</li>
+<li>最小的误报数：golangci-lint 调整了所集成 linter 的默认设置，大幅度减少了误报。</li>
+<li>良好的输出：输出的结果带有颜色、代码行号和 linter 标识，易于查看和定位。</li>
+</ul>
+<p><code>golangci-lint</code> 有诸多大公司背书，，例如 Google、Facebook、Istio、Red Hat OpenShift 等。</p>
+<h1 id="运行"><a href="#运行" class="headerlink" title="运行"></a>运行</h1><p>安装成功 golangci-lint 后，就可以使用它进行代码检查了，示例代码</p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> main</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> <span class="string">&quot;os&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">	os.Open(<span class="string">&quot;./main.go&quot;</span>)</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>如下, 提示对返回内容进行错误检查。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">golangci-lint run </span><br><span class="line">main.go:11:9: Error <span class="built_in">return</span> value of `os.Open` is not checked (errcheck)</span><br><span class="line">        os.Open(<span class="string">&quot;./main.go&quot;</span>)</span><br><span class="line">               ^</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h1 id="golangci-lint-命令"><a href="#golangci-lint-命令" class="headerlink" title="golangci-lint 命令"></a>golangci-lint 命令</h1><p>我们可以通过执行 golangci-lint -h 查看其用法，golangci-lint 支持的子命令见下表：</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th style="text-align:center">子命令</th>
+<th style="text-align:center">功能</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">cache</td>
+<td style="text-align:center">缓存控制，并打印缓存信息</td>
+</tr>
+<tr>
+<td style="text-align:center">completion</td>
+<td style="text-align:center">输出 bash\fish\powershell\zsh 补全脚本</td>
+</tr>
+<tr>
+<td style="text-align:center">config</td>
+<td style="text-align:center">打印golangci-lint使用的配置文件路径</td>
+</tr>
+<tr>
+<td style="text-align:center">help</td>
+<td style="text-align:center">打印帮助信息</td>
+</tr>
+<tr>
+<td style="text-align:center">linters</td>
+<td style="text-align:center">打印golangci-lint所支持的全部linter</td>
+</tr>
+<tr>
+<td style="text-align:center">run</td>
+<td style="text-align:center">使用golangci-lint对代码进行检查</td>
+</tr>
+<tr>
+<td style="text-align:center">version</td>
+<td style="text-align:center">打印golangci-lint的版本号</td>
+</tr>
+</tbody>
+</table>
+</div>
+<ul>
+<li><p><strong>run 命令</strong>: run 命令执行 golangci-lint，对代码进行检查，是 golangci-lint 最为核心的一个命令。run 没有子命令，但有很多选项。</p>
+</li>
+<li><p><strong>cache 命令</strong>: cache 命令用来进行缓存控制，并打印缓存的信息。它包含两个子命令, <code>status</code> 、 <code>clean</code></p>
+</li>
+</ul>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">golangci-lint cache status</span><br><span class="line">Dir: /home/ubuntu/.cache/golangci-lint</span><br><span class="line">Size: 71.3KiB</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<ul>
+<li><strong>completion 命令</strong>: completion 命令包含 4 个子命令 bash、fish、powershell 和 zsh，分别用来输出 bash、fish、powershell 和 zsh 的自动补全脚本。</li>
+</ul>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">$ golangci-lint completion bash &gt; ~/.golangci-lint.bash</span><br><span class="line">$ <span class="built_in">echo</span> <span class="string">&quot;source &#x27;<span class="variable">$HOME</span>/.golangci-lint.bash&#x27;&quot;</span> &gt;&gt; ~/.bashrc</span><br><span class="line">$ <span class="built_in">source</span> ~/.bashrc</span><br></pre></td></tr></table></figure>
+<ul>
+<li><strong>linters 命令</strong>: linters 命令可以打印出 golangci-lint 所支持的 linter，并将这些 linter 分成两类，分别是配置为启用的 linter 和配置为禁用的 linter，例如：</li>
+</ul>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">$ golangci-lint linters</span><br><span class="line">Enabled by your configuration linters:</span><br><span class="line">...</span><br><span class="line">deadcode: Finds unused code [fast: <span class="literal">true</span>, auto-fix: <span class="literal">false</span>]</span><br><span class="line">...</span><br><span class="line">Disabled by your configuration linters:</span><br><span class="line">exportloopref: checks <span class="keyword">for</span> pointers to enclosing loop variables [fast: <span class="literal">true</span>, auto-fix: <span class="literal">false</span>]</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+<p>运行指定的 linter</p>
+<p>你可以传入参数-E/—enable来使某个 linter 可用，也可以使用-D/—disable参数来使某个 linter 不可用。下面的示例仅仅启用了 errcheck linter：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ golangci-lint run --no-config --disable-all -E errcheck ./...</span><br></pre></td></tr></table></figure>
+<h1 id="golangci-lint-配置"><a href="#golangci-lint-配置" class="headerlink" title="golangci-lint 配置"></a>golangci-lint 配置</h1><p><code>golangci-lint</code> 的配置比较灵活，比如你可以自定义要启用哪些 <code>linter</code>。<code>golangci-lint</code> 默认启用的 <code>linter</code>，包括这些：</p>
+<ul>
+<li>deadcode - 死代码检查</li>
+<li>errcheck - 返回错误是否使用检查</li>
+<li>gosimple - 检查代码是否可以简化</li>
+<li>govet - 代码可疑检查，比如格式化字符串和类型不一致</li>
+<li>ineffassign - 检查是否有未使用的代码</li>
+<li>staticcheck - 静态分析检查</li>
+<li>structcheck - 查找未使用的结构体字段</li>
+<li>typecheck - 类型检查</li>
+<li>unused - 未使用代码检查</li>
+<li>varcheck - 未使用的全局变量和常量检查</li>
+</ul>
+<p>可以使用 <code>golangci-lint linters</code> 查看;</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">golangci-lint linters</span><br><span class="line">Enabled by your configuration linters:</span><br><span class="line">deadcode: Finds unused code [fast: <span class="literal">false</span>, auto-fix: <span class="literal">false</span>]</span><br><span class="line">errcheck: Errcheck is a program <span class="keyword">for</span> checking <span class="keyword">for</span> unchecked errors <span class="keyword">in</span> go programs. These unchecked errors can be critical bugs <span class="keyword">in</span> some cases [fast: <span class="literal">false</span>, auto-fix: <span class="literal">false</span>]</span><br><span class="line">...</span><br><span class="line"></span><br><span class="line">Disabled by your configuration linters:</span><br><span class="line">asciicheck: Simple linter to check that your code does not contain non-ASCII identifiers [fast: <span class="literal">true</span>, auto-fix: <span class="literal">false</span>]</span><br><span class="line">bidichk: Checks <span class="keyword">for</span> dangerous unicode character sequences [fast: <span class="literal">true</span>, auto-fix: <span class="literal">false</span>]</span><br><span class="line">bodyclose: checks whether HTTP response body is closed successfully [fast: <span class="literal">false</span>, auto-fix: <span class="literal">false</span>]</span><br><span class="line">contextcheck: check the <span class="keyword">function</span> whether use a non-inherited context [fast: <span class="literal">false</span>, auto-fix: <span class="literal">false</span>]</span><br><span class="line">cyclop: checks <span class="keyword">function</span> and package cyclomatic complexity [fast: <span class="literal">false</span>, auto-fix: <span class="literal">false</span>]</span><br><span class="line">...</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>这些 linter 分为两类，一类是默认启用的，另一类是默认禁用的。每个 linter 都有两个属性：</p>
+<ul>
+<li><p>fast：true/false，如果为 true，说明该 linter 可以缓存类型信息，支持快速检查。因为第一次缓存了这些信息，所以后续的运行会非常快。</p>
+</li>
+<li><p>auto-fix：true/false，如果为 true 说明该 linter 支持自动修复发现的错误；如果为 false 说明不支持自动修复。</p>
+</li>
+</ul>
+<p>如果要修改默认启用的 <code>linter</code>，就需要对 <code>golangci-lint</code> 进行配置。即在项目根目录下新建一个名字为 <code>.golangci.yml</code> 的文件，这就是 <code>golangci-lint</code> 的配置文件。在运行代码规范检查的时候，<code>golangci-lint</code> 会自动使用它。假设我只启用 unused 检查，可以这样配置</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">linters:</span></span><br><span class="line">  <span class="attr">disable-all:</span> <span class="literal">true</span></span><br><span class="line">  <span class="attr">enable:</span></span><br><span class="line">    <span class="bullet">-</span> <span class="string">unused</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>更详细的配置内容，你可以参考 <a target="_blank" rel="noopener" href="https://golangci-lint.run/usage/configuration/">Configuration</a><br><a target="_blank" rel="noopener" href="https://github.com/marmotedu/iam/blob/master/.golangci.yaml">IAM 项目参考</a></p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">     <span class="attr">linters-settings:</span></span><br><span class="line">  <span class="attr">golint:</span></span><br><span class="line">    <span class="attr">min-confidence:</span> <span class="number">0</span></span><br><span class="line">  <span class="attr">misspell:</span></span><br><span class="line">    <span class="attr">locale:</span> <span class="string">US</span></span><br><span class="line"><span class="attr">linters:</span></span><br><span class="line">  <span class="attr">disable-all:</span> <span class="literal">true</span></span><br><span class="line">  <span class="attr">enable:</span></span><br><span class="line">    <span class="bullet">-</span> <span class="string">typecheck</span></span><br><span class="line">    <span class="bullet">-</span> <span class="string">goimports</span></span><br><span class="line">    <span class="bullet">-</span> <span class="string">misspell</span></span><br><span class="line">    <span class="bullet">-</span> <span class="string">govet</span></span><br><span class="line">    <span class="bullet">-</span> <span class="string">golint</span></span><br><span class="line">    <span class="bullet">-</span> <span class="string">ineffassign</span></span><br><span class="line">    <span class="bullet">-</span> <span class="string">gosimple</span></span><br><span class="line">    <span class="bullet">-</span> <span class="string">deadcode</span></span><br><span class="line">    <span class="bullet">-</span> <span class="string">structcheck</span></span><br><span class="line">    <span class="bullet">-</span> <span class="string">unused</span></span><br><span class="line">    <span class="bullet">-</span> <span class="string">errcheck</span></span><br><span class="line"><span class="attr">service:</span></span><br><span class="line">  <span class="attr">golangci-lint-version:</span> <span class="number">1.32</span><span class="number">.2</span> <span class="comment"># use the fixed version to not introduce new linters unexpectedly</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h1 id="忽略检查"><a href="#忽略检查" class="headerlink" title="忽略检查"></a>忽略检查</h1><ul>
+<li>某一行忽略检查</li>
+</ul>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> a = <span class="number">1</span> <span class="comment">//nolint</span></span><br></pre></td></tr></table></figure>
+<ul>
+<li>某个函数块忽略检查</li>
+</ul>
+<p>代码中忽略检查, 注释中加 //nolint<br><figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="comment">//nolint</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">allIssuesInThisFunctionAreExcluded</span><span class="params">()</span> *<span class="title">string</span></span> &#123;</span><br><span class="line">  <span class="comment">// ...</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">//nolint:govet</span></span><br><span class="line"><span class="keyword">var</span> (</span><br><span class="line">  a <span class="keyword">int</span></span><br><span class="line">  b <span class="keyword">int</span></span><br><span class="line">)</span><br></pre></td></tr></table></figure></p>
+<ul>
+<li>文件忽略检查</li>
+</ul>
+<p>在 package xx 上面一行添加//nolint注释。<br><figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//nolint:unparam</span></span><br><span class="line"><span class="keyword">package</span> pkg</span><br><span class="line">...</span><br></pre></td></tr></table></figure></p>
+<h1 id="继承到CI"><a href="#继承到CI" class="headerlink" title="继承到CI"></a>继承到CI</h1><p>集成到 <code>CI</code> 代码检查一定要集成到 <code>CI</code> 流程中，效果才会更好，这样开发者提交代码的时候，<code>CI</code> 就会自动检查代码，及时发现问题并进行修正。</p>
+<p>不管你是使用 <code>Jenkins</code>，还是 <code>Gitlab CI</code>，或者 <code>Github Action</code>，都可以通过 <code>Makefile</code> 的方式运行 <code>golangci-lint</code> 。现在我在项目根目录下创建一个 <code>Makefile</code> 文件，并添加如下代码：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">getdeps:</span><br><span class="line">   @mkdir -p $&#123;GOPATH&#125;&#x2F;bin</span><br><span class="line">   @which golangci-lint 1&gt;&#x2F;dev&#x2F;null || (echo &quot;Installing golangci-lint&quot; &amp;&amp; go get github.com&#x2F;golangci&#x2F;golangci-lint&#x2F;cmd&#x2F;golangci-lint@v1.32.2)</span><br><span class="line">lint:</span><br><span class="line">   @echo &quot;Running $@ check&quot;</span><br><span class="line">   @GO111MODULE&#x3D;on $&#123;GOPATH&#125;&#x2F;bin&#x2F;golangci-lint cache clean</span><br><span class="line">   @GO111MODULE&#x3D;on $&#123;GOPATH&#125;&#x2F;bin&#x2F;golangci-lint run --timeout&#x3D;5m --config .&#x2F;.golangci.yml</span><br><span class="line">verifiers: getdeps lint</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+</div></article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta">Author: </span><span class="post-copyright-info"><a href="mailto:undefined">kiosk</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta">Link: </span><span class="post-copyright-info"><a href="http://kiosk007.top/2021/12/18/GoLang-静态代码分析工具/">http://kiosk007.top/2021/12/18/GoLang-静态代码分析工具/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta">Copyright Notice: </span><span class="post-copyright-info">All articles in this blog are licensed under <a target="_blank" rel="noopener" href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a> unless stating additionally.</span></div></div><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/golang/">golang</a></div><div class="addthis_inline_share_toolbox pull-right"></div><script src="//s7.addthis.com/js/300/addthis_widget.js#pubid=kiosk" async></script><nav id="pagination"><div class="next-post pull-right"><a href="/2021/12/04/Nginx-Lua-%E5%85%A5%E9%97%A8/"><span>Nginx Lua 扩展 --（Nginx 监控）</span><i class="fa fa-chevron-right"></i></a></div></nav><div id="vcomment"></div><script src="https://cdn1.lncld.net/static/js/3.0.4/av-min.js"></script><script src="https://cdn.jsdelivr.net/npm/valine/dist/Valine.min.js"></script><script>var notify = 'false' == 'true';
+var verify = 'false' == 'true';
+var record_ip = 'false' == 'true';
+var GUEST_INFO = ['nick','mail','link'];
+var guest_info = 'nick,mail,link'.split(',').filter(function(item){
+  return GUEST_INFO.indexOf(item) > -1
+});
+guest_info = guest_info.length == 0 ? GUEST_INFO :guest_info;
+window.valine = new Valine({
+  el:'#vcomment',
+  notify:notify,
+  verify:verify,
+  recordIP:record_ip,
+  appId:'XhYn8GEq1Sg7ufJQAVmR4dWN-gzGzoHsz',
+  appKey:'r42k4lqU022wD7IvtwGaQfjN',
+  placeholder:'Just go go',
+  avatar:'mm',
+  guest_info:guest_info,
+  pageSize:'10',
+  lang: 'zh-cn'
+})</script></div></div><footer class="footer-bg" style="background-image: url(https://img1.kiosk007.top/static/images/backgroud_sbpk.jpg)"><div class="layout" id="footer"><div class="copyright">&copy;2020 - 2021 By kiosk</div><div class="framework-info"><span>Driven - </span><a target="_blank" rel="noopener" href="http://hexo.io"><span>Hexo</span></a><span class="footer-separator">|</span><span>Theme - </span><a target="_blank" rel="noopener" href="https://github.com/Molunerfinn/hexo-theme-melody"><span>Melody</span></a></div><div class="footer_custom_text"><a target="_blank" rel="noopener" href="http://beian.miit.gov.cn/">京ICP备20015006号-1</a></div><div class="busuanzi"><script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><span id="busuanzi_container_page_pv"><i class="fa fa-file"></i><span id="busuanzi_value_page_pv"></span><span></span></span></div></div></footer><i class="fa fa-arrow-up" id="go-up" aria-hidden="true"></i><script src="https://cdn.jsdelivr.net/npm/animejs@latest/anime.min.js"></script><script src="https://cdn.jsdelivr.net/npm/jquery@latest/dist/jquery.min.js"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@latest/dist/jquery.fancybox.min.js"></script><script src="https://cdn.jsdelivr.net/npm/velocity-animate@latest/velocity.min.js"></script><script src="https://cdn.jsdelivr.net/npm/velocity-ui-pack@latest/velocity.ui.min.js"></script><script src="https://img1.kiosk007.top/static/js/utils.js?version=1.9.0"></script><script src="https://img1.kiosk007.top/static/js/fancybox.js?version=1.9.0"></script><script src="https://img1.kiosk007.top/static/js/sidebar.js?version=1.9.0"></script><script src="https://img1.kiosk007.top/static/js/copy.js?version=1.9.0"></script><script src="https://img1.kiosk007.top/static/js/fireworks.js?version=1.9.0"></script><script src="https://img1.kiosk007.top/static/js/transition.js?version=1.9.0"></script><script src="https://img1.kiosk007.top/static/js/scroll.js?version=1.9.0"></script><script src="https://img1.kiosk007.top/static/js/head.js?version=1.9.0"></script><link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/katex@latest/dist/katex.min.css"><script src="https://cdn.jsdelivr.net/npm/katex-copytex@latest/dist/katex-copytex.min.js"></script><link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/katex-copytex@latest/dist/katex-copytex.min.css"><script src="https://img1.kiosk007.top/static/js/katex.js"></script><script src="https://img1.kiosk007.top/static/js/search/local-search.js"></script><script id="ribbon" src="https://img1.kiosk007.top/static/js/third-party/canvas-ribbon.js" size="150" alpha="0.3" zIndex="-1" data-click="true"></script><script>if(/Android|webOS|iPhone|iPod|iPad|BlackBerry/i.test(navigator.userAgent)) {
+  $('#nav').addClass('is-mobile')
+  $('footer').addClass('is-mobile')
+  $('#top-container').addClass('is-mobile')
+}</script><div class="search-dialog" id="local-search"><div class="search-dialog__title" id="local-search-title">Local search</div><div id="local-input-panel"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="Search for Posts"></div></div></div><hr><div id="local-search-results"><div id="local-hits"></div><div id="local-stats"><div class="local-search-stats__hr" id="hr"><span>Powered by</span> <a target="_blank" rel="noopener" href="https://github.com/wzpan/hexo-generator-search" style="color:#49B1F5;">hexo-generator-search</a></div></div></div><span class="search-close-button"><i class="fa fa-times"></i></span></div><div class="search-mask"></div></body></html>

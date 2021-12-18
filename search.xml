@@ -617,6 +617,142 @@ func main() {
       </tags>
   </entry>
   <entry>
+    <title>GoLang 静态代码分析工具</title>
+    <url>/2021/12/18/GoLang-%E9%9D%99%E6%80%81%E4%BB%A3%E7%A0%81%E5%88%86%E6%9E%90%E5%B7%A5%E5%85%B7/</url>
+    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script><p>在日常Golang编程过程中，需要对 Go 代码做静态代码检查。虽然 Go 命令提供了 <code>go vet</code> 和 <code>go tool vet</code>，但是它们检查的内容还不够全面。go 的 vet 工具可以用来检查 go 代码中可以通过编译但仍然有可能存在错误的代码。包括并发访问安全、死锁、泄露上下文、结构体反射等等，参考<a href="https://zhuanlan.zhihu.com/p/357406395">文章</a></p>
+<a id="more"></a>
+<p>可用于 Go 语言代码分析的工具有很多，比如 golint、gofmt、misspell 等，如果一一引用配置，就会比较烦琐，所以通常我们不会单独地使用它们，而是使用 golangci-lint。</p>
+<p>golangcli-lint 官网 : <a href="https://golangci-lint.run/">https://golangci-lint.run/</a></p>
+<p>golangci-lint 是一个集成工具，它集成了很多静态代码分析工具，便于我们使用。通过配置这一工具，我们可以很灵活地启用需要的代码规范检查。</p>
+<h1 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h1><p><code>golangci-lint</code> 本身是通过 GO 编写，所以可以直接使用 <code>go get</code> 安装。</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">go get github.com/golangci/golangci-lint/cmd/golangci-lint</span><br></pre></td></tr></table></figure>
+<p>或者按照官网的方式<a href="https://golangci-lint.run/usage/install/">安装</a></p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># binary will be $(go env GOPATH)/bin/golangci-lint</span></span><br><span class="line">curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.43.0</span><br><span class="line"></span><br><span class="line"><span class="comment"># or install it into ./bin/</span></span><br><span class="line">curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s v1.43.0</span><br><span class="line"></span><br><span class="line"><span class="comment"># In alpine linux (as it does not come with curl by default)</span></span><br><span class="line">wget -O- -nv https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s v1.43.0</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>安装完成后，在终端输入如下命令，检测是否安装成功</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">golangci-lint --version</span><br><span class="line">golangci-lint has version v1.43.0 built </span><br></pre></td></tr></table></figure>
+<h1 id="优势"><a href="#优势" class="headerlink" title="优势"></a>优势</h1><p>选择 <code>golangci-lint</code>，是因为它具有其他静态代码检查工具不具备的一些优点。</p>
+<ul>
+<li>速度非常快：golangci-lint 是基于 gometalinter 开发的，但是平均速度要比 gometalinter 快 5 倍。golangci-lint 速度快的原因有三个：可以并行检查代码；可以复用 go build 缓存；会缓存分析结果。</li>
+<li>可配置：支持 YAML 格式的配置文件，让检查更灵活，更可控。</li>
+<li>IDE 集成：可以集成进多个主流的 IDE，例如 VS Code、GNU Emacs、Sublime Text、Goland 等。</li>
+<li>linter 聚合器：1.41.1 版本的 golangci-lint 集成了 76 个 linter，不需要再单独安装这 76 个 linter。并且 golangci-lint 还支持自定义 linter。</li>
+<li>最小的误报数：golangci-lint 调整了所集成 linter 的默认设置，大幅度减少了误报。</li>
+<li>良好的输出：输出的结果带有颜色、代码行号和 linter 标识，易于查看和定位。</li>
+</ul>
+<p><code>golangci-lint</code> 有诸多大公司背书，，例如 Google、Facebook、Istio、Red Hat OpenShift 等。</p>
+<h1 id="运行"><a href="#运行" class="headerlink" title="运行"></a>运行</h1><p>安装成功 golangci-lint 后，就可以使用它进行代码检查了，示例代码</p>
+<figure class="highlight golang"><table><tr><td class="code"><pre><span class="line"><span class="keyword">package</span> main</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> <span class="string">&quot;os&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">	os.Open(<span class="string">&quot;./main.go&quot;</span>)</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>如下, 提示对返回内容进行错误检查。</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">golangci-lint run </span><br><span class="line">main.go:11:9: Error <span class="built_in">return</span> value of `os.Open` is not checked (errcheck)</span><br><span class="line">        os.Open(<span class="string">&quot;./main.go&quot;</span>)</span><br><span class="line">               ^</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h1 id="golangci-lint-命令"><a href="#golangci-lint-命令" class="headerlink" title="golangci-lint 命令"></a>golangci-lint 命令</h1><p>我们可以通过执行 golangci-lint -h 查看其用法，golangci-lint 支持的子命令见下表：</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th style="text-align:center">子命令</th>
+<th style="text-align:center">功能</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">cache</td>
+<td style="text-align:center">缓存控制，并打印缓存信息</td>
+</tr>
+<tr>
+<td style="text-align:center">completion</td>
+<td style="text-align:center">输出 bash\fish\powershell\zsh 补全脚本</td>
+</tr>
+<tr>
+<td style="text-align:center">config</td>
+<td style="text-align:center">打印golangci-lint使用的配置文件路径</td>
+</tr>
+<tr>
+<td style="text-align:center">help</td>
+<td style="text-align:center">打印帮助信息</td>
+</tr>
+<tr>
+<td style="text-align:center">linters</td>
+<td style="text-align:center">打印golangci-lint所支持的全部linter</td>
+</tr>
+<tr>
+<td style="text-align:center">run</td>
+<td style="text-align:center">使用golangci-lint对代码进行检查</td>
+</tr>
+<tr>
+<td style="text-align:center">version</td>
+<td style="text-align:center">打印golangci-lint的版本号</td>
+</tr>
+</tbody>
+</table>
+</div>
+<ul>
+<li><p><strong>run 命令</strong>: run 命令执行 golangci-lint，对代码进行检查，是 golangci-lint 最为核心的一个命令。run 没有子命令，但有很多选项。</p>
+</li>
+<li><p><strong>cache 命令</strong>: cache 命令用来进行缓存控制，并打印缓存的信息。它包含两个子命令, <code>status</code> 、 <code>clean</code></p>
+</li>
+</ul>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">golangci-lint cache status</span><br><span class="line">Dir: /home/ubuntu/.cache/golangci-lint</span><br><span class="line">Size: 71.3KiB</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<ul>
+<li><strong>completion 命令</strong>: completion 命令包含 4 个子命令 bash、fish、powershell 和 zsh，分别用来输出 bash、fish、powershell 和 zsh 的自动补全脚本。</li>
+</ul>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"></span><br><span class="line">$ golangci-lint completion bash &gt; ~/.golangci-lint.bash</span><br><span class="line">$ <span class="built_in">echo</span> <span class="string">&quot;source &#x27;<span class="variable">$HOME</span>/.golangci-lint.bash&#x27;&quot;</span> &gt;&gt; ~/.bashrc</span><br><span class="line">$ <span class="built_in">source</span> ~/.bashrc</span><br></pre></td></tr></table></figure>
+<ul>
+<li><strong>linters 命令</strong>: linters 命令可以打印出 golangci-lint 所支持的 linter，并将这些 linter 分成两类，分别是配置为启用的 linter 和配置为禁用的 linter，例如：</li>
+</ul>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"></span><br><span class="line">$ golangci-lint linters</span><br><span class="line">Enabled by your configuration linters:</span><br><span class="line">...</span><br><span class="line">deadcode: Finds unused code [fast: <span class="literal">true</span>, auto-fix: <span class="literal">false</span>]</span><br><span class="line">...</span><br><span class="line">Disabled by your configuration linters:</span><br><span class="line">exportloopref: checks <span class="keyword">for</span> pointers to enclosing loop variables [fast: <span class="literal">true</span>, auto-fix: <span class="literal">false</span>]</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+<p>运行指定的 linter</p>
+<p>你可以传入参数-E/—enable来使某个 linter 可用，也可以使用-D/—disable参数来使某个 linter 不可用。下面的示例仅仅启用了 errcheck linter：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ golangci-lint run --no-config --disable-all -E errcheck ./...</span><br></pre></td></tr></table></figure>
+<h1 id="golangci-lint-配置"><a href="#golangci-lint-配置" class="headerlink" title="golangci-lint 配置"></a>golangci-lint 配置</h1><p><code>golangci-lint</code> 的配置比较灵活，比如你可以自定义要启用哪些 <code>linter</code>。<code>golangci-lint</code> 默认启用的 <code>linter</code>，包括这些：</p>
+<ul>
+<li>deadcode - 死代码检查</li>
+<li>errcheck - 返回错误是否使用检查</li>
+<li>gosimple - 检查代码是否可以简化</li>
+<li>govet - 代码可疑检查，比如格式化字符串和类型不一致</li>
+<li>ineffassign - 检查是否有未使用的代码</li>
+<li>staticcheck - 静态分析检查</li>
+<li>structcheck - 查找未使用的结构体字段</li>
+<li>typecheck - 类型检查</li>
+<li>unused - 未使用代码检查</li>
+<li>varcheck - 未使用的全局变量和常量检查</li>
+</ul>
+<p>可以使用 <code>golangci-lint linters</code> 查看;</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">golangci-lint linters</span><br><span class="line">Enabled by your configuration linters:</span><br><span class="line">deadcode: Finds unused code [fast: <span class="literal">false</span>, auto-fix: <span class="literal">false</span>]</span><br><span class="line">errcheck: Errcheck is a program <span class="keyword">for</span> checking <span class="keyword">for</span> unchecked errors <span class="keyword">in</span> go programs. These unchecked errors can be critical bugs <span class="keyword">in</span> some cases [fast: <span class="literal">false</span>, auto-fix: <span class="literal">false</span>]</span><br><span class="line">...</span><br><span class="line"></span><br><span class="line">Disabled by your configuration linters:</span><br><span class="line">asciicheck: Simple linter to check that your code does not contain non-ASCII identifiers [fast: <span class="literal">true</span>, auto-fix: <span class="literal">false</span>]</span><br><span class="line">bidichk: Checks <span class="keyword">for</span> dangerous unicode character sequences [fast: <span class="literal">true</span>, auto-fix: <span class="literal">false</span>]</span><br><span class="line">bodyclose: checks whether HTTP response body is closed successfully [fast: <span class="literal">false</span>, auto-fix: <span class="literal">false</span>]</span><br><span class="line">contextcheck: check the <span class="keyword">function</span> whether use a non-inherited context [fast: <span class="literal">false</span>, auto-fix: <span class="literal">false</span>]</span><br><span class="line">cyclop: checks <span class="keyword">function</span> and package cyclomatic complexity [fast: <span class="literal">false</span>, auto-fix: <span class="literal">false</span>]</span><br><span class="line">...</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>这些 linter 分为两类，一类是默认启用的，另一类是默认禁用的。每个 linter 都有两个属性：</p>
+<ul>
+<li><p>fast：true/false，如果为 true，说明该 linter 可以缓存类型信息，支持快速检查。因为第一次缓存了这些信息，所以后续的运行会非常快。</p>
+</li>
+<li><p>auto-fix：true/false，如果为 true 说明该 linter 支持自动修复发现的错误；如果为 false 说明不支持自动修复。</p>
+</li>
+</ul>
+<p>如果要修改默认启用的 <code>linter</code>，就需要对 <code>golangci-lint</code> 进行配置。即在项目根目录下新建一个名字为 <code>.golangci.yml</code> 的文件，这就是 <code>golangci-lint</code> 的配置文件。在运行代码规范检查的时候，<code>golangci-lint</code> 会自动使用它。假设我只启用 unused 检查，可以这样配置</p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">linters:</span></span><br><span class="line">  <span class="attr">disable-all:</span> <span class="literal">true</span></span><br><span class="line">  <span class="attr">enable:</span></span><br><span class="line">    <span class="bullet">-</span> <span class="string">unused</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>更详细的配置内容，你可以参考 <a href="https://golangci-lint.run/usage/configuration/">Configuration</a><br><a href="https://github.com/marmotedu/iam/blob/master/.golangci.yaml">IAM 项目参考</a></p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"></span><br><span class="line">     <span class="attr">linters-settings:</span></span><br><span class="line">  <span class="attr">golint:</span></span><br><span class="line">    <span class="attr">min-confidence:</span> <span class="number">0</span></span><br><span class="line">  <span class="attr">misspell:</span></span><br><span class="line">    <span class="attr">locale:</span> <span class="string">US</span></span><br><span class="line"><span class="attr">linters:</span></span><br><span class="line">  <span class="attr">disable-all:</span> <span class="literal">true</span></span><br><span class="line">  <span class="attr">enable:</span></span><br><span class="line">    <span class="bullet">-</span> <span class="string">typecheck</span></span><br><span class="line">    <span class="bullet">-</span> <span class="string">goimports</span></span><br><span class="line">    <span class="bullet">-</span> <span class="string">misspell</span></span><br><span class="line">    <span class="bullet">-</span> <span class="string">govet</span></span><br><span class="line">    <span class="bullet">-</span> <span class="string">golint</span></span><br><span class="line">    <span class="bullet">-</span> <span class="string">ineffassign</span></span><br><span class="line">    <span class="bullet">-</span> <span class="string">gosimple</span></span><br><span class="line">    <span class="bullet">-</span> <span class="string">deadcode</span></span><br><span class="line">    <span class="bullet">-</span> <span class="string">structcheck</span></span><br><span class="line">    <span class="bullet">-</span> <span class="string">unused</span></span><br><span class="line">    <span class="bullet">-</span> <span class="string">errcheck</span></span><br><span class="line"><span class="attr">service:</span></span><br><span class="line">  <span class="attr">golangci-lint-version:</span> <span class="number">1.32</span><span class="number">.2</span> <span class="comment"># use the fixed version to not introduce new linters unexpectedly</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h1 id="忽略检查"><a href="#忽略检查" class="headerlink" title="忽略检查"></a>忽略检查</h1><ul>
+<li>某一行忽略检查</li>
+</ul>
+<figure class="highlight golang"><table><tr><td class="code"><pre><span class="line"><span class="keyword">const</span> a = <span class="number">1</span> <span class="comment">//nolint</span></span><br></pre></td></tr></table></figure>
+<ul>
+<li>某个函数块忽略检查</li>
+</ul>
+<p>代码中忽略检查, 注释中加 //nolint<br><figure class="highlight golang"><table><tr><td class="code"><pre><span class="line"></span><br><span class="line"><span class="comment">//nolint</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">allIssuesInThisFunctionAreExcluded</span><span class="params">()</span> *<span class="title">string</span></span> &#123;</span><br><span class="line">  <span class="comment">// ...</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">//nolint:govet</span></span><br><span class="line"><span class="keyword">var</span> (</span><br><span class="line">  a <span class="keyword">int</span></span><br><span class="line">  b <span class="keyword">int</span></span><br><span class="line">)</span><br></pre></td></tr></table></figure></p>
+<ul>
+<li>文件忽略检查</li>
+</ul>
+<p>在 package xx 上面一行添加//nolint注释。<br><figure class="highlight golang"><table><tr><td class="code"><pre><span class="line"><span class="comment">//nolint:unparam</span></span><br><span class="line"><span class="keyword">package</span> pkg</span><br><span class="line">...</span><br></pre></td></tr></table></figure></p>
+<h1 id="继承到CI"><a href="#继承到CI" class="headerlink" title="继承到CI"></a>继承到CI</h1><p>集成到 <code>CI</code> 代码检查一定要集成到 <code>CI</code> 流程中，效果才会更好，这样开发者提交代码的时候，<code>CI</code> 就会自动检查代码，及时发现问题并进行修正。</p>
+<p>不管你是使用 <code>Jenkins</code>，还是 <code>Gitlab CI</code>，或者 <code>Github Action</code>，都可以通过 <code>Makefile</code> 的方式运行 <code>golangci-lint</code> 。现在我在项目根目录下创建一个 <code>Makefile</code> 文件，并添加如下代码：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">getdeps:</span><br><span class="line">   @mkdir -p $&#123;GOPATH&#125;&#x2F;bin</span><br><span class="line">   @which golangci-lint 1&gt;&#x2F;dev&#x2F;null || (echo &quot;Installing golangci-lint&quot; &amp;&amp; go get github.com&#x2F;golangci&#x2F;golangci-lint&#x2F;cmd&#x2F;golangci-lint@v1.32.2)</span><br><span class="line">lint:</span><br><span class="line">   @echo &quot;Running $@ check&quot;</span><br><span class="line">   @GO111MODULE&#x3D;on $&#123;GOPATH&#125;&#x2F;bin&#x2F;golangci-lint cache clean</span><br><span class="line">   @GO111MODULE&#x3D;on $&#123;GOPATH&#125;&#x2F;bin&#x2F;golangci-lint run --timeout&#x3D;5m --config .&#x2F;.golangci.yml</span><br><span class="line">verifiers: getdeps lint</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+]]></content>
+      <categories>
+        <category>programming</category>
+      </categories>
+      <tags>
+        <tag>golang</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Nginx Lua 扩展 --（Nginx 监控）</title>
     <url>/2021/12/04/Nginx-Lua-%E5%85%A5%E9%97%A8/</url>
     <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script><p>上周我从腾讯云买了一台服务器，开始将本站解析到腾讯云上，至此本站彻底支持了HTTP3访问。不过也需要对Nginx进行一定程度的封装。一个最佳的选择是使用 <code>lua-nginx-module</code> 来扩展Nginx的能力，比如我想对请求进行一些访问统计，将数据发送到 open-falcon 或者 Prometheus 上。</p>
