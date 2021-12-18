@@ -898,6 +898,12 @@ func main() {
 <p>接下来只介绍一下 <code>counter()</code> 函数的执行逻辑，其本质是一个工厂函数，实际调用的是 <code>register()</code> 方法。</p>
 <figure class="highlight lua"><table><tr><td class="code"><pre><span class="line"><span class="comment">-- Public function to register a counter.</span></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">Prometheus:counter</span><span class="params">(name, help, label_names)</span></span></span><br><span class="line">  <span class="keyword">return</span> register(<span class="built_in">self</span>, name, help, label_names, <span class="literal">nil</span>, TYPE_COUNTER)</span><br><span class="line"><span class="keyword">end</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment">-- register 工厂函数</span></span><br><span class="line"><span class="keyword">local</span> <span class="function"><span class="keyword">function</span> <span class="title">register</span><span class="params">(self, name, help, label_names, buckets, typ)</span></span></span><br><span class="line">  <span class="keyword">if</span> <span class="keyword">not</span> <span class="built_in">self</span>.initialized <span class="keyword">then</span></span><br><span class="line">    ngx.<span class="built_in">log</span>(ngx.ERR, <span class="string">&quot;Prometheus module has not been initialized&quot;</span>)</span><br><span class="line">    <span class="keyword">return</span></span><br><span class="line">  <span class="keyword">end</span></span><br><span class="line"></span><br><span class="line">  <span class="keyword">local</span> err = check_metric_and_label_names(name, label_names)</span><br><span class="line">  <span class="keyword">if</span> err <span class="keyword">then</span></span><br><span class="line">    <span class="built_in">self</span>:log_error(err)</span><br><span class="line">    <span class="keyword">return</span></span><br><span class="line">  <span class="keyword">end</span></span><br><span class="line"></span><br><span class="line">  <span class="keyword">local</span> name_maybe_historgram = name:<span class="built_in">gsub</span>(<span class="string">&quot;_bucket$&quot;</span>, <span class="string">&quot;&quot;</span>)</span><br><span class="line">                                    :<span class="built_in">gsub</span>(<span class="string">&quot;_count$&quot;</span>, <span class="string">&quot;&quot;</span>)</span><br><span class="line">                                    :<span class="built_in">gsub</span>(<span class="string">&quot;_sum$&quot;</span>, <span class="string">&quot;&quot;</span>)</span><br><span class="line">  <span class="comment">-- 判断是否有重复的metric                                  </span></span><br><span class="line">  <span class="keyword">if</span> (typ ~= TYPE_HISTOGRAM <span class="keyword">and</span> (</span><br><span class="line">      <span class="built_in">self</span>.registry[name] <span class="keyword">or</span> <span class="built_in">self</span>.registry[name_maybe_historgram]</span><br><span class="line">    )) <span class="keyword">or</span></span><br><span class="line">    (typ == TYPE_HISTOGRAM <span class="keyword">and</span> (</span><br><span class="line">      <span class="built_in">self</span>.registry[name] <span class="keyword">or</span></span><br><span class="line">      <span class="built_in">self</span>.registry[name .. <span class="string">&quot;_count&quot;</span>] <span class="keyword">or</span></span><br><span class="line">      <span class="built_in">self</span>.registry[name .. <span class="string">&quot;_sum&quot;</span>] <span class="keyword">or</span> <span class="built_in">self</span>.registry[name .. <span class="string">&quot;_bucket&quot;</span>]</span><br><span class="line">    )) <span class="keyword">then</span></span><br><span class="line"></span><br><span class="line">    <span class="built_in">self</span>:log_error(<span class="string">&quot;Duplicate metric &quot;</span> .. name)</span><br><span class="line">    <span class="keyword">return</span></span><br><span class="line">  <span class="keyword">end</span></span><br><span class="line"></span><br><span class="line">  <span class="comment">-- 初始化 metrics</span></span><br><span class="line">  <span class="keyword">local</span> metric = &#123;</span><br><span class="line">    name = name,</span><br><span class="line">    help = help,</span><br><span class="line">    typ = typ,</span><br><span class="line">    label_names = label_names,</span><br><span class="line">    label_count = label_names <span class="keyword">and</span> #label_names <span class="keyword">or</span> <span class="number">0</span>,</span><br><span class="line">    <span class="comment">-- Lookup is a tree of lua tables that contain label values, with leaf</span></span><br><span class="line">    <span class="comment">-- tables containing full metric names. For example, given a metric</span></span><br><span class="line">    <span class="comment">-- `http_count` and labels `host` and `status`, it might contain the</span></span><br><span class="line">    <span class="comment">-- following values:</span></span><br><span class="line">    <span class="comment">-- [&#x27;me.com&#x27;][&#x27;200&#x27;][LEAF_KEY] = &#x27;http_count&#123;host=&quot;me.com&quot;,status=&quot;200&quot;&#125;&#x27;</span></span><br><span class="line">    lookup = &#123;&#125;,</span><br><span class="line">    parent = <span class="built_in">self</span>,</span><br><span class="line">    <span class="comment">-- Store a reference for logging functions for faster lookup.</span></span><br><span class="line">    _log_error = <span class="function"><span class="keyword">function</span><span class="params">(...)</span></span> <span class="built_in">self</span>:log_error(...) <span class="keyword">end</span>,</span><br><span class="line">    _log_error_kv = <span class="function"><span class="keyword">function</span><span class="params">(...)</span></span> <span class="built_in">self</span>:log_error_kv(...) <span class="keyword">end</span>,</span><br><span class="line">    _key_index = <span class="built_in">self</span>.key_index,</span><br><span class="line">    _dict = <span class="built_in">self</span>.dict,</span><br><span class="line">    reset = reset,</span><br><span class="line">  &#125;</span><br><span class="line">  </span><br><span class="line">  <span class="comment">-- 将封装方法赋值给 metric </span></span><br><span class="line">  <span class="keyword">if</span> typ &lt; TYPE_HISTOGRAM <span class="keyword">then</span></span><br><span class="line">    <span class="keyword">if</span> typ == TYPE_GAUGE <span class="keyword">then</span></span><br><span class="line">      metric.set = set</span><br><span class="line">      metric.inc = inc_gauge</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">      metric.inc = inc_counter</span><br><span class="line">    <span class="keyword">end</span></span><br><span class="line">    metric.del = del</span><br><span class="line">  <span class="keyword">else</span></span><br><span class="line">    metric.observe = observe</span><br><span class="line">    metric.buckets = buckets <span class="keyword">or</span> DEFAULT_BUCKETS</span><br><span class="line">    metric.bucket_count = #metric.buckets</span><br><span class="line">    metric.bucket_format = construct_bucket_format(metric.buckets)</span><br><span class="line">  <span class="keyword">end</span></span><br><span class="line"></span><br><span class="line">  <span class="built_in">self</span>.registry[name] = metric</span><br><span class="line">  <span class="keyword">return</span> metric</span><br><span class="line"><span class="keyword">end</span></span><br></pre></td></tr></table></figure>
 ]]></content>
+      <categories>
+        <category>Nginx</category>
+      </categories>
+      <tags>
+        <tag>nginx</tag>
+      </tags>
   </entry>
   <entry>
     <title>Go Module 基本使用</title>
@@ -961,6 +967,12 @@ func main() {
 </ul>
 <p>预发布版本是发布版本后接一个预发布后缀。预发布后缀是 - 接一个字符串或者 + 接一个 build 元信息。比如 v8.0.5-pre, v2.0.9+meta<br>带有预发布后缀的版本都为被认为为不稳定版本，这类版本会认为与其他版本不兼容。</p>
 <h1 id="Go-环境"><a href="#Go-环境" class="headerlink" title="Go 环境"></a>Go 环境</h1><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">// 指定不走 proxy 的包路径，用于公司内网的仓库不走代理</span><br><span class="line"><span class="built_in">export</span> GOPRIVATE=<span class="string">&quot;*.taobao.com,*.abc.com&quot;</span></span><br><span class="line">// SUMDB 的代理，SUMDB 用于校验版本是否被恶意修改</span><br><span class="line"><span class="built_in">export</span> GOSUMDB=<span class="string">&quot;sum.golang.google.cn&quot;</span></span><br><span class="line"></span><br><span class="line">// GOPROXY，拉取依赖库使用的代理。</span><br><span class="line">// 适用于 GO 版本 1.15</span><br><span class="line"><span class="built_in">export</span> GOPROXY=<span class="string">&quot;https://goproxy.cn|direct&quot;</span></span><br></pre></td></tr></table></figure>]]></content>
+      <categories>
+        <category>programming</category>
+      </categories>
+      <tags>
+        <tag>golang</tag>
+      </tags>
   </entry>
   <entry>
     <title>项目管理--编写Golang MakeFile</title>
@@ -2657,6 +2669,12 @@ func main() {
 <p>我们现在已经能够使用模拟的方法来全面测试更复杂的项目。值得注意的是，此技术可用于各种不同的系统，例如模拟数据库查询或者是如何与其他 API 交互。总的来说，模拟是非常强大的手段</p>
 <h2 id="suite-package"><a href="#suite-package" class="headerlink" title="suite package"></a>suite package</h2><p>这个包不太常用</p>
 ]]></content>
+      <categories>
+        <category>programming</category>
+      </categories>
+      <tags>
+        <tag>golang</tag>
+      </tags>
   </entry>
   <entry>
     <title>搭建我的ELK 7.12</title>
@@ -2989,7 +3007,7 @@ func main() {
 ]]></content>
   </entry>
   <entry>
-    <title>GoLang 编程模式 -- 基本概念</title>
+    <title>GoLang 编程技巧 (一)</title>
     <url>/2021/01/30/GoLang-%E5%87%BD%E6%95%B0%E5%BC%8F%E7%BC%96%E7%A8%8B/</url>
     <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script><p>本文为了巩固一下 Go 的基础，主要涉及 Slice、Interface、函数式编程等。</p>
 <a id="more"></a>
@@ -3069,6 +3087,12 @@ func main() {
 <figure class="highlight golang"><table><tr><td class="code"><pre><span class="line"></span><br><span class="line">s1, _ := NewServer(<span class="string">&quot;localhost&quot;</span>, <span class="number">1024</span>)</span><br><span class="line">s2, _ := NewServer(<span class="string">&quot;localhost&quot;</span>, <span class="number">2048</span>, Protocol(<span class="string">&quot;udp&quot;</span>))</span><br><span class="line">s3, _ := NewServer(<span class="string">&quot;0.0.0.0&quot;</span>, <span class="number">8080</span>, Timeout(<span class="number">300</span>*time.Second), MaxConns(<span class="number">1000</span>))</span><br></pre></td></tr></table></figure>
 <p>这下对 Server 的封装就像搭积木一样简单容易并且可视化很好。</p>
 ]]></content>
+      <categories>
+        <category>programming</category>
+      </categories>
+      <tags>
+        <tag>golang</tag>
+      </tags>
   </entry>
   <entry>
     <title>探索 Webtransport</title>
@@ -3290,7 +3314,7 @@ func main() {
         <category>programming</category>
       </categories>
       <tags>
-        <tag>Go</tag>
+        <tag>golang</tag>
       </tags>
   </entry>
   <entry>
