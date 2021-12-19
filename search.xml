@@ -428,7 +428,7 @@ func main() {
 </ul>
 <p>原型模式用于创建重复的对象。当一个类在创建时开销比较大时(比如大量数据准备，数据库连接)，我们可以缓存该对象，当下一次调用时，返回该对象的克隆。</p>
 <blockquote>
-<p><strong>不过大多数原型模式不在日常中使用，一般会使用 <code>sync.pool</code> 替代，详见 <a href="Worker Pool in Golang">https://kiosk007.top/2021/03/21/Worker-Pool-in-Golang/#Pool</a></strong></p>
+<p><strong>不过大多数原型模式不在日常中使用，一般会使用 <code>sync.pool</code> 替代，详见 <a href="https://kiosk007.top/2021/03/21/Worker-Pool-in-Golang/">Worker Pool in Golang</a></strong></p>
 </blockquote>
 <p><strong>使用场景</strong></p>
 <ol>
@@ -3009,6 +3009,12 @@ func main() {
 <li><code>waitingQueue</code> 的目的是讲一个新的task放入到等待 task 队列。或者等待工人队列中有可用的工人时将 task 等待队列中取出 task 交给 worker 队列。</li>
 </ul>
 <figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(p *WorkerPool)</span> <span class="title">processWaitingQueue</span><span class="params">()</span> <span class="title">bool</span></span> &#123;</span><br><span class="line">	<span class="keyword">select</span> &#123;</span><br><span class="line">	<span class="keyword">case</span> task, ok := &lt;-p.taskQueue:</span><br><span class="line">		<span class="keyword">if</span> !ok &#123;</span><br><span class="line">			<span class="keyword">return</span> <span class="literal">false</span></span><br><span class="line">		&#125;</span><br><span class="line">		p.waitingQueue.PushBack(task)</span><br><span class="line">	<span class="keyword">case</span> p.workerQueue &lt;- p.waitingQueue.Front().(<span class="function"><span class="keyword">func</span><span class="params">()</span>):</span></span><br><span class="line">		<span class="comment">// A worker was ready, so gave task to worker.</span></span><br><span class="line">		p.waitingQueue.PopFront()</span><br><span class="line">	&#125;</span><br><span class="line">	atomic.StoreInt32(&amp;p.waiting, <span class="keyword">int32</span>(p.waitingQueue.Len()))</span><br><span class="line">	<span class="keyword">return</span> <span class="literal">true</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>]]></content>
+      <categories>
+        <category>programming</category>
+      </categories>
+      <tags>
+        <tag>golang</tag>
+      </tags>
   </entry>
   <entry>
     <title>HTTP/3</title>
