@@ -1,0 +1,122 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"><meta name="description" content="Golang GC"><meta name="keywords" content="golang"><meta name="author" content="kiosk"><meta name="copyright" content="kiosk"><title>Golang GC | kiosk007's Blog</title><link rel="shortcut icon" href="/img/favicon-16x16-dragon.png"><link rel="stylesheet" href="/css/index.css?version=1.9.0"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome@latest/css/font-awesome.min.css?version=1.9.0"><link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.3.1/css/all.css?version=1.9.0"><meta name="format-detection" content="telephone=no"><meta http-equiv="x-dns-prefetch-control" content="on"><link rel="dns-prefetch" href="https://cdn.jsdelivr.net"><link rel="dns-prefetch" href="https://hm.baidu.com"><script>var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?6f3d277b6c83066a05a8b7db067b2308";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();</script><meta http-equiv="Cache-Control" content="no-transform"><meta http-equiv="Cache-Control" content="no-siteapp"><script>var GLOBAL_CONFIG = { 
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"search.xml","languages":{"hits_empty":"We didn't find any results for the search: ${query}"}},
+  copy: {
+    success: 'Copy successfully',
+    error: 'Copy error',
+    noSupport: 'The browser does not support'
+  },
+  hexoVersion: '5.3.0'
+} </script><meta name="generator" content="Hexo 5.3.0"><link rel="alternate" href="/atom.xml" title="kiosk007's Blog" type="application/atom+xml">
+</head><body><i class="fa fa-arrow-right" id="toggle-sidebar" aria-hidden="true"></i><div id="sidebar" data-display="true"><div class="toggle-sidebar-info text-center"><span data-toggle="Toggle article">Toggle site</span><hr></div><div class="sidebar-toc"><div class="sidebar-toc__title">Catalog</div><div class="sidebar-toc__progress"><span class="progress-notice">You've read</span><span class="progress-num">0</span><span class="progress-percentage">%</span><div class="sidebar-toc__progress-bar"></div></div><div class="sidebar-toc__content"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#Golang-%E5%9B%9E%E6%94%B6%E6%9C%BA%E5%88%B6"><span class="toc-number">1.</span> <span class="toc-text">Golang 回收机制</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Go-V1-3-%E4%B9%8B%E5%89%8D%E7%9A%84%E6%A0%87%E8%AE%B0%E6%B8%85%E9%99%A4%E6%B3%95"><span class="toc-number">1.1.</span> <span class="toc-text">Go V1.3 之前的标记清除法</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Go-V1-5-%E4%B8%89%E8%89%B2%E6%A0%87%E8%AE%B0%E6%B3%95"><span class="toc-number">1.2.</span> <span class="toc-text">Go V1.5 三色标记法</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%86%99%E5%B1%8F%E9%9A%9C%E6%9C%BA%E5%88%B6"><span class="toc-number">1.3.</span> <span class="toc-text">写屏障机制</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%8F%92%E5%85%A5%E5%86%99%E5%B1%8F%E9%9A%9C"><span class="toc-number">1.4.</span> <span class="toc-text">插入写屏障</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%88%A0%E9%99%A4%E5%86%99%E5%B1%8F%E9%9A%9C"><span class="toc-number">1.5.</span> <span class="toc-text">删除写屏障</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Go-V1-8-%E6%B7%B7%E5%90%88%E5%86%99%E5%B1%8F%E9%9A%9C"><span class="toc-number">1.6.</span> <span class="toc-text">Go V1.8 混合写屏障</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%80%BB%E7%BB%93"><span class="toc-number">2.</span> <span class="toc-text">总结</span></a></li></ol></div></div><div class="author-info hide"><div class="author-info__avatar text-center"><img src="https://img1.kiosk007.top/static/images/avatar.jpg"></div><div class="author-info__name text-center">kiosk</div><div class="author-info__description text-center">NoOps</div><div class="follow-button"><a target="_blank" rel="noopener" href="https://github.com/weijiaxiang007">Ordinary But Great</a></div><hr><div class="author-info-articles"><a class="author-info-articles__archives article-meta" href="/archives"><span class="pull-left">Articles</span><span class="pull-right">51</span></a><a class="author-info-articles__tags article-meta" href="/tags"><span class="pull-left">Tags</span><span class="pull-right">20</span></a><a class="author-info-articles__categories article-meta" href="/categories"><span class="pull-left">Categories</span><span class="pull-right">8</span></a></div></div></div><div id="content-outer"><div id="top-container" style="background-image: url(https://img1.kiosk007.top/static/images/backgroud_sbpk.jpg)"><div id="page-header"><span class="pull-left"> <a id="site-name" href="/">kiosk007's Blog</a></span><i class="fa fa-bars toggle-menu pull-right" aria-hidden="true"></i><span class="pull-right menus">   <a class="site-page" href="/">首页</a><a class="site-page" href="/about/">关于</a><a class="site-page" href="/archives/">文章</a><a class="site-page" href="/tags/">标签</a><a class="site-page" href="/categories/">分类</a><a class="site-page" href="/express/">Express</a></span><span class="pull-right"><a class="site-page social-icon search"><i class="fa fa-search"></i><span> Search</span></a></span></div><div id="post-info"><div id="post-title">Golang GC</div><div id="post-meta"><time class="post-meta__date"><i class="fa fa-calendar" aria-hidden="true"></i> 2022-03-31</time><span class="post-meta__separator">|</span><i class="fa fa-inbox post-meta__icon" aria-hidden="true"></i><a class="post-meta__categories" href="/categories/programming/">programming</a><div class="post-meta-wordcount"><span>Word count: </span><span class="word-count">1.8k</span><span class="post-meta__separator">|</span><span>Reading time: 5 min</span></div></div></div></div><div class="layout" id="content-inner"><article id="post"><div class="article-container" id="post-content"><p>所有的编程语言都有内存的管理办法，这里面分两大类；一类是编程语言提供了手动管理内存的方式，开发者必须自行对内存进行申请和释放，虽然手动管理相对精准，但是编程麻烦且稍有不慎会造成内存泄露和指针乱踩的后果。另一类是由编程语言提供了垃圾收集机制，开发者不需要手动管理内存，这为开发者提供了很大的便利。</p>
+<p>但是，垃圾回收的工作机制并不是完美的。</p>
+<a id="more"></a>
+<h2 id="Golang-回收机制"><a href="#Golang-回收机制" class="headerlink" title="Golang 回收机制"></a>Golang 回收机制</h2><h3 id="Go-V1-3-之前的标记清除法"><a href="#Go-V1-3-之前的标记清除法" class="headerlink" title="Go V1.3 之前的标记清除法"></a>Go V1.3 之前的标记清除法</h3><p><strong>标记清除法（mark and sweep）</strong> ，低版本的Go 采用的标记清除法很古老。原理也很简单。垃圾回收分为两个阶段：<strong>标记阶段和清除阶段</strong>。</p>
+<ul>
+<li>标记阶段：通过根节点（GC Roots）标记所有从根节点开始的对象，未被标记的对象就是未被引用的垃圾对象。</li>
+<li>清除阶段：清除所有未被标记的对象。</li>
+</ul>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">| --------------- Stop The World 暂停范围 -----------------|</span><br><span class="line">|   启动STW   |   Mark标记  |  Sweep 清除   |    停止 STW   |</span><br></pre></td></tr></table></figure>
+<p>但是这样的垃圾回收机制造就了Golang被人诟病的两个槽点：<strong>速度慢、效率差</strong></p>
+<p><strong>STW（STOP THE WORLD）噩梦</strong> ，在标记清除过程中，会进入一个 “Stop the World” 阶段， 当前运行的所有程序将被暂停。会导致性能下降。</p>
+<p>另外标记阶段需要<strong>扫描整个 heap</strong>，复杂且消耗巨大，最后的清除阶段还会<strong>造成heap碎片</strong>。</p>
+<h3 id="Go-V1-5-三色标记法"><a href="#Go-V1-5-三色标记法" class="headerlink" title="Go V1.5 三色标记法"></a>Go V1.5 三色标记法</h3><p>三色标记法是逻辑上抽象出的三种状态。</p>
+<ul>
+<li><p>白色：对象未被标记，该对象将会在本次GC中被清理</p>
+</li>
+<li><p>灰色：对象还在标记队列中等待</p>
+</li>
+<li><p>黑色：对象已被标记，该对象不会在本次GC中被清理</p>
+</li>
+</ul>
+<ol>
+<li>初始状态下，所有的对象都是白色。</li>
+</ol>
+<p><img src="https://img1.kiosk007.top/static/images/go/gc/gc_3c1.jpg" alt></p>
+<ol>
+<li>从根节点开始遍历所有对象，把遍历到的对象变成灰色对象(备注：这里变成灰色对象的都是根节点的对象)。</li>
+</ol>
+<p><img src="https://img1.kiosk007.top/static/images/go/gc/gc_3c2.jpg" alt></p>
+<ol>
+<li>遍历灰色对象，将灰色对象引用的对象也变成灰色对象，然后将遍历过的灰色对象变成黑色对象。</li>
+</ol>
+<p><img src="https://img1.kiosk007.top/static/images/go/gc/gc_3c3.jpg" alt></p>
+<ol>
+<li><p>循环步骤3，直到灰色对象全部变黑色。</p>
+</li>
+<li><p>通过写屏障(write-barrier)检测对象有变化，重复以上操作</p>
+</li>
+<li>清除所有的白色对象。</li>
+</ol>
+<p>以上图为例，最终对象6由于没有灰色对象引用，最终白色标记表里的对象6被当做 垃圾清除。</p>
+<h3 id="写屏障机制"><a href="#写屏障机制" class="headerlink" title="写屏障机制"></a>写屏障机制</h3><p>下面主要解释一下步骤5 ，什么是”<strong>写屏障机制（Write Barrier）</strong>“。</p>
+<p><strong>三色标记法在垃圾回收过程中是没有 STW 的</strong>。程序在垃圾回收的同时也在正常运行中，为了防止一个被没有被引用的对象（实际上是本来被某对象引用但是取消了引用），在过程中又被已经标记为黑色对象引用，造成误清除，所以必须有一个保护机制即写屏障。</p>
+<p><img src="https://img1.kiosk007.top/static/images/go/gc/gc_3c4.jpg" alt></p>
+<p>如上图，对象2本引用对象三，但是GC过程中对象2放弃取消引用对象3，转为由对象4引用。那么对象4不会再被扫描，对象3无法变成灰色。</p>
+<p>正是为了解决漏标的问题，需要使用写屏障机制来避免，写屏障一定是在内存进行写操作之前执行的。一般屏障机制需要满足以下两个原理来打破上面的破坏。</p>
+<ul>
+<li><p><strong>强三色不变式</strong>: 强制性的不允许黑色对象引用白色对象。</p>
+</li>
+<li><p><strong>弱三色不变式</strong>：黑色对象可以引用白色对象，白色对象存在其他灰色对象对他的引用，或者可达它的链路上游存在灰色对象</p>
+</li>
+</ul>
+<p><img src="https://img1.kiosk007.top/static/images/go/gc/gc_3c5.jpg" alt></p>
+<p>满足上述两种不变式才能做到GC过程中的误清除。</p>
+<p>Go 语言使用两种写屏障技术，分别是 <code>Dikstra</code> 提出的插入写屏障和 <code>Yuasa</code> 提出的删除写屏障。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">          —— 插入屏障  ...  对象被引用时触发</span><br><span class="line">屏障机制  |</span><br><span class="line">          —— 删除屏障  ...  对象被删除时触发</span><br></pre></td></tr></table></figure>
+<h3 id="插入写屏障"><a href="#插入写屏障" class="headerlink" title="插入写屏障"></a>插入写屏障</h3><p><strong>插入写屏障</strong>：（<strong>满足强三色不变式</strong>）在A对象引用B对象时，B对象被标记为灰色（不存在黑色对白色对象引用的情况，因为白色会强制变成灰色）</p>
+<p><strong>插入写屏障的缺点：</strong></p>
+<p>虽然插入写屏障能解决问题，但是 golang 针对栈上对象的赋值却没有捕捉（没有生成写屏障），原因自然是性能损耗和实现复杂度的考虑。这就开了一个例外的口子，有一些黑色的栈对象指向了白色的对象，而回收器却无法感知到。</p>
+<p>golang 的解决方法是：最后再 STW 重新扫描一把栈。这个自然就会导致整个协程的赋值器卡顿。这大约需要 10 ~ 100ms。</p>
+<h3 id="删除写屏障"><a href="#删除写屏障" class="headerlink" title="删除写屏障"></a>删除写屏障</h3><p><strong>删除写屏障</strong>：（<strong>满足弱三色不变式</strong>）被删除的对象如果自身为灰色或者白色，那么被标记为灰色。（保护灰色对象到白色对象的路径不会断掉）</p>
+<p>他的问题是GC过程中如果出现了删除引用，那么所删除的对象及其子对象会全部保留，就是害怕被已被标记的黑色对象再引用。</p>
+<p><strong>删除写屏障的缺点：</strong></p>
+<p>回收精度低，一个对象即便被删除了最后一个指向它的指针依旧可以活过这一轮，在下一轮GC中被清除。</p>
+<h3 id="Go-V1-8-混合写屏障"><a href="#Go-V1-8-混合写屏障" class="headerlink" title="Go V1.8 混合写屏障"></a>Go V1.8 混合写屏障</h3><p>V1.5 通过三色标记 和满足强弱三色不变式的写屏障机制实现了垃圾回收。</p>
+<p>但是从上面的过程可以看出，无论是满足强三色的插入写屏障还是满足弱三式的删除写屏障。都有他们的问题。</p>
+<p>插入写屏障还需要在结束时STW扫描栈，删除写屏障的回收精度太低。所以在 GoV1.8 版本之后引入了 <strong>三色标记 + 混合写屏障机制</strong>。</p>
+<p>具体操作：</p>
+<ol>
+<li><strong>GC 开始则将栈上的对象全部标记为黑色（之后不再进行二次重复扫描，无需STW）</strong></li>
+<li>GC期间，任何创建在栈上的新对象，均为黑色。</li>
+<li>被删除对象标记为灰色。</li>
+<li>被添加对象标记为灰色。</li>
+</ol>
+<p>混合写屏障机制满足了变形的强弱三色不变式，（结合了插入、删除写屏障两者的优点）</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
+<li>Go V1.3 标记清除法：整个过程需要 STW ，效率底下</li>
+<li>Go V1.5 三色标记法：堆空间启用写屏障，栈空间不启用，全部扫描一遍后，需要重新再扫描一次栈（需要STW），效率普通</li>
+<li>Go V1.8 三色标记法+混合写屏障机制：栈空间不启用（栈基本都标记为黑色），堆空间不启用，整个过程不需要STW，效率高。</li>
+</ul>
+</div></article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta">Author: </span><span class="post-copyright-info"><a href="mailto:undefined">kiosk</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta">Link: </span><span class="post-copyright-info"><a href="http://kiosk007.top/2022/03/31/Golang-GC/">http://kiosk007.top/2022/03/31/Golang-GC/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta">Copyright Notice: </span><span class="post-copyright-info">All articles in this blog are licensed under <a target="_blank" rel="noopener" href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a> unless stating additionally.</span></div></div><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/golang/">golang</a></div><div class="addthis_inline_share_toolbox pull-right"></div><script src="//s7.addthis.com/js/300/addthis_widget.js#pubid=kiosk" async></script><nav id="pagination"><div class="next-post pull-right"><a href="/2022/03/31/Golang-%E6%B3%9B%E5%9E%8B%E5%85%A5%E9%97%A8/"><span>Golang 泛型入门</span><i class="fa fa-chevron-right"></i></a></div></nav><div id="vcomment"></div><script src="https://cdn1.lncld.net/static/js/3.0.4/av-min.js"></script><script src="https://cdn.jsdelivr.net/npm/valine/dist/Valine.min.js"></script><script>var notify = 'false' == 'true';
+var verify = 'false' == 'true';
+var record_ip = 'false' == 'true';
+var GUEST_INFO = ['nick','mail','link'];
+var guest_info = 'nick,mail,link'.split(',').filter(function(item){
+  return GUEST_INFO.indexOf(item) > -1
+});
+guest_info = guest_info.length == 0 ? GUEST_INFO :guest_info;
+window.valine = new Valine({
+  el:'#vcomment',
+  notify:notify,
+  verify:verify,
+  recordIP:record_ip,
+  appId:'XhYn8GEq1Sg7ufJQAVmR4dWN-gzGzoHsz',
+  appKey:'r42k4lqU022wD7IvtwGaQfjN',
+  placeholder:'Just go go',
+  avatar:'mm',
+  guest_info:guest_info,
+  pageSize:'10',
+  lang: 'zh-cn'
+})</script></div></div><footer class="footer-bg" style="background-image: url(https://img1.kiosk007.top/static/images/backgroud_sbpk.jpg)"><div class="layout" id="footer"><div class="copyright">&copy;2020 - 2022 By kiosk</div><div class="framework-info"><span>Driven - </span><a target="_blank" rel="noopener" href="http://hexo.io"><span>Hexo</span></a><span class="footer-separator">|</span><span>Theme - </span><a target="_blank" rel="noopener" href="https://github.com/Molunerfinn/hexo-theme-melody"><span>Melody</span></a></div><div class="footer_custom_text"><a target="_blank" rel="noopener" href="http://beian.miit.gov.cn/">京ICP备20015006号-1</a></div><div class="busuanzi"><script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><span id="busuanzi_container_page_pv"><i class="fa fa-file"></i><span id="busuanzi_value_page_pv"></span><span></span></span></div></div></footer><i class="fa fa-arrow-up" id="go-up" aria-hidden="true"></i><script src="https://cdn.jsdelivr.net/npm/animejs@latest/anime.min.js"></script><script src="https://cdn.jsdelivr.net/npm/jquery@latest/dist/jquery.min.js"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@latest/dist/jquery.fancybox.min.js"></script><script src="https://cdn.jsdelivr.net/npm/velocity-animate@latest/velocity.min.js"></script><script src="https://cdn.jsdelivr.net/npm/velocity-ui-pack@latest/velocity.ui.min.js"></script><script src="https://img1.kiosk007.top/static/js/utils.js?version=1.9.0"></script><script src="https://img1.kiosk007.top/static/js/fancybox.js?version=1.9.0"></script><script src="https://img1.kiosk007.top/static/js/sidebar.js?version=1.9.0"></script><script src="https://img1.kiosk007.top/static/js/copy.js?version=1.9.0"></script><script src="https://img1.kiosk007.top/static/js/fireworks.js?version=1.9.0"></script><script src="https://img1.kiosk007.top/static/js/transition.js?version=1.9.0"></script><script src="https://img1.kiosk007.top/static/js/scroll.js?version=1.9.0"></script><script src="https://img1.kiosk007.top/static/js/head.js?version=1.9.0"></script><link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/katex@latest/dist/katex.min.css"><script src="https://cdn.jsdelivr.net/npm/katex-copytex@latest/dist/katex-copytex.min.js"></script><link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/katex-copytex@latest/dist/katex-copytex.min.css"><script src="https://img1.kiosk007.top/static/js/katex.js"></script><script src="https://img1.kiosk007.top/static/js/search/local-search.js"></script><script id="ribbon" src="https://img1.kiosk007.top/static/js/third-party/canvas-ribbon.js" size="150" alpha="0.3" zIndex="-1" data-click="true"></script><script>if(/Android|webOS|iPhone|iPod|iPad|BlackBerry/i.test(navigator.userAgent)) {
+  $('#nav').addClass('is-mobile')
+  $('footer').addClass('is-mobile')
+  $('#top-container').addClass('is-mobile')
+}</script><div class="search-dialog" id="local-search"><div class="search-dialog__title" id="local-search-title">Local search</div><div id="local-input-panel"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="Search for Posts"></div></div></div><hr><div id="local-search-results"><div id="local-hits"></div><div id="local-stats"><div class="local-search-stats__hr" id="hr"><span>Powered by</span> <a target="_blank" rel="noopener" href="https://github.com/wzpan/hexo-generator-search" style="color:#49B1F5;">hexo-generator-search</a></div></div></div><span class="search-close-button"><i class="fa fa-times"></i></span></div><div class="search-mask"></div></body></html>

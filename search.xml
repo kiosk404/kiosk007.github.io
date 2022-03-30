@@ -703,6 +703,230 @@ func main() {
       </tags>
   </entry>
   <entry>
+    <title>Golang GC</title>
+    <url>/2022/03/31/Golang-GC/</url>
+    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script><p>所有的编程语言都有内存的管理办法，这里面分两大类；一类是编程语言提供了手动管理内存的方式，开发者必须自行对内存进行申请和释放，虽然手动管理相对精准，但是编程麻烦且稍有不慎会造成内存泄露和指针乱踩的后果。另一类是由编程语言提供了垃圾收集机制，开发者不需要手动管理内存，这为开发者提供了很大的便利。</p>
+<p>但是，垃圾回收的工作机制并不是完美的。</p>
+<a id="more"></a>
+<h2 id="Golang-回收机制"><a href="#Golang-回收机制" class="headerlink" title="Golang 回收机制"></a>Golang 回收机制</h2><h3 id="Go-V1-3-之前的标记清除法"><a href="#Go-V1-3-之前的标记清除法" class="headerlink" title="Go V1.3 之前的标记清除法"></a>Go V1.3 之前的标记清除法</h3><p><strong>标记清除法（mark and sweep）</strong> ，低版本的Go 采用的标记清除法很古老。原理也很简单。垃圾回收分为两个阶段：<strong>标记阶段和清除阶段</strong>。</p>
+<ul>
+<li>标记阶段：通过根节点（GC Roots）标记所有从根节点开始的对象，未被标记的对象就是未被引用的垃圾对象。</li>
+<li>清除阶段：清除所有未被标记的对象。</li>
+</ul>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">| --------------- Stop The World 暂停范围 -----------------|</span><br><span class="line">|   启动STW   |   Mark标记  |  Sweep 清除   |    停止 STW   |</span><br></pre></td></tr></table></figure>
+<p>但是这样的垃圾回收机制造就了Golang被人诟病的两个槽点：<strong>速度慢、效率差</strong></p>
+<p><strong>STW（STOP THE WORLD）噩梦</strong> ，在标记清除过程中，会进入一个 “Stop the World” 阶段， 当前运行的所有程序将被暂停。会导致性能下降。</p>
+<p>另外标记阶段需要<strong>扫描整个 heap</strong>，复杂且消耗巨大，最后的清除阶段还会<strong>造成heap碎片</strong>。</p>
+<h3 id="Go-V1-5-三色标记法"><a href="#Go-V1-5-三色标记法" class="headerlink" title="Go V1.5 三色标记法"></a>Go V1.5 三色标记法</h3><p>三色标记法是逻辑上抽象出的三种状态。</p>
+<ul>
+<li><p>白色：对象未被标记，该对象将会在本次GC中被清理</p>
+</li>
+<li><p>灰色：对象还在标记队列中等待</p>
+</li>
+<li><p>黑色：对象已被标记，该对象不会在本次GC中被清理</p>
+</li>
+</ul>
+<ol>
+<li>初始状态下，所有的对象都是白色。</li>
+</ol>
+<p><img src="https://img1.kiosk007.top/static/images/go/gc/gc_3c1.jpg" alt></p>
+<ol>
+<li>从根节点开始遍历所有对象，把遍历到的对象变成灰色对象(备注：这里变成灰色对象的都是根节点的对象)。</li>
+</ol>
+<p><img src="https://img1.kiosk007.top/static/images/go/gc/gc_3c2.jpg" alt></p>
+<ol>
+<li>遍历灰色对象，将灰色对象引用的对象也变成灰色对象，然后将遍历过的灰色对象变成黑色对象。</li>
+</ol>
+<p><img src="https://img1.kiosk007.top/static/images/go/gc/gc_3c3.jpg" alt></p>
+<ol>
+<li><p>循环步骤3，直到灰色对象全部变黑色。</p>
+</li>
+<li><p>通过写屏障(write-barrier)检测对象有变化，重复以上操作</p>
+</li>
+<li>清除所有的白色对象。</li>
+</ol>
+<p>以上图为例，最终对象6由于没有灰色对象引用，最终白色标记表里的对象6被当做 垃圾清除。</p>
+<h3 id="写屏障机制"><a href="#写屏障机制" class="headerlink" title="写屏障机制"></a>写屏障机制</h3><p>下面主要解释一下步骤5 ，什么是”<strong>写屏障机制（Write Barrier）</strong>“。</p>
+<p><strong>三色标记法在垃圾回收过程中是没有 STW 的</strong>。程序在垃圾回收的同时也在正常运行中，为了防止一个被没有被引用的对象（实际上是本来被某对象引用但是取消了引用），在过程中又被已经标记为黑色对象引用，造成误清除，所以必须有一个保护机制即写屏障。</p>
+<p><img src="https://img1.kiosk007.top/static/images/go/gc/gc_3c4.jpg" alt></p>
+<p>如上图，对象2本引用对象三，但是GC过程中对象2放弃取消引用对象3，转为由对象4引用。那么对象4不会再被扫描，对象3无法变成灰色。</p>
+<p>正是为了解决漏标的问题，需要使用写屏障机制来避免，写屏障一定是在内存进行写操作之前执行的。一般屏障机制需要满足以下两个原理来打破上面的破坏。</p>
+<ul>
+<li><p><strong>强三色不变式</strong>: 强制性的不允许黑色对象引用白色对象。</p>
+</li>
+<li><p><strong>弱三色不变式</strong>：黑色对象可以引用白色对象，白色对象存在其他灰色对象对他的引用，或者可达它的链路上游存在灰色对象</p>
+</li>
+</ul>
+<p><img src="https://img1.kiosk007.top/static/images/go/gc/gc_3c5.jpg" alt></p>
+<p>满足上述两种不变式才能做到GC过程中的误清除。</p>
+<p>Go 语言使用两种写屏障技术，分别是 <code>Dikstra</code> 提出的插入写屏障和 <code>Yuasa</code> 提出的删除写屏障。</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">          —— 插入屏障  ...  对象被引用时触发</span><br><span class="line">屏障机制  |</span><br><span class="line">          —— 删除屏障  ...  对象被删除时触发</span><br></pre></td></tr></table></figure>
+<h3 id="插入写屏障"><a href="#插入写屏障" class="headerlink" title="插入写屏障"></a>插入写屏障</h3><p><strong>插入写屏障</strong>：（<strong>满足强三色不变式</strong>）在A对象引用B对象时，B对象被标记为灰色（不存在黑色对白色对象引用的情况，因为白色会强制变成灰色）</p>
+<p><strong>插入写屏障的缺点：</strong></p>
+<p>虽然插入写屏障能解决问题，但是 golang 针对栈上对象的赋值却没有捕捉（没有生成写屏障），原因自然是性能损耗和实现复杂度的考虑。这就开了一个例外的口子，有一些黑色的栈对象指向了白色的对象，而回收器却无法感知到。</p>
+<p>golang 的解决方法是：最后再 STW 重新扫描一把栈。这个自然就会导致整个协程的赋值器卡顿。这大约需要 10 ~ 100ms。</p>
+<h3 id="删除写屏障"><a href="#删除写屏障" class="headerlink" title="删除写屏障"></a>删除写屏障</h3><p><strong>删除写屏障</strong>：（<strong>满足弱三色不变式</strong>）被删除的对象如果自身为灰色或者白色，那么被标记为灰色。（保护灰色对象到白色对象的路径不会断掉）</p>
+<p>他的问题是GC过程中如果出现了删除引用，那么所删除的对象及其子对象会全部保留，就是害怕被已被标记的黑色对象再引用。</p>
+<p><strong>删除写屏障的缺点：</strong></p>
+<p>回收精度低，一个对象即便被删除了最后一个指向它的指针依旧可以活过这一轮，在下一轮GC中被清除。</p>
+<h3 id="Go-V1-8-混合写屏障"><a href="#Go-V1-8-混合写屏障" class="headerlink" title="Go V1.8 混合写屏障"></a>Go V1.8 混合写屏障</h3><p>V1.5 通过三色标记 和满足强弱三色不变式的写屏障机制实现了垃圾回收。</p>
+<p>但是从上面的过程可以看出，无论是满足强三色的插入写屏障还是满足弱三式的删除写屏障。都有他们的问题。</p>
+<p>插入写屏障还需要在结束时STW扫描栈，删除写屏障的回收精度太低。所以在 GoV1.8 版本之后引入了 <strong>三色标记 + 混合写屏障机制</strong>。</p>
+<p>具体操作：</p>
+<ol>
+<li><strong>GC 开始则将栈上的对象全部标记为黑色（之后不再进行二次重复扫描，无需STW）</strong></li>
+<li>GC期间，任何创建在栈上的新对象，均为黑色。</li>
+<li>被删除对象标记为灰色。</li>
+<li>被添加对象标记为灰色。</li>
+</ol>
+<p>混合写屏障机制满足了变形的强弱三色不变式，（结合了插入、删除写屏障两者的优点）</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
+<li>Go V1.3 标记清除法：整个过程需要 STW ，效率底下</li>
+<li>Go V1.5 三色标记法：堆空间启用写屏障，栈空间不启用，全部扫描一遍后，需要重新再扫描一次栈（需要STW），效率普通</li>
+<li>Go V1.8 三色标记法+混合写屏障机制：栈空间不启用（栈基本都标记为黑色），堆空间不启用，整个过程不需要STW，效率高。</li>
+</ul>
+]]></content>
+      <categories>
+        <category>programming</category>
+      </categories>
+      <tags>
+        <tag>golang</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Golang 泛型入门</title>
+    <url>/2022/03/31/Golang-%E6%B3%9B%E5%9E%8B%E5%85%A5%E9%97%A8/</url>
+    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script><h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>Go 1.18 版本正式推出了，而这个版本最大的亮点则是正式支持泛型。</p>
+<a id="more"></a>
+<h2 id="泛型编程"><a href="#泛型编程" class="headerlink" title="泛型编程"></a>泛型编程</h2><p>在之前的版本中<code>Go</code>语言想做一些通用的数据类型的编程操作的时候，可能大部分还是使用<code>interface</code>来进行编程。但是代码里面会出现各种断言操作。</p>
+<h2 id="准备工作"><a href="#准备工作" class="headerlink" title="准备工作"></a>准备工作</h2><p>安装Go 1.18 版本</p>
+<ol>
+<li>使用下面的命令安装beta版本</li>
+</ol>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ go install golang.org/dl/go1.18@latest</span><br></pre></td></tr></table></figure>
+<ol>
+<li>运行如下命令来更新</li>
+</ol>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ go1.18 download</span><br></pre></td></tr></table></figure>
+<ol>
+<li>创建alias</li>
+</ol>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ <span class="built_in">alias</span> go=go1.18</span><br><span class="line">$ go version</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h2 id="初体验"><a href="#初体验" class="headerlink" title="初体验"></a>初体验</h2><p>如果没有泛型，我们必须对变量的类型进行强制定义，当然 Golang 中还有<code>intererface&#123;&#125;</code> 这个类型。假设我们需要写一个可以传入任意类型的排序函数，则需要在函数内判断类型，如下所示。</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">bubbleSort</span><span class="params">(sequence []<span class="keyword">interface</span>&#123;&#125;)</span></span> &#123;</span><br><span class="line">	<span class="keyword">switch</span> sequence[<span class="number">0</span>].(<span class="keyword">type</span>) &#123;</span><br><span class="line">	<span class="keyword">case</span> <span class="keyword">int</span>:</span><br><span class="line">		<span class="keyword">for</span> i := <span class="number">0</span>; i &lt; <span class="built_in">len</span>(sequence)<span class="number">-1</span>; i++ &#123;</span><br><span class="line">			<span class="keyword">for</span> j := <span class="number">0</span>; j &lt; <span class="built_in">len</span>(sequence)-i<span class="number">-1</span>; j++ &#123;</span><br><span class="line">				<span class="keyword">if</span> sequence[j].(<span class="keyword">int</span>) &gt; sequence[j+<span class="number">1</span>].(<span class="keyword">int</span>) &#123;</span><br><span class="line">					sequence[j], sequence[j+<span class="number">1</span>] = sequence[j+<span class="number">1</span>], sequence[j]</span><br><span class="line">				&#125;</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">case</span> <span class="keyword">float64</span>:</span><br><span class="line">		<span class="keyword">for</span> i := <span class="number">0</span>; i &lt; <span class="built_in">len</span>(sequence)<span class="number">-1</span>; i++ &#123;</span><br><span class="line">			<span class="keyword">for</span> j := <span class="number">0</span>; j &lt; <span class="built_in">len</span>(sequence)-i<span class="number">-1</span>; j++ &#123;</span><br><span class="line">				<span class="keyword">if</span> sequence[j].(<span class="keyword">float64</span>) &gt; sequence[j+<span class="number">1</span>].(<span class="keyword">float64</span>) &#123;</span><br><span class="line">					sequence[j], sequence[j+<span class="number">1</span>] = sequence[j+<span class="number">1</span>], sequence[j]</span><br><span class="line">				&#125;</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">	sequence := []<span class="keyword">interface</span>&#123;&#125;&#123;<span class="number">12.12</span>, <span class="number">1.1</span>, <span class="number">99.4</span>, <span class="number">99.2</span>, <span class="number">88.8</span>, <span class="number">2.3</span>&#125;</span><br><span class="line">	bubbleSort(sequence)</span><br><span class="line">	fmt.Println(sequence)</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>下面我们看看泛型函数如何实现我们的需求。</p>
+<p><code>Go</code>支持泛型函数和泛型类型，首先我们看一下泛型函数，下面是一个标准的泛型函数标准模板：</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="comment">// GenericFunc 一个标准的泛型函数模板</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">GenericFunc</span>[<span class="title">T</span> <span class="title">any</span>]<span class="params">(args T)</span></span> &#123;</span><br><span class="line">	  <span class="comment">// logic code</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>函数签名里面多了<code>[T any]</code>部分，这就是<code>Go</code>泛型的参数列表，其中<code>T</code>就是参数，<code>any</code>为参数的约束。</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">bubbleSort</span>[<span class="title">T</span> <span class="title">int</span> | <span class="title">float64</span>]<span class="params">(sequence []T)</span></span> &#123;</span><br><span class="line">	<span class="keyword">for</span> i := <span class="number">0</span>; i &lt; <span class="built_in">len</span>(sequence)<span class="number">-1</span>; i++ &#123;</span><br><span class="line">		<span class="keyword">for</span> j := <span class="number">0</span>; j &lt; <span class="built_in">len</span>(sequence)-i<span class="number">-1</span>; j++ &#123;</span><br><span class="line">			<span class="keyword">if</span> sequence[j] &gt; sequence[j+<span class="number">1</span>] &#123;</span><br><span class="line">				sequence[j], sequence[j+<span class="number">1</span>] = sequence[j+<span class="number">1</span>], sequence[j]</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">	sequence := []<span class="keyword">float64</span>&#123;<span class="number">2.12</span>, <span class="number">1.1</span>, <span class="number">99.4</span>, <span class="number">99.2</span>, <span class="number">88.8</span>, <span class="number">2.3</span>&#125;</span><br><span class="line">	bubbleSort[<span class="keyword">float64</span>](sequence)</span><br><span class="line">	fmt.Println(sequence)</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>上面编写的泛型示例都是基于泛型函数进行的，但是我们有时候编程需要定义一些复合数据类型的数据结构，例如我们要实现一套缓存组件代码，缓存的内容<code>Value</code>可能有多重形式，一个缓存有<code>Get</code>方法有 <code>Set</code> 方法。一个写入缓存，一个取出缓存内容，如下的代码：</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="keyword">type</span> Element <span class="keyword">interface</span> &#123;</span><br><span class="line">	<span class="keyword">int</span> | <span class="keyword">int64</span> | <span class="keyword">float64</span> | <span class="keyword">string</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> Cache[V Element] <span class="keyword">struct</span> &#123;</span><br><span class="line">	size  <span class="keyword">int</span></span><br><span class="line">	value <span class="keyword">map</span>[<span class="keyword">string</span>]V</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>上面的代码我们就通过泛型编程定义一个<code>value</code>类型只能为<code>Element</code>类型集合的<code>Cache</code>结构，<code>Cache[V Element]</code>的中括号里面的就是泛型约束条件。</p>
+<p>接着给Cache添加行为方法，方法签名上的<code>c *Cache[V]</code>就代表是一个泛型的<code>Cache</code>结构。</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="keyword">type</span> Element <span class="keyword">interface</span> &#123;</span><br><span class="line">	<span class="keyword">int</span> | <span class="keyword">int64</span> | <span class="keyword">float64</span> | <span class="keyword">string</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> Cache[V Element] <span class="keyword">struct</span> &#123;</span><br><span class="line">	size  <span class="keyword">int</span></span><br><span class="line">	value <span class="keyword">map</span>[<span class="keyword">string</span>]V</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(c *Cache[V])</span> <span class="title">Set</span><span class="params">(key <span class="keyword">string</span>, v V)</span></span> &#123;</span><br><span class="line">	c.value[key] = v</span><br><span class="line">	c.size = <span class="built_in">len</span>(c.value)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(c *Cache[V])</span> <span class="title">Get</span><span class="params">(key <span class="keyword">string</span>)</span> <span class="params">(ok <span class="keyword">bool</span>, v V)</span></span> &#123;</span><br><span class="line">	v, ok = c.value[key]</span><br><span class="line">	<span class="keyword">return</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">NewCache</span>[<span class="title">V</span> <span class="title">Element</span>]<span class="params">()</span> *<span class="title">Cache</span>[<span class="title">V</span>]</span> &#123;</span><br><span class="line">	<span class="keyword">return</span> &amp;Cache[V]&#123;</span><br><span class="line">		size:  <span class="number">0</span>,</span><br><span class="line">		value: <span class="keyword">map</span>[<span class="keyword">string</span>]V&#123;&#125;,</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>使用就和函数泛型差不多，在中括号里面指定泛型类型：</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">    cache := NewCache[<span class="keyword">int64</span>]()</span><br><span class="line">	  cache.Set(<span class="string">&quot;a&quot;</span>, <span class="number">10</span>)</span><br><span class="line">	  _, v := cache.Get(<span class="string">&quot;a&quot;</span>)</span><br><span class="line">	  fmt.Println(v)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="泛型和interface的区别"><a href="#泛型和interface的区别" class="headerlink" title="泛型和interface的区别"></a>泛型和interface的区别</h2><p>这么看来泛型和 <code>interface&#123;&#125;</code> 相比只是代码的可读性变的强大了吗？</p>
+<p>其实不然。以上面的 ”缓存组件“ 为例</p>
+<p>1.18 以下版本的Go为了支持任意类型，会使用空接口如下所示</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="keyword">type</span> Cache <span class="keyword">struct</span> &#123;</span><br><span class="line">  size   <span class="keyword">int</span> </span><br><span class="line">  values <span class="keyword">map</span>[<span class="keyword">string</span>]<span class="keyword">interface</span>&#123;&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(c *Cache)</span> <span class="title">Set</span><span class="params">(k <span class="keyword">string</span>, v <span class="keyword">interface</span>&#123;&#125;)</span></span> &#123;</span><br><span class="line">  c.values[k] = v</span><br><span class="line">  c.size = <span class="built_in">len</span>(c.values)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(c *Cache)</span> <span class="title">Get</span><span class="params">(k <span class="keyword">string</span>)</span> <span class="params">(v <span class="keyword">interface</span>&#123;&#125;, ok <span class="keyword">bool</span>)</span></span> &#123;</span><br><span class="line">  v , ok = c.value[k]</span><br><span class="line">  <span class="keyword">return</span> </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>一般在 <code>Set</code> 的时候没有什么不方便，因为到空接口的赋值是不需要额外的处理。但是 <code>Get</code> 的时候就需要将取出的数据进行一次类型断言。</p>
+<p>我们知道空接口本质是一对指针。如果用来装载值类型的话，会发生逃逸到堆上。</p>
+<p><img src="https://img1.kiosk007.top/static/images/go/generic_interface1.png" alt></p>
+<p>也就是说，在上面的cache中，value 是 <code>interface&#123;&#125;</code>空接口，而<code>interface&#123;&#125;</code>空接口是一个包含类型和值的的指针， <code>data</code>指针会指向堆上的 int 数据。那么就是老的实现方式占用了2倍的内存。</p>
+<p>下来我们看看 泛型的实现。</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">	cache := NewCache[<span class="keyword">int64</span>]()</span><br><span class="line">	cache.Set(<span class="string">&quot;a&quot;</span>, <span class="number">10</span>)</span><br><span class="line">	_, _ = cache.Get(<span class="string">&quot;a&quot;</span>)</span><br><span class="line">	t := reflect.TypeOf(cache.value)</span><br><span class="line">	fmt.Println(t)       <span class="comment">// map[string]int64</span></span><br><span class="line">	fmt.Println(t.Elem().String())   <span class="comment">// int64</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>通过反射可以看出 <code>cache.value</code> 底层的map本身值就是 <code>int64</code> , 没有额外的堆分配。也就是使用泛型的实现节省了程序在运行过程中的额外内存消耗的问题。</p>
+<p>这样的实现本质也是有消耗的。其实 Go 编译器在编译阶段就为 int64 生成了一套代码，同样的 <code>string</code> 、<code>float64</code> 也生成了一套代码，这样会导致编译后的产物变大。</p>
+<p><strong>所以泛型是编译阶段的代码生成，其不会代替空接口的地位，空接口主要来实现语言的动态性，他们的使用场景不一样</strong></p>
+<p>参考:</p>
+<ul>
+<li><a href="https://blog.ibyte.me/post/golang-generic-programming/">Golang Generic Programming</a></li>
+<li><a href="https://www.bilibili.com/video/BV1PL41147Y5">[Golang]泛型要来了吗？</a></li>
+</ul>
+]]></content>
+      <categories>
+        <category>programming</category>
+      </categories>
+      <tags>
+        <tag>golang</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Golang 的内存对齐</title>
+    <url>/2022/03/30/Golang-%E7%9A%84%E5%86%85%E5%AD%98%E5%AF%B9%E9%BD%90/</url>
+    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script><p>今天又在网上看到了一个以前不知道的概念，内存对齐？从名字就可以看出来，这是一个偏性能优化类的概念。</p>
+<a id="more"></a>
+<p>如果使用了 go-lint，会有这样一个<a href="maligned">检查项</a>。</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">linters-settings:</span><br><span class="line">  maligned:</span><br><span class="line">    # Print struct with more effective memory layout or not.</span><br><span class="line">    # Default: false</span><br><span class="line">    suggest-new: true</span><br></pre></td></tr></table></figure>
+<p>检查是否有更有效的内存布局，其本质就对 Golang 中 Struct 结构体字段的内存对齐进行检查。</p>
+<h2 id="前情概要"><a href="#前情概要" class="headerlink" title="前情概要"></a>前情概要</h2><p>在分析内存对齐之前，我们先看看几个关于操作系统对内存是如何管理的。</p>
+<p>内存是与CPU是程序运行的搭档，内存用于暂存CPU中的运算数据。早期，程序直接运行在物理内存上，直接操作物理内存，但是存在一些问题，比如使用效率低，地址空间不隔离等问题。就出现了虚拟内存这个概念，虚拟内存是程序和物理内存之间的一个中间层，在Liunx操作系统中。虚拟内存被划为<code>用户空间</code> 和 <code>内核空间</code>，用户只能访问用户空间的虚拟地址，而内核空间只有通过系统调用和外设中断才能访问。</p>
+<p>CPU与内存的工作关系是：当执行一个程序时，硬盘上的程序被加载进内存，CPU对内存发起寻址操作，将加载到内存中的指令翻译出来，CPU通过总线寻址、取指令、执行取数据与寄存器交互，然后CPU运算，在输出数据至内存。</p>
+<p>而CPU每次寻址能传输的数据大小和CPU位数有关，常见的CPU位数有8位、16位、32位、64位。位数越高每次执行的数据量就越大，性能也就越强。os的位数一般和CPU的位数相匹配， 32位CPU可以寻址4GB的内存空间，</p>
+<h2 id="什么是对齐"><a href="#什么是对齐" class="headerlink" title="什么是对齐"></a>什么是对齐</h2><p>先看下面的这两个结构体</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="keyword">type</span> T1 <span class="keyword">struct</span> &#123;</span><br><span class="line">	a <span class="keyword">int8</span></span><br><span class="line">	b <span class="keyword">int64</span></span><br><span class="line">	c <span class="keyword">int16</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> T2 <span class="keyword">struct</span> &#123;</span><br><span class="line">	a <span class="keyword">int8</span></span><br><span class="line">	c <span class="keyword">int16</span></span><br><span class="line">	b <span class="keyword">int64</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>在 64位的平台上 <code>T1</code> 占用 24 Bytes，<code>T2</code> 占用16 Bytes ；</p>
+<p>在 32位的平台上 <code>T1</code>占用 16 Bytes，<code>T2</code>占用 12 Bytes 。</p>
+<p>这是为什么呢？</p>
+<p>因为编译器使用了内存对齐策略，所以结果就不一样了。而编译器要做对齐主要基于以下2个原因。</p>
+<ul>
+<li><p>平台（移植性）</p>
+</li>
+<li><p>性能（若访问未对齐的内存，将导致CPU进行2次内存访问，并且要花费额外的时钟中期对齐预算。而本身就对齐的内存仅需要一次访问就可以一次访问完成读取动作，标准的空间换时间的做法）</p>
+</li>
+</ul>
+<p>每个特定平台上的编译器都有自己的默认”对齐系数”，常用平台默认对齐系数如下：</p>
+<ul>
+<li>32位系统对齐系数是4</li>
+<li>64位系统对齐系数是8</li>
+</ul>
+<p>以上面的 <code>T1</code>、<code>T2</code> 来说，在 x86_64 平台上，<code>T1</code>的内存布局为：</p>
+<p><img src="https://img1.kiosk007.top/static/images/go/T1.png" alt></p>
+<p>而T2的内存布局为</p>
+<p><img src="https://img1.kiosk007.top/static/images/go/T2.png" alt></p>
+<p>从中可以看到T1存在了许多 padding，显然占据了不少空间，那么也就不难理解为什么改变结构体成员的位置可以达到缩小结构体占用大小的疑问了。</p>
+<h2 id="结构体的对齐规则"><a href="#结构体的对齐规则" class="headerlink" title="结构体的对齐规则"></a>结构体的对齐规则</h2><p>其实上面的例子已经可以看出对齐规则了，下面再简单总结下：</p>
+<ul>
+<li>对于结构体的各个成员，第一个成员位于偏移为<code>0</code>的位置，结构体第一个成员的偏移量(offset)为<code>0</code>，以后每个成员相对于结构体首地址的<code>offset</code>都是该成员大小与有效对齐值中较小那个的整数倍，如有需要编译器会在成员之间加上填充字节。</li>
+<li>除了结构成员需要对齐，结构本身也需要对齐，结构的长度必须是编译器默认的对齐长度和成员中最长类型中最小的数据大小的倍数对齐。</li>
+</ul>
+<p><strong>举个例子</strong></p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">&#x2F;&#x2F; 64位平台，对齐参数是8</span><br><span class="line">type User struct &#123;</span><br><span class="line">    A int32 &#x2F;&#x2F; 4</span><br><span class="line">    B []int32 &#x2F;&#x2F; 24</span><br><span class="line">    C string &#x2F;&#x2F; 16</span><br><span class="line">    D bool &#x2F;&#x2F; 1</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">func main()  &#123;</span><br><span class="line">    var u User</span><br><span class="line">    fmt.Println(&quot;u1 size is &quot;,unsafe.Sizeof(u))</span><br><span class="line">&#125;</span><br><span class="line">&#x2F;&#x2F; 运行结果</span><br><span class="line">u size is  56</span><br></pre></td></tr></table></figure>
+<ul>
+<li>第一个字段类型是<code>int32</code>，对齐值是4，大小为4，所以放在内存布局中的第一位.</li>
+<li>第二个字段类型是<code>[]int32</code>，对齐值是8，大小为<code>24</code>，按照第一条规则，偏移量应该是成员大小<code>24</code>与对齐值<code>8</code>中较小那个的整数倍，那么偏移量就是<code>8</code>，所以<code>4-7</code>位会由编译进行填充，一般为<code>0</code>值，也称为空洞，第<code>9</code>到<code>32</code>位为第二个字段<code>B</code>.</li>
+<li>第三个字段类型是<code>string</code>，对齐值是<code>8</code>，大小为<code>16</code>，所以他的内存偏移值必须是8的倍数，因为<code>user</code>前两个字段就已经排到了第<code>32</code>位，所以<code>offset</code>为<code>32</code>正好是<code>8</code>的倍数，不要填充，从<code>32</code>位到<code>48</code>位是第三个字段<code>C</code>.</li>
+<li>第四个字段类型是<code>bool</code>，对齐值是<code>1</code>，大小为<code>1</code>，所以他的内存偏移值必须是<code>1</code>的倍数，因为<code>user</code>前两个字段就已经排到了第<code>48</code>位，所以下一位的偏移量正好是<code>48</code>，正好是字段<code>D</code>的对齐值的倍数，不用填充，可以直接排列到第四个字段，也就是从<code>48</code>到第<code>49</code>位是第三个字段<code>D</code>.</li>
+</ul>
+<h2 id="空结构体的字段对齐"><a href="#空结构体的字段对齐" class="headerlink" title="空结构体的字段对齐"></a>空结构体的字段对齐</h2><p><code>Go</code>语言中空结构体的大小为<code>0</code>，如果一个结构体中包含空结构体类型的字段时，通常是不需要进行内存对齐的，举个例子：</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="keyword">type</span> demo1 <span class="keyword">struct</span> &#123;</span><br><span class="line">    a <span class="keyword">struct</span>&#123;&#125;</span><br><span class="line">    b <span class="keyword">int32</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span>  &#123;</span><br><span class="line">    fmt.Println(unsafe.Sizeof(demo1&#123;&#125;))</span><br><span class="line">&#125;</span><br><span class="line">运行结果：</span><br><span class="line"><span class="number">4</span></span><br></pre></td></tr></table></figure>
+<p>但是如果 <code>struct</code>在结构体的最后一个字段时，需要内存对齐，因为如果有内存指向该字段是，返回的的地址在结构体之外。所以当<code>struct&#123;&#125;</code>作为结构体成员中最后一个字段时，要填充额外的内存保证安全。</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="keyword">type</span> demo2 <span class="keyword">struct</span> &#123;</span><br><span class="line">    a <span class="keyword">int32</span></span><br><span class="line">    b <span class="keyword">struct</span>&#123;&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span>  &#123;</span><br><span class="line">    fmt.Println(unsafe.Sizeof(demo2&#123;&#125;))</span><br><span class="line">&#125;</span><br><span class="line">运行结果：</span><br><span class="line"><span class="number">8</span></span><br></pre></td></tr></table></figure>
+<h2 id="go-lint-检查"><a href="#go-lint-检查" class="headerlink" title="go-lint 检查"></a>go-lint 检查</h2><p>在文章的开头有提到过使用 <code>golangci-lint</code> 命令行工具进行内存对齐检查。首先我们打印一下 <code>linters</code> 中和 <code>mem</code> 有关的选项，从后面的说明已经其功能了。</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">golangci-lint linters |rg &quot;mem&quot;</span><br><span class="line">maligned [deprecated]: Tool to detect Go structs that would take less memory if their fields were sorted [fast: false, auto-fix: false]</span><br></pre></td></tr></table></figure>
+<p>还是上面最开始提到的例子。</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">package main</span><br><span class="line"></span><br><span class="line">import &quot;fmt&quot;</span><br><span class="line"></span><br><span class="line">type T1 struct &#123;</span><br><span class="line">   a int8</span><br><span class="line">   b int64</span><br><span class="line">   c int16</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">func main() &#123;</span><br><span class="line">   fmt.Println(&amp;T1&#123;&#125;)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>运行lint检查命令。</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ golangci-lint run --no-config --disable-all -E maligned     </span><br><span class="line">WARN [runner] The linter <span class="string">&#x27;maligned&#x27;</span> is deprecated (since v1.38.0) due to: The repository of the linter has been archived by the owner.  Replaced by govet <span class="string">&#x27;fieldalignment&#x27;</span>. </span><br><span class="line">main.go:5:9: struct of size 24 bytes could be of size 16 bytes (maligned)</span><br><span class="line"><span class="built_in">type</span> T1 struct &#123;</span><br><span class="line">        ^</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>可以看到 <code>lint</code> 报了一个 <strong>WARN</strong> ，<code>T1</code> 这个结构体的字节数可以更少的。</p>
+<p>参考：</p>
+<ul>
+<li><a href="https://xie.infoq.cn/article/594a7f54c639accb53796cfc7">golang 内存对齐</a></li>
+<li><p><a href="https://ms2008.github.io/2019/08/01/golang-memory-alignment/">golang是否有必要内存对齐</a></p>
+</li>
+<li><p><a href="https://segmentfault.com/a/1190000040528007">[Golang]详解内存对齐</a></p>
+</li>
+</ul>
+]]></content>
+      <categories>
+        <category>programming</category>
+      </categories>
+      <tags>
+        <tag>golang</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>HTTP2 下的 Transfer-Encoding: chunked</title>
     <url>/2022/02/28/HTTP2-%E6%94%AF%E6%8C%81%E5%88%86%E5%9D%97%E4%BC%A0%E8%BE%93%EF%BC%9F/</url>
     <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script><p>在 <span style="color:#FF7F50"> HTTP </span> 中传输数据有一个 <span style="color:#FF7F50">chunked</span> 的方式, 又称“分块传输”。在响应报文里用头字段<span style="color:#FF7F50">Transfer-Encoding: chunked</span> 来表示。意思是报文里的 body 部分不是一次性发过来的，而是分成了许多的块（<span style="color:#FF7F50">chunk</span>）逐个发送。而 <span style="color:#FF7F50">HTTP2.0</span> 协议作为 <span style="color:#FF7F50">HTTP</span>协议的升级，自然是对<span style="color:#FF7F50">chunked</span>模式做支持？不然！</p>
@@ -2503,9 +2727,10 @@ func main() {
 <p><img src="https://img1.kiosk007.top/static/images/network/QUIC/quic_http3_check.png"></p>
 ]]></content>
       <categories>
-        <category>QUIC</category>
+        <category>network</category>
       </categories>
       <tags>
+        <tag>nginx</tag>
         <tag>network</tag>
       </tags>
   </entry>
@@ -5211,7 +5436,7 @@ reserved &quot;salary&quot;;</code> 如果再使用5 或者 salary 则会报错�
 <h2 id="上传到-docker-hub"><a href="#上传到-docker-hub" class="headerlink" title="上传到 docker hub"></a>上传到 docker hub</h2><p>在docker hub 上创建一个 docker 账号&lt;/br&gt;<br>使用 <code>docker login</code> 登录</p>
 <figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># 为容器起一个完整的名字。</span></span><br><span class="line">docker tag helloworld your-docker-id/helloworld:v1</span><br><span class="line"></span><br><span class="line"><span class="comment"># 上传到docker hub 上</span></span><br><span class="line">docker push your-docker-id/helloworld:v1</span><br><span class="line"></span><br><span class="line"><span class="comment"># 在容器中新建文件</span></span><br><span class="line">docker <span class="built_in">exec</span> -it 29038er849jsa /bin/sh</span><br><span class="line">touch tmp.file</span><br><span class="line"><span class="built_in">exit</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 将新建的内容提交</span></span><br><span class="line">docker commit 29038er849jsa your-docker-id/helloworld:v2</span><br></pre></td></tr></table></figure>]]></content>
       <categories>
-        <category>docker</category>
+        <category>devops</category>
       </categories>
       <tags>
         <tag>devops</tag>
@@ -5523,7 +5748,7 @@ reserved &quot;salary&quot;;</code> 如果再使用5 或者 salary 则会报错�
 <figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(e EtcdApi)</span> <span class="title">Op</span><span class="params">()</span></span> &#123;</span><br><span class="line">	<span class="comment">// 创建一个OP：operation</span></span><br><span class="line">	putOp := clientv3.OpPut(<span class="string">&quot;/key1/op&quot;</span>,<span class="string">&quot;value_op&quot;</span>)</span><br><span class="line"></span><br><span class="line">	<span class="comment">// 执行OP</span></span><br><span class="line">	opResp, err := e.KV.Do(e.Ctx,putOp)</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		fmt.Println(err)</span><br><span class="line">		<span class="keyword">return</span></span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	fmt.Println(<span class="string">&quot;写入Revision： &quot;</span>, &amp;opResp.Put().Header.Revision)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <h2 id="Txn"><a href="#Txn" class="headerlink" title="Txn"></a>Txn</h2><figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="comment">// 处理业务</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(e *EtcdApi)</span> <span class="title">DoTxn</span><span class="params">(leaseId clientv3.LeaseID)</span></span> &#123;</span><br><span class="line">	<span class="comment">// 创建事物</span></span><br><span class="line">	txn := e.KV.Txn(e.Ctx)</span><br><span class="line">	</span><br><span class="line">	<span class="comment">// 定义事物</span></span><br><span class="line">	txn.If(clientv3.Compare(clientv3.CreateRevision(<span class="string">&quot;/key1/lease&quot;</span>),<span class="string">&quot;=&quot;</span>,<span class="string">&quot;0&quot;</span>)).</span><br><span class="line">		Then(clientv3.OpPut(<span class="string">&quot;/key1/lease&quot;</span>,<span class="string">&quot;value1&quot;</span>,clientv3.WithLease(leaseId))).</span><br><span class="line">		Else(clientv3.OpGet(<span class="string">&quot;/key1/lease&quot;</span>))  <span class="comment">//抢锁失败</span></span><br><span class="line">	</span><br><span class="line">	txnResp,err := txn.Commit()</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		log.Fatal(err.Error())</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="comment">// 是否抢到锁</span></span><br><span class="line">	<span class="keyword">if</span> !txnResp.Succeeded &#123;</span><br><span class="line">		fmt.Println(<span class="string">&quot;抢锁失败,锁被占用：&quot;</span> , <span class="keyword">string</span>(txnResp.Responses[<span class="number">0</span>].GetResponseRange().Kvs[<span class="number">0</span>].Value))</span><br><span class="line">		<span class="keyword">return</span></span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>]]></content>
       <categories>
-        <category>etcd</category>
+        <category>devops</category>
       </categories>
       <tags>
         <tag>etcd</tag>
@@ -6183,11 +6408,11 @@ reserved &quot;salary&quot;;</code> 如果再使用5 或者 salary 则会报错�
 <p>日志格式参考: <a href="https://adamtheautomator.com/nginix-logs/">https://adamtheautomator.com/nginix-logs/</a></p>
 ]]></content>
       <categories>
-        <category>运维</category>
+        <category>devops</category>
       </categories>
       <tags>
+        <tag>devops</tag>
         <tag>nginx</tag>
-        <tag>ops</tag>
       </tags>
   </entry>
   <entry>
